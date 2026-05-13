@@ -101,6 +101,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         await _firestoreService.createUserDocument(
           user.uid,
           event.email,
+          event.password,
           event.role,
           event.displayName,
         );

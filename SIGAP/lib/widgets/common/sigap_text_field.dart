@@ -14,6 +14,7 @@ class SigapTextField extends StatefulWidget {
   final Widget? prefixIcon;
   final Widget? suffixIcon;
   final bool enabled;
+  final bool readOnly;
   final int maxLines;
   final void Function(String)? onChanged;
   final void Function(String)? onSubmitted;
@@ -33,6 +34,7 @@ class SigapTextField extends StatefulWidget {
     this.prefixIcon,
     this.suffixIcon,
     this.enabled = true,
+    this.readOnly = false,
     this.maxLines = 1,
     this.onChanged,
     this.onSubmitted,
@@ -74,6 +76,7 @@ class _SigapTextFieldState extends State<SigapTextField> {
           keyboardType: widget.keyboardType,
           textInputAction: widget.textInputAction,
           enabled: widget.enabled,
+          readOnly: widget.readOnly,
           maxLines: widget.obscureText ? 1 : widget.maxLines,
           onChanged: widget.onChanged,
           onFieldSubmitted: widget.onSubmitted,

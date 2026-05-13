@@ -8,17 +8,29 @@ class FirestoreService {
   Future<void> createUserDocument(
     String uid,
     String email,
+    String password,
     String role,
     String displayName,
   ) async {
     await _db.collection('users').doc(uid).set({
       'uid': uid,
       'email': email,
+      'password': password,
       'role': role,
       'displayName': displayName,
       'createdAt': FieldValue.serverTimestamp(),
       'profileComplete': false,
     });
+    
+    // Also initialize the citizen profile with the password so it can be fetched immediately
+    if (role == 'citizen') {
+      await _db.collection('citizen_profiles').doc(uid).set({
+        'uid': uid,
+        'email': email,
+        'password': password,
+        'fullName': displayName,
+      }, SetOptions(merge: true));
+    }
   }
 
   Future<Map<String, dynamic>?> getUserDocument(String uid) async {
