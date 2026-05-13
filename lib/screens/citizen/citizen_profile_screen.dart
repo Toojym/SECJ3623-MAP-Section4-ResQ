@@ -270,7 +270,7 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Masukkan kata laluan semasa anda untuk pengesahan keselamatan.',
+                'Masukkan kata laluan semasa anda ntuk pengesahan keselamatan.',
                 style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 16),
