@@ -3,10 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/constants/app_strings.dart';
 import '../../services/firestore_service.dart';
-import '../../widgets/common/sigap_app_bar.dart';
 import '../../widgets/common/sigap_button.dart';
+import '../../widgets/common/sigap_text_field.dart';
 
 class VolunteerProfileScreen extends StatefulWidget {
   const VolunteerProfileScreen({super.key});
@@ -16,11 +15,15 @@ class VolunteerProfileScreen extends StatefulWidget {
 }
 
 class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
-  final List<String> _allSkills = ['Medical', 'Rescue', 'Boat Operator', 'Logistics', 'Search & Rescue'];
-  List<String> _selectedSkills = [];
-  String _availStart = '08:00';
-  String _availEnd = '18:00';
-  bool _isLoading = false;
+  final _formKey = GlobalKey<FormState>();
+  final _firestoreService = FirestoreService();
+
+  final _fullNameCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+  final _skillsCtrl = TextEditingController();
+  final _locationCtrl = TextEditingController();
+
+  bool _isLoading = true;
   bool _isSaving = false;
 
   @override
@@ -29,43 +32,99 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
     _loadProfile();
   }
 
+  @override
+  void dispose() {
+    _fullNameCtrl.dispose();
+    _phoneCtrl.dispose();
+    _skillsCtrl.dispose();
+    _locationCtrl.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadProfile() async {
-    setState(() => _isLoading = true);
-    final state = context.read<AuthBloc>().state;
-    if (state is! AuthAuthenticated) { setState(() => _isLoading = false); return; }
+    final authState = context.read<AuthBloc>().state;
+    if (authState is! AuthAuthenticated) {
+      setState(() => _isLoading = false);
+      return;
+    }
+
     try {
-      final data = await FirestoreService().getVolunteerProfile(state.uid);
-      if (data != null && mounted) {
-        setState(() {
-          _selectedSkills = List<String>.from(data['skills'] as List? ?? []);
-          _availStart = data['availabilityStart'] as String? ?? '08:00';
-          _availEnd = data['availabilityEnd'] as String? ?? '18:00';
-        });
+      final data =
+          await _firestoreService.getVolunteerProfile(authState.uid);
+      if (mounted) {
+        if (data != null) {
+          _fullNameCtrl.text =
+              data['fullName'] as String? ?? authState.displayName;
+          _phoneCtrl.text = data['phone'] as String? ?? '';
+          _skillsCtrl.text = data['skills'] as String? ?? '';
+          _locationCtrl.text = data['location'] as String? ?? '';
+        } else {
+          // First time — pre-fill name from auth
+          _fullNameCtrl.text = authState.displayName;
+        }
       }
-    } catch (_) {} finally {
+    } catch (_) {
+      if (mounted) _fullNameCtrl.text = authState.displayName;
+    } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  Future<void> _save() async {
+  Future<void> _saveProfile() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final authState = context.read<AuthBloc>().state;
+    if (authState is! AuthAuthenticated) return;
+
     setState(() => _isSaving = true);
-    final state = context.read<AuthBloc>().state;
-    if (state is! AuthAuthenticated) return;
     try {
-      await FirestoreService().createVolunteerProfile(state.uid, {
-        'skills': _selectedSkills,
-        'availabilityStart': _availStart,
-        'availabilityEnd': _availEnd,
+      // Save to volunteer_profiles collection (also marks profileComplete: true)
+      await _firestoreService.createVolunteerProfile(authState.uid, {
+        'fullName': _fullNameCtrl.text.trim(),
+        'phone': _phoneCtrl.text.trim(),
+        'skills': _skillsCtrl.text.trim(),
+        'location': _locationCtrl.text.trim(),
       });
+
+      // Sync displayName in the main users doc
+      await _firestoreService.updateUserDocument(authState.uid, {
+        'displayName': _fullNameCtrl.text.trim(),
+      });
+
       if (mounted) {
+        // Notify BLoC so header name updates across the app
+        context.read<AuthBloc>().add(const AuthProfileCompleted());
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profil berjaya dikemaskini.'), backgroundColor: AppColors.safe),
+          SnackBar(
+            content: Text(
+              'Profil berjaya disimpan!',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+            ),
+            backgroundColor: AppColors.safe,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
         );
+
+        // Refresh avatar name display
+        setState(() {});
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: AppColors.danger),
+          SnackBar(
+            content: Text(
+              'Ralat menyimpan profil. Cuba lagi.',
+              style: GoogleFonts.inter(),
+            ),
+            backgroundColor: AppColors.danger,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+          ),
         );
       }
     } finally {
@@ -73,153 +132,226 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
     }
   }
 
-  Future<void> _pickTime(bool isStart) async {
-    final parts = (isStart ? _availStart : _availEnd).split(':');
-    final initial = TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
-    final picked = await showTimePicker(context: context, initialTime: initial);
-    if (picked != null && mounted) {
-      final formatted = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
-      setState(() { if (isStart) { _availStart = formatted; } else { _availEnd = formatted; } });
-    }
-  }
+  // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: SigapAppBar(title: AppStrings.myProfile, showLogout: false),
+      appBar: AppBar(
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
+          color: AppColors.textPrimary,
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'Profil Sukarelawan',
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        centerTitle: true,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Divider(height: 1, color: AppColors.divider),
+        ),
+      ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+          ? const Center(
+              child: CircularProgressIndicator(
+                color: AppColors.volunteerAccent,
+              ),
+            )
+          : _buildForm(),
+    );
+  }
+
+  Widget _buildForm() {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildAvatarSection(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
+            child: Form(
+              key: _formKey,
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildAvatarCard(),
+                  // ── Personal Info ──────────────────────────────────────
+                  _buildSectionTitle('Maklumat Peribadi'),
                   const SizedBox(height: 16),
-                  _buildSkillsSection(),
+                  SigapTextField(
+                    label: 'Nama Penuh',
+                    hint: 'Masukkan nama penuh anda',
+                    controller: _fullNameCtrl,
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty)
+                            ? 'Nama penuh diperlukan'
+                            : null,
+                    prefixIcon: const Icon(
+                      Icons.person_outline_rounded,
+                      size: 20,
+                    ),
+                  ),
                   const SizedBox(height: 16),
-                  _buildAvailabilitySection(),
-                  const SizedBox(height: 24),
-                  SigapButton(label: AppStrings.save, onPressed: _isSaving ? null : _save, isLoading: _isSaving),
+                  SigapTextField(
+                    label: 'Nombor Telefon',
+                    hint: 'cth: 012-3456789',
+                    controller: _phoneCtrl,
+                    keyboardType: TextInputType.phone,
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty)
+                            ? 'Nombor telefon diperlukan'
+                            : null,
+                    prefixIcon: const Icon(
+                      Icons.phone_outlined,
+                      size: 20,
+                    ),
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  // ── Volunteer Info ─────────────────────────────────────
+                  _buildSectionTitle('Maklumat Sukarelawan'),
+                  const SizedBox(height: 16),
+                  SigapTextField(
+                    label: 'Kemahiran',
+                    hint: 'cth: Pertolongan Cemas, Memandu Bot, Masak',
+                    controller: _skillsCtrl,
+                    maxLines: 2,
+                    prefixIcon: const Icon(
+                      Icons.build_circle_outlined,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SigapTextField(
+                    label: 'Kawasan Tempat Tinggal',
+                    hint: 'cth: Kuala Lumpur, Selangor',
+                    controller: _locationCtrl,
+                    textInputAction: TextInputAction.done,
+                    prefixIcon: const Icon(
+                      Icons.location_on_outlined,
+                      size: 20,
+                    ),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  SigapButton(
+                    label: 'Simpan Profil',
+                    onPressed: _isSaving ? null : _saveProfile,
+                    isLoading: _isSaving,
+                  ),
                 ],
               ),
             ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildAvatarCard() {
-    return BlocBuilder<AuthBloc, AuthState>(
-      builder: (context, state) {
-        final name = state is AuthAuthenticated ? state.displayName : '';
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.divider)),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 30,
-                backgroundColor: AppColors.volunteerAccent.withOpacity(0.15),
-                child: Text(
-                  name.isNotEmpty ? name[0].toUpperCase() : 'S',
-                  style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.w700, color: AppColors.volunteerAccent),
+  // ── Avatar Section ────────────────────────────────────────────────────────
+
+  Widget _buildAvatarSection() {
+    final displayName = _fullNameCtrl.text.isNotEmpty
+        ? _fullNameCtrl.text
+        : 'Sukarelawan';
+
+    // Build initials from name
+    final parts = displayName.trim().split(' ');
+    final initials = parts.length >= 2
+        ? '${parts[0][0]}${parts[1][0]}'.toUpperCase()
+        : displayName.substring(0, displayName.length >= 2 ? 2 : 1)
+            .toUpperCase();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 32),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border(
+          bottom: BorderSide(color: AppColors.divider),
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 88,
+            height: 88,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF6D28D9), Color(0xFF8B5CF6)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.volunteerAccent.withOpacity(0.3),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Center(
+              child: Text(
+                initials,
+                style: GoogleFonts.poppins(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
                 ),
               ),
-              const SizedBox(width: 12),
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(name, style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                Container(
-                  margin: const EdgeInsets.only(top: 4),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.volunteerAccent.withOpacity(0.1), borderRadius: BorderRadius.circular(99)),
-                  child: Text('Sukarelawan', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.volunteerAccent)),
-                ),
-              ]),
-            ],
+            ),
           ),
-        );
-      },
-    );
-  }
-
-  Widget _buildSkillsSection() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.divider)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Kemahiran', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-          const SizedBox(height: 4),
-          Text('Pilih semua kemahiran yang berkaitan', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8, runSpacing: 8,
-            children: _allSkills.map((s) {
-              final selected = _selectedSkills.contains(s);
-              return GestureDetector(
-                onTap: () => setState(() { selected ? _selectedSkills.remove(s) : _selectedSkills.add(s); }),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: selected ? AppColors.volunteerAccent : AppColors.surface,
-                    borderRadius: BorderRadius.circular(99),
-                    border: Border.all(color: selected ? AppColors.volunteerAccent : AppColors.border),
-                  ),
-                  child: Text(s, style: GoogleFonts.inter(
-                    fontSize: 12, fontWeight: FontWeight.w500,
-                    color: selected ? Colors.white : AppColors.textSecondary,
-                  )),
-                ),
-              );
-            }).toList(),
+          const SizedBox(height: 14),
+          Text(
+            displayName,
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+            decoration: BoxDecoration(
+              color: AppColors.volunteerAccent.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              'Sukarelawan',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.volunteerAccent,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildAvailabilitySection() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.divider)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Waktu Ketersediaan', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(child: _timeButton('Mula', _availStart, () => _pickTime(true))),
-              const SizedBox(width: 12),
-              const Icon(Icons.arrow_forward_rounded, color: AppColors.textSecondary, size: 20),
-              const SizedBox(width: 12),
-              Expanded(child: _timeButton('Tamat', _availEnd, () => _pickTime(false))),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+  // ── Helpers ───────────────────────────────────────────────────────────────
 
-  Widget _timeButton(String label, String time, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppColors.primaryLight, borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.primary.withOpacity(0.3))),
-        child: Column(
-          children: [
-            Text(label, style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary)),
-            const SizedBox(height: 4),
-            Text(time, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.primary)),
-          ],
-        ),
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textSecondary,
       ),
     );
   }

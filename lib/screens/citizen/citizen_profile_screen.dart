@@ -717,7 +717,7 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
         Switch(
           value: value,
           onChanged: _isEditing ? onChanged : null,
-          activeColor: AppColors.primary,
+          activeThumbColor: AppColors.primary,
         )
       ],
     );

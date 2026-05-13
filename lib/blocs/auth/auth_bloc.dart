@@ -3,7 +3,6 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../services/auth_service.dart';
 import '../../services/firestore_service.dart';
-import '../../core/constants/app_strings.dart';
 
 part 'auth_event.dart';
 part 'auth_state.dart';

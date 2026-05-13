@@ -1,69 +1,67 @@
-import 'package:equatable/equatable.dart';
-
-class VolunteerProfileModel extends Equatable {
+class VolunteerProfileModel {
   final String uid;
-  final List<String> skills;
-  final String availabilityStart;
-  final String availabilityEnd;
+  final String fullName;
+  final String email;
+  final String phone;
+  final String skills;
+  final String location;
   final bool isActive;
   final int sigapMataPoints;
-  final List<String> certifications;
 
   const VolunteerProfileModel({
     required this.uid,
-    required this.skills,
-    required this.availabilityStart,
-    required this.availabilityEnd,
-    required this.isActive,
-    required this.sigapMataPoints,
-    required this.certifications,
+    required this.fullName,
+    this.email = '',
+    this.phone = '',
+    this.skills = '',
+    this.location = '',
+    this.isActive = false,
+    this.sigapMataPoints = 0,
   });
 
-  factory VolunteerProfileModel.fromFirestore(Map<String, dynamic> data) {
+  factory VolunteerProfileModel.fromMap(String uid, Map<String, dynamic> map) {
     return VolunteerProfileModel(
-      uid: data['uid'] as String? ?? '',
-      skills: List<String>.from(data['skills'] as List? ?? []),
-      availabilityStart: data['availabilityStart'] as String? ?? '08:00',
-      availabilityEnd: data['availabilityEnd'] as String? ?? '18:00',
-      isActive: data['isActive'] as bool? ?? false,
-      sigapMataPoints: data['sigapMataPoints'] as int? ?? 0,
-      certifications: List<String>.from(data['certifications'] as List? ?? []),
+      uid: uid,
+      fullName: map['fullName'] as String? ?? '',
+      email: map['email'] as String? ?? '',
+      phone: map['phone'] as String? ?? '',
+      skills: map['skills'] as String? ?? '',
+      location: map['location'] as String? ?? '',
+      isActive: map['isActive'] as bool? ?? false,
+      sigapMataPoints: map['sigapMataPoints'] as int? ?? 0,
     );
   }
 
-  Map<String, dynamic> toFirestore() {
-    return {
-      'uid': uid,
-      'skills': skills,
-      'availabilityStart': availabilityStart,
-      'availabilityEnd': availabilityEnd,
-      'isActive': isActive,
-      'sigapMataPoints': sigapMataPoints,
-      'certifications': certifications,
-    };
-  }
+  Map<String, dynamic> toMap() => {
+        'uid': uid,
+        'fullName': fullName,
+        'email': email,
+        'phone': phone,
+        'skills': skills,
+        'location': location,
+        'isActive': isActive,
+        'sigapMataPoints': sigapMataPoints,
+      };
 
   VolunteerProfileModel copyWith({
     String? uid,
-    List<String>? skills,
-    String? availabilityStart,
-    String? availabilityEnd,
+    String? fullName,
+    String? email,
+    String? phone,
+    String? skills,
+    String? location,
     bool? isActive,
     int? sigapMataPoints,
-    List<String>? certifications,
   }) {
     return VolunteerProfileModel(
       uid: uid ?? this.uid,
+      fullName: fullName ?? this.fullName,
+      email: email ?? this.email,
+      phone: phone ?? this.phone,
       skills: skills ?? this.skills,
-      availabilityStart: availabilityStart ?? this.availabilityStart,
-      availabilityEnd: availabilityEnd ?? this.availabilityEnd,
+      location: location ?? this.location,
       isActive: isActive ?? this.isActive,
       sigapMataPoints: sigapMataPoints ?? this.sigapMataPoints,
-      certifications: certifications ?? this.certifications,
     );
   }
-
-  @override
-  List<Object?> get props =>
-      [uid, skills, availabilityStart, availabilityEnd, isActive, sigapMataPoints, certifications];
 }
