@@ -61,32 +61,13 @@ lib/
    flutter run
    ```
 
-## 🔌 Setup Your Own Backend (API Configuration)
+## 🔌 Shared Database Configuration
 
-If you are cloning this repository to build your own version, you must connect it to your own Firebase project (which serves as the backend API for SIGAP).
+This repository is already pre-configured to connect to the central **SIGAP Firebase Project**. 
 
-1. Go to the [Firebase Console](https://console.firebase.google.com/) and create a new project.
-2. Enable **Authentication** (Email/Password provider).
-3. Enable **Firestore Database** and set the security rules to allow authenticated reads and writes:
-   ```text
-   rules_version = '2';
-   service cloud.firestore {
-     match /databases/{database}/documents {
-       match /{document=**} {
-         allow read, write: if request.auth != null;
-       }
-     }
-   }
-   ```
-4. Install the FlutterFire CLI on your computer:
-   ```bash
-   dart pub global activate flutterfire_cli
-   ```
-5. Run the configuration tool inside the SIGAP project folder to generate your own API keys:
-   ```bash
-   flutterfire configure
-   ```
-   *(This will automatically update `lib/firebase_options.dart` and the native config files with your own project's API keys).*
+Because the API configuration files (`google-services.json` and `firebase_options.dart`) are included directly in this repository, **you do not need to set up your own database**. 
+
+Any team member who clones this project and runs `flutter run` will instantly be connected to the exact same shared live database. All user accounts, profiles, and data will automatically sync across everyone's devices out-of-the-box!
 
 ---
 *Developed for SECJ3623 MAP Section 4.*
