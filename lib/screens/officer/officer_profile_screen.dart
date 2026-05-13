@@ -106,6 +106,23 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
                     _buildFormCard(),
                     const SizedBox(height: 24),
                     SigapButton(label: AppStrings.save, onPressed: _isSaving ? null : _save, isLoading: _isSaving),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          context.read<AuthBloc>().add(const AuthLoggedOut());
+                        },
+                        icon: const Icon(Icons.logout_rounded),
+                        label: const Text('Log Keluar'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.danger,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
