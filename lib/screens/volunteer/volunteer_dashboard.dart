@@ -163,7 +163,8 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
             children: [
               // Live status badge
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
@@ -314,7 +315,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                     )
                   : Switch(
                       value: _isActive,
-                      activeColor: AppColors.safe,
+                      activeThumbColor: AppColors.safe,
                       activeTrackColor: AppColors.safeLight,
                       inactiveThumbColor: AppColors.textHint,
                       inactiveTrackColor: AppColors.divider,
@@ -605,8 +606,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
               label,
               style: GoogleFonts.inter(
                 fontSize: 10,
-                fontWeight:
-                    isSelected ? FontWeight.w600 : FontWeight.w500,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 color: color,
               ),
             ),
