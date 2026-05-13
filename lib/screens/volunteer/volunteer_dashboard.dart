@@ -22,6 +22,11 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
   bool _isActive = false;
   int _sigapMataPoints = 0;
   bool _isToggling = false;
+  
+  // Future features: Tracking for upcoming modules
+  int _openIncidentsCount = 0;
+  int _pendingMissionsCount = 0;
+  int _redeemedCertificatesCount = 0;
 
   @override
   void initState() {
@@ -105,6 +110,14 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
         return _buildHomeTab(uid, name);
       case 1:
         return _buildTasksPlaceholder();
+      case 2:
+        return _buildNotificationsPlaceholder();
+      case 3:
+        return _buildLeaderboardPlaceholder();
+      case 4:
+        return _buildTaskBoardPlaceholder();
+      case 5:
+        return _buildCertificatesPlaceholder();
       default:
         return const SizedBox.shrink();
     }
@@ -128,6 +141,10 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
           _buildSectionHeader('Tindakan Pantas'),
           const SizedBox(height: 12),
           _buildQuickActions(),
+          const SizedBox(height: 24),
+          _buildSectionHeader('Modul Akses'),
+          const SizedBox(height: 12),
+          _buildModuleGrid(),
           const SizedBox(height: 24),
           _buildSectionHeader('Aktiviti Terkini'),
           const SizedBox(height: 12),
@@ -424,6 +441,180 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
     );
   }
 
+  Widget _buildModuleGrid() {
+    return GridView.count(
+      crossAxisCount: 2,
+      childAspectRatio: 1.1,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      children: [
+        _moduleCard(
+          Icons.notifications_rounded,
+          'Pemberitahuan',
+          '2',
+          Color(0xFF06B6D4),
+          () {},
+        ),
+        _moduleCard(
+          Icons.help_rounded,
+          'Bantuan',
+          'FAQ',
+          Color(0xFF10B981),
+          () {},
+        ),
+        _moduleCard(
+          Icons.assessment_rounded,
+          'Laporan',
+          'Progres',
+          Color(0xFFEF4444),
+          () {},
+        ),
+        _moduleCard(
+          Icons.school_rounded,
+          'Pembelajaran',
+          'Video',
+          Color(0xFFF97316),
+          () {},
+        ),
+        // Future features
+        _moduleCard(
+          Icons.location_on_rounded,
+          'Papan Tugas',
+          'Segera',
+          Color(0xFF8B5CF6),
+          () => _showComingSoonDialog('Papan Tugas', 'Lihat insiden terbuka berdekatan dengan anda'),
+        ),
+        _moduleCard(
+          Icons.card_giftcard_rounded,
+          'Pelepasan Mata',
+          'Sprint 2+',
+          Color(0xFFEC4899),
+          () => _showComingSoonDialog('Pelepasan SIGAP Mata', 'Tukarkan poin anda dengan sijil NADMA/Bomba'),
+        ),
+      ],
+    );
+  }
+
+  void _showComingSoonDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(title, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(message, style: GoogleFonts.inter(color: AppColors.textSecondary)),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.schedule_rounded, size: 16, color: AppColors.warning),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Akan datang dalam sprint yang akan datang',
+                      style: GoogleFonts.inter(fontSize: 12, color: AppColors.warning, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Tutup'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _moduleCard(
+    IconData icon,
+    String title,
+    String badge,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withOpacity(0.2), width: 1),
+        ),
+        child: Stack(
+          children: [
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: color, size: 28),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  badge,
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: color,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            // Small indicator/badge
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  '→',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ── Quick Actions ─────────────────────────────────────────────────────────
 
   Widget _buildQuickActions() {
@@ -438,11 +629,43 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
         ),
         const SizedBox(height: 10),
         _actionCard(
+          Icons.assignment_rounded,
+          'Misi Tersedia',
+          'Lihat misi yang memerlukan anda',
+          AppColors.warning,
+          () => setState(() => _currentIndex = 4),
+        ),
+        const SizedBox(height: 10),
+        _actionCard(
+          Icons.checklist_rounded,
+          'Senarai Semak Misi',
+          'Tandai tugas yang diselesaikan',
+          Color(0xFF10B981),
+          () => _showComingSoonDialog('Senarai Semak Misi', 'Tandai: bekalan, mangsa dibantu, foto lokasi'),
+        ),
+        const SizedBox(height: 10),
+        _actionCard(
           Icons.history_rounded,
           'Sejarah Misi',
           'Rekod misi terdahulu',
           AppColors.primary,
           () {},
+        ),
+        const SizedBox(height: 10),
+        _actionCard(
+          Icons.auto_awesome_rounded,
+          'Briefing AWANIS',
+          'Ringkasan pra-misi & sumber',
+          Color(0xFFEC4899),
+          () => _showComingSoonDialog('Briefing AWANIS AI', 'Ringkasan insiden, bilangan mangsa, sumber di lapangan'),
+        ),
+        const SizedBox(height: 10),
+        _actionCard(
+          Icons.leaderboard_rounded,
+          'Leaderboard',
+          'Peringkat sukarelawan terbaik',
+          Color(0xFF8B5CF6),
+          () => setState(() => _currentIndex = 3),
         ),
       ],
     );
@@ -567,21 +790,500 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
     );
   }
 
+  // ── Notifications Placeholder ────────────────────────────────────────────
+
+  Widget _buildNotificationsPlaceholder() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.notifications_none_rounded, size: 64, color: AppColors.textHint),
+          const SizedBox(height: 16),
+          Text(
+            'Tiada Notifikasi',
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Anda akan menerima notifikasi tentang\nmisi dan aktiviti penting di sini',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              color: AppColors.textHint,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Leaderboard Placeholder ──────────────────────────────────────────────
+
+  Widget _buildLeaderboardPlaceholder() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.leaderboard_rounded, size: 64, color: AppColors.textHint),
+          const SizedBox(height: 16),
+          Text(
+            'Leaderboard Sukarelawan',
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Peringkat akan dimuatkan dengan\ndata aktiviti sukarelawan',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              color: AppColors.textHint,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Task Board Placeholder (Sprint 2+) ───────────────────────────────────
+
+  Widget _buildTaskBoardPlaceholder() {
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      children: [
+        // Header
+        Text(
+          'Papan Tugas Langsung',
+          style: GoogleFonts.poppins(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Lihat insiden terbuka berdekatan dengan anda',
+          style: GoogleFonts.inter(
+            fontSize: 13,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // Info banner
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.info_rounded, size: 20, color: AppColors.primary),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Ciri-ciri Papan Tugas',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _featureListItem('📍 Jarak dari lokasi anda', 'Lihat jarak ke setiap insiden'),
+              const SizedBox(height: 8),
+              _featureListItem('🚨 Jenis Insiden', 'Banjir, Kebakaran, Pencapaian, dsb'),
+              const SizedBox(height: 8),
+              _featureListItem('🎯 Kemahiran Diperlukan', 'Padankan dengan profil anda'),
+              const SizedBox(height: 8),
+              _featureListItem('⚡ Skor Kecemasan', 'Dari rendah hingga kritikal'),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 24),
+
+        // Coming Soon
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Column(
+              children: [
+                Icon(Icons.construction_rounded, size: 48, color: AppColors.textHint),
+                const SizedBox(height: 16),
+                Text(
+                  'Akan Datang dalam Sprint 2+',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Kami sedang menyediakan peta interaktif\ndengan insiden real-time di kawasan anda',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppColors.textHint,
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _featureListItem(String title, String description) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: GoogleFonts.inter(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          description,
+          style: GoogleFonts.inter(
+            fontSize: 12,
+            color: AppColors.textSecondary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Certificates Placeholder (Sprint 2+) ─────────────────────────────────
+
+  Widget _buildCertificatesPlaceholder() {
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      children: [
+        // Header
+        Text(
+          'Pelepasan SIGAP Mata',
+          style: GoogleFonts.poppins(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Tukarkan poin SIGAP Mata anda dengan sijil tersertifikasi',
+          style: GoogleFonts.inter(
+            fontSize: 13,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // Current Points Card
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF6D28D9), Color(0xFF8B5CF6)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.stars_rounded, color: Colors.amber, size: 24),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Poin SIGAP Mata Anda',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: Colors.white70,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                '$_sigapMataPoints',
+                style: GoogleFonts.poppins(
+                  fontSize: 44,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 24),
+
+        // Certifications Available
+        Text(
+          'Sijil Tersedia untuk Pelepasan',
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // NADMA Certificate
+        _certificateCard(
+          'Sijil NADMA\nSukarelawan Darurat',
+          '500 SIGAP Mata',
+          AppColors.primary,
+          Icons.verified_user_rounded,
+        ),
+        const SizedBox(height: 12),
+
+        // Bomba Certificate
+        _certificateCard(
+          'Sijil Bomba\nPembantu Penyelamat',
+          '750 SIGAP Mata',
+          Color(0xFFEF4444),
+          Icons.shield_rounded,
+        ),
+        const SizedBox(height: 12),
+
+        // Advanced Certificate
+        _certificateCard(
+          'Sijil Lanjutan\nKoordinator Misi',
+          '1200 SIGAP Mata',
+          Color(0xFF8B5CF6),
+          Icons.military_tech_rounded,
+        ),
+
+        const SizedBox(height: 24),
+
+        // Info Banner
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.safe.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.safe.withOpacity(0.2)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.lightbulb_rounded, size: 20, color: AppColors.safe),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Cara Mengumpul Poin',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _pointsExplanation('Selesaikan misi darurat', 'Dapatkan poin per misi yang selesai'),
+              const SizedBox(height: 8),
+              _pointsExplanation('Bantuan kepada korban', 'Bonus poin untuk bantuan kualiti tinggi'),
+              const SizedBox(height: 8),
+              _pointsExplanation('Peringkat Leaderboard', 'Bonus mingguan untuk volunteer terbaik'),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 24),
+
+        // Coming Soon Banner
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+          decoration: BoxDecoration(
+            color: AppColors.warning.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.warning.withOpacity(0.2)),
+          ),
+          child: Center(
+            child: Column(
+              children: [
+                Icon(Icons.schedule_rounded, size: 32, color: AppColors.warning),
+                const SizedBox(height: 12),
+                Text(
+                  'Sistem Pelepasan Akan Datang',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Persiapkan diri anda untuk memperoleh\nsijil NADMA dan Bomba yang diiktiraf',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _certificateCard(String title, String cost, Color color, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3), width: 1.5),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  cost,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: color,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.arrow_forward_rounded, color: AppColors.textHint, size: 20),
+        ],
+      ),
+    );
+  }
+
+  Widget _pointsExplanation(String title, String description) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          margin: const EdgeInsets.only(top: 2),
+          width: 4,
+          height: 4,
+          decoration: BoxDecoration(
+            color: AppColors.safe,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                description,
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   // ── Bottom Nav ────────────────────────────────────────────────────────────
 
   Widget _buildBottomNav() {
-    return BottomAppBar(
-      color: AppColors.surface,
-      elevation: 20,
-      shadowColor: Colors.black.withOpacity(0.2),
-      child: SizedBox(
-        height: 65,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _navItem(Icons.home_rounded, 'Utama', 0),
-            _navItem(Icons.assignment_rounded, 'Tugas', 1),
-          ],
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: BottomAppBar(
+        color: AppColors.surface,
+        elevation: 20,
+        shadowColor: Colors.black.withOpacity(0.2),
+        child: SizedBox(
+          height: 65,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _navItem(Icons.home_rounded, 'Utama', 0),
+              _navItem(Icons.assignment_rounded, 'Tugas', 1),
+              _navItem(Icons.notifications_rounded, 'Surat', 2),
+              _navItem(Icons.leaderboard_rounded, 'Papan', 3),
+              _navItem(Icons.location_on_rounded, 'Peta', 4),
+              _navItem(Icons.card_giftcard_rounded, 'Sijil', 5),
+            ],
+          ),
         ),
       ),
     );
@@ -595,20 +1297,21 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
       onTap: () => setState(() => _currentIndex = index),
       borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 4),
+            Icon(icon, color: color, size: 20),
+            const SizedBox(height: 2),
             Text(
               label,
               style: GoogleFonts.inter(
-                fontSize: 10,
+                fontSize: 8,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 color: color,
               ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),

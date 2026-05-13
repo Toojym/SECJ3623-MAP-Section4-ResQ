@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_strings.dart';
 import '../../services/firestore_service.dart';
 import '../../widgets/common/sigap_button.dart';
 import '../../widgets/common/sigap_text_field.dart';
@@ -19,12 +20,18 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
   final _firestoreService = FirestoreService();
 
   final _fullNameCtrl = TextEditingController();
+  final _icCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
+  final _addressCtrl = TextEditingController();
+  final _emerNameCtrl = TextEditingController();
+  final _emerPhoneCtrl = TextEditingController();
   final _skillsCtrl = TextEditingController();
   final _locationCtrl = TextEditingController();
+  final _experienceCtrl = TextEditingController();
 
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _isEditing = false;
 
   @override
   void initState() {
@@ -35,9 +42,14 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
   @override
   void dispose() {
     _fullNameCtrl.dispose();
+    _icCtrl.dispose();
     _phoneCtrl.dispose();
+    _addressCtrl.dispose();
+    _emerNameCtrl.dispose();
+    _emerPhoneCtrl.dispose();
     _skillsCtrl.dispose();
     _locationCtrl.dispose();
+    _experienceCtrl.dispose();
     super.dispose();
   }
 
@@ -55,9 +67,14 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
         if (data != null) {
           _fullNameCtrl.text =
               data['fullName'] as String? ?? authState.displayName;
+          _icCtrl.text = data['icNumber'] as String? ?? '';
           _phoneCtrl.text = data['phone'] as String? ?? '';
+          _addressCtrl.text = data['address'] as String? ?? '';
+          _emerNameCtrl.text = data['emergencyContactName'] as String? ?? '';
+          _emerPhoneCtrl.text = data['emergencyContactPhone'] as String? ?? '';
           _skillsCtrl.text = data['skills'] as String? ?? '';
           _locationCtrl.text = data['location'] as String? ?? '';
+          _experienceCtrl.text = data['experience'] as String? ?? '';
         } else {
           // First time — pre-fill name from auth
           _fullNameCtrl.text = authState.displayName;
@@ -81,9 +98,14 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
       // Save to volunteer_profiles collection (also marks profileComplete: true)
       await _firestoreService.createVolunteerProfile(authState.uid, {
         'fullName': _fullNameCtrl.text.trim(),
+        'icNumber': _icCtrl.text.trim(),
         'phone': _phoneCtrl.text.trim(),
+        'address': _addressCtrl.text.trim(),
+        'emergencyContactName': _emerNameCtrl.text.trim(),
+        'emergencyContactPhone': _emerPhoneCtrl.text.trim(),
         'skills': _skillsCtrl.text.trim(),
         'location': _locationCtrl.text.trim(),
+        'experience': _experienceCtrl.text.trim(),
       });
 
       // Sync displayName in the main users doc
@@ -95,6 +117,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
         // Notify BLoC so header name updates across the app
         context.read<AuthBloc>().add(const AuthProfileCompleted());
 
+        setState(() => _isEditing = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -130,6 +153,34 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
+  }
+
+  void _confirmLogout() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(AppStrings.logout, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        content: Text(AppStrings.logoutConfirm, style: GoogleFonts.inter(color: AppColors.textSecondary)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Tidak', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.danger,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.read<AuthBloc>().add(const AuthLoggedOut());
+            },
+            child: Text('Ya', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────
@@ -194,8 +245,21 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                         (v == null || v.trim().isEmpty)
                             ? 'Nama penuh diperlukan'
                             : null,
+                    enabled: _isEditing,
                     prefixIcon: const Icon(
                       Icons.person_outline_rounded,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SigapTextField(
+                    label: 'Nombor Kad Pengenalan',
+                    hint: '123456789012',
+                    controller: _icCtrl,
+                    keyboardType: TextInputType.number,
+                    enabled: _isEditing,
+                    prefixIcon: const Icon(
+                      Icons.badge_rounded,
                       size: 20,
                     ),
                   ),
@@ -209,8 +273,54 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                         (v == null || v.trim().isEmpty)
                             ? 'Nombor telefon diperlukan'
                             : null,
+                    enabled: _isEditing,
                     prefixIcon: const Icon(
                       Icons.phone_outlined,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SigapTextField(
+                    label: 'Alamat Rumah',
+                    hint: 'Masukkan alamat rumah anda',
+                    controller: _addressCtrl,
+                    maxLines: 3,
+                    enabled: _isEditing,
+                    prefixIcon: const Icon(
+                      Icons.home_rounded,
+                      size: 20,
+                    ),
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  // ── Emergency Contact ──────────────────────────────────
+                  _buildSectionTitle('Kenalan Kecemasan'),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Ahli waris / kenalan rapat (Sebaiknya di luar zon bencana)',
+                    style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 12),
+                  SigapTextField(
+                    label: 'Nama Kenalan Kecemasan',
+                    hint: 'cth: Siti Sarah (Isteri)',
+                    controller: _emerNameCtrl,
+                    enabled: _isEditing,
+                    prefixIcon: const Icon(
+                      Icons.person_rounded,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SigapTextField(
+                    label: 'Nombor Telefon Kenalan',
+                    hint: '0123456789',
+                    controller: _emerPhoneCtrl,
+                    keyboardType: TextInputType.phone,
+                    enabled: _isEditing,
+                    prefixIcon: const Icon(
+                      Icons.phone_rounded,
                       size: 20,
                     ),
                   ),
@@ -225,6 +335,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                     hint: 'cth: Pertolongan Cemas, Memandu Bot, Masak',
                     controller: _skillsCtrl,
                     maxLines: 2,
+                    enabled: _isEditing,
                     prefixIcon: const Icon(
                       Icons.build_circle_outlined,
                       size: 20,
@@ -235,20 +346,52 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                     label: 'Kawasan Tempat Tinggal',
                     hint: 'cth: Kuala Lumpur, Selangor',
                     controller: _locationCtrl,
-                    textInputAction: TextInputAction.done,
+                    enabled: _isEditing,
                     prefixIcon: const Icon(
                       Icons.location_on_outlined,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SigapTextField(
+                    label: 'Pengalaman Sukarelawan',
+                    hint: 'cth: 3 tahun pengalaman, pernah terlibat di...',
+                    controller: _experienceCtrl,
+                    maxLines: 2,
+                    enabled: _isEditing,
+                    prefixIcon: const Icon(
+                      Icons.school_outlined,
                       size: 20,
                     ),
                   ),
 
                   const SizedBox(height: 32),
 
-                  SigapButton(
-                    label: 'Simpan Profil',
-                    onPressed: _isSaving ? null : _saveProfile,
-                    isLoading: _isSaving,
-                  ),
+                  if (_isEditing)
+                    SigapButton(
+                      label: 'Simpan Profil',
+                      onPressed: _isSaving ? null : _saveProfile,
+                      isLoading: _isSaving,
+                    )
+                  else
+                    SigapButton(
+                      label: 'Edit Profil',
+                      onPressed: () => setState(() => _isEditing = true),
+                    ),
+
+                  const SizedBox(height: 16),
+                  
+                  if (!_isEditing)
+                    TextButton.icon(
+                      onPressed: _confirmLogout,
+                      icon: const Icon(Icons.logout_rounded, color: AppColors.danger),
+                      label: Text('Log Keluar', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.danger)),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: AppColors.danger.withOpacity(0.3))),
+                        backgroundColor: AppColors.danger.withOpacity(0.05),
+                      ),
+                    ),
                 ],
               ),
             ),
