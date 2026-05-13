@@ -150,6 +150,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         displayName: current.displayName,
         profileComplete: true,
       ));
+    } else if (state is AuthRegistrationSuccess) {
+      final current = state as AuthRegistrationSuccess;
+      emit(AuthAuthenticated(
+        uid: current.uid,
+        role: current.role,
+        displayName: current.displayName,
+        profileComplete: true,
+      ));
     }
   }
 

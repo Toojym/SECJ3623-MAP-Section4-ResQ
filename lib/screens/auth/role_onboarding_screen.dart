@@ -17,48 +17,48 @@ class RoleOnboardingScreen extends StatefulWidget {
 class _RoleOnboardingScreenState extends State<RoleOnboardingScreen> {
   bool _isLoading = false;
 
-  Future<void> _completeOnboarding(BuildContext context, String uid, String role) async {
+  Future<void> _completeOnboarding(
+      BuildContext context, String uid, String role) async {
     setState(() => _isLoading = true);
     try {
       final firestore = FirestoreService();
-      try {
-        switch (role) {
-          case 'volunteer':
-            await firestore.createVolunteerProfile(uid, {
-              'skills': <String>[],
-              'availabilityStart': '08:00',
-              'availabilityEnd': '18:00',
-              'isActive': false,
-              'sigapMataPoints': 0,
-              'certifications': <String>[],
-            }).timeout(const Duration(seconds: 5));
-            break;
-          case 'officer':
-            await firestore.createOfficerProfile(uid, {
-              'agencyName': '',
-              'designation': '',
-              'badgeNumber': '',
-              'district': '',
-            }).timeout(const Duration(seconds: 5));
-            break;
-          default:
-            await firestore.createCitizenProfile(uid, {
-              'icNumber': '',
-              'phoneNumber': '',
-              'address': '',
-              'householdSize': 1,
-              'emergencyContacts': <Map>[],
-            }).timeout(const Duration(seconds: 5));
-            break;
-        }
-      } catch (_) {}
+      switch (role) {
+        case 'volunteer':
+          await firestore.createVolunteerProfile(uid, {
+            'skills': <String>[],
+            'availabilityStart': '08:00',
+            'availabilityEnd': '18:00',
+            'isActive': false,
+            'sigapMataPoints': 0,
+            'certifications': <String>[],
+          }).timeout(const Duration(seconds: 5));
+          break;
+        case 'officer':
+          await firestore.createOfficerProfile(uid, {
+            'agencyName': '',
+            'designation': '',
+            'badgeNumber': '',
+            'district': '',
+          }).timeout(const Duration(seconds: 5));
+          break;
+        default:
+          await firestore.createCitizenProfile(uid, {
+            'icNumber': '',
+            'phoneNumber': '',
+            'address': '',
+            'householdSize': 1,
+            'emergencyContacts': <Map>[],
+          }).timeout(const Duration(seconds: 5));
+          break;
+      }
       if (context.mounted) {
         context.read<AuthBloc>().add(const AuthProfileCompleted());
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: AppColors.danger),
+          SnackBar(
+              content: Text(e.toString()), backgroundColor: AppColors.danger),
         );
       }
     } finally {
@@ -100,7 +100,9 @@ class _RoleOnboardingScreenState extends State<RoleOnboardingScreen> {
                   SigapButton(
                     label: AppStrings.continueButton,
                     isLoading: _isLoading,
-                    onPressed: _isLoading ? null : () => _completeOnboarding(context, uid, role),
+                    onPressed: _isLoading
+                        ? null
+                        : () => _completeOnboarding(context, uid, role),
                   ),
                 ],
               ),
@@ -130,7 +132,8 @@ class _RoleOnboardingScreenState extends State<RoleOnboardingScreen> {
                 ),
               ],
             ),
-            child: const Icon(Icons.bolt_rounded, color: Colors.white, size: 44),
+            child:
+                const Icon(Icons.bolt_rounded, color: Colors.white, size: 44),
           ),
         ),
         const SizedBox(height: 24),
@@ -149,7 +152,8 @@ class _RoleOnboardingScreenState extends State<RoleOnboardingScreen> {
           Center(
             child: Text(
               displayName,
-              style: GoogleFonts.inter(fontSize: 15, color: AppColors.textSecondary),
+              style: GoogleFonts.inter(
+                  fontSize: 15, color: AppColors.textSecondary),
             ),
           ),
         ],
@@ -165,7 +169,8 @@ class _RoleOnboardingScreenState extends State<RoleOnboardingScreen> {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: (roleData['color'] as Color).withOpacity(0.3)),
+        border:
+            Border.all(color: (roleData['color'] as Color).withOpacity(0.3)),
         boxShadow: [
           BoxShadow(
             color: (roleData['color'] as Color).withOpacity(0.08),
@@ -183,7 +188,8 @@ class _RoleOnboardingScreenState extends State<RoleOnboardingScreen> {
               color: (roleData['color'] as Color).withOpacity(0.12),
               borderRadius: BorderRadius.circular(18),
             ),
-            child: Icon(roleData['icon'] as IconData, color: roleData['color'] as Color, size: 32),
+            child: Icon(roleData['icon'] as IconData,
+                color: roleData['color'] as Color, size: 32),
           ),
           const SizedBox(height: 16),
           Container(
@@ -214,11 +220,13 @@ class _RoleOnboardingScreenState extends State<RoleOnboardingScreen> {
           const SizedBox(height: 8),
           Text(
             roleData['desc'] as String,
-            style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary, height: 1.6),
+            style: GoogleFonts.inter(
+                fontSize: 14, color: AppColors.textSecondary, height: 1.6),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),
-          _buildFeaturesList(roleData['features'] as List<String>, roleData['color'] as Color),
+          _buildFeaturesList(
+              roleData['features'] as List<String>, roleData['color'] as Color),
         ],
       ),
     );
@@ -244,7 +252,8 @@ class _RoleOnboardingScreenState extends State<RoleOnboardingScreen> {
               Expanded(
                 child: Text(
                   f,
-                  style: GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary),
+                  style: GoogleFonts.inter(
+                      fontSize: 13, color: AppColors.textPrimary),
                 ),
               ),
             ],
