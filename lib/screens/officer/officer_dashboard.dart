@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +7,7 @@ import '../../blocs/auth/auth_bloc.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_routes.dart';
 import '../../core/constants/app_strings.dart';
+import '../../services/firestore_service.dart';
 import '../../widgets/common/sigap_app_bar.dart';
 
 class OfficerDashboard extends StatefulWidget {
@@ -17,6 +19,33 @@ class OfficerDashboard extends StatefulWidget {
 
 class _OfficerDashboardState extends State<OfficerDashboard> {
   int _currentIndex = 0;
+  String? _profileImageUrl;
+  bool _isLoadingProfile = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOfficerData();
+  }
+
+  Future<void> _loadOfficerData() async {
+    final state = context.read<AuthBloc>().state;
+    if (state is AuthAuthenticated) {
+      setState(() => _isLoadingProfile = true);
+      try {
+        final data = await FirestoreService().getOfficerProfile(state.uid);
+        if (data != null && mounted) {
+          setState(() {
+            _profileImageUrl = data['profileImageUrl'] as String?;
+          });
+        }
+      } catch (e) {
+        debugPrint('Error loading officer data: $e');
+      } finally {
+        if (mounted) setState(() => _isLoadingProfile = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -949,17 +978,36 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
   }
 
   // ─── EXISTING WIDGETS ─────────────────────────────────────────────
+
+  ImageProvider? _getAvatarProvider() {
+    if (_profileImageUrl != null && _profileImageUrl!.isNotEmpty) {
+      if (_profileImageUrl!.startsWith('data:image')) {
+        final base64Str = _profileImageUrl!.split(',').last;
+        return MemoryImage(base64Decode(base64Str));
+      }
+      return NetworkImage(_profileImageUrl!);
+    }
+    return null;
+  }
+
+
   Widget _buildCommandCard(String name) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0E7490), Color(0xFF0891B2)],
+        gradient: LinearGradient(
+          colors: [const Color(0xFF0E7490), AppColors.officerAccent],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: AppColors.officerAccent.withOpacity(0.3), blurRadius: 16, offset: const Offset(0, 6))],
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.officerAccent.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          )
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -970,21 +1018,37 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Pusat Kawalan', style: GoogleFonts.inter(color: Colors.white70, fontSize: 12)),
-                    const SizedBox(height: 2),
-                    Text(name.isNotEmpty ? name : 'Pegawai',
-                        style: GoogleFonts.poppins(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
+                    Text('Pusat Kawalan Operasi', 
+                      style: GoogleFonts.inter(color: Colors.white.withOpacity(0.8), fontSize: 12, fontWeight: FontWeight.w500)),
+                    const SizedBox(height: 4),
+                    Text(name.isNotEmpty ? name : 'Pegawai SIGAP',
+                        style: GoogleFonts.poppins(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700)),
                   ],
                 ),
               ),
-              Container(
-                width: 52, height: 52,
-                decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(14)),
-                child: const Icon(Icons.shield_rounded, color: Colors.white, size: 28),
+              GestureDetector(
+                onTap: () => context.push(AppRoutes.officerProfile).then((_) => _loadOfficerData()),
+                child: Hero(
+                  tag: 'officer_avatar',
+                  child: Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
+                    ),
+                    child: CircleAvatar(
+                      radius: 28,
+                      backgroundColor: Colors.white.withOpacity(0.2),
+                      backgroundImage: _getAvatarProvider(),
+                      child: (_profileImageUrl == null || _profileImageUrl!.isEmpty)
+                          ? const Icon(Icons.person_rounded, color: Colors.white, size: 30)
+                          : null,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 20),
           Row(
             children: [
               _statusPill(Icons.circle, '4 Daerah Aktif', Colors.amber),
@@ -999,13 +1063,19 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
 
   Widget _statusPill(IconData icon, String label, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(99)),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, color: color, size: 10),
-        const SizedBox(width: 5),
-        Text(label, style: GoogleFonts.inter(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500)),
-      ]),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 10),
+          const SizedBox(width: 6),
+          Text(label, style: GoogleFonts.inter(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
+        ],
+      ),
     );
   }
 
@@ -1013,9 +1083,9 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
     return Row(
       children: [
         _statCard('247', 'Jumlah SOS', AppColors.danger, Icons.sos_rounded),
-        const SizedBox(width: 10),
+        const SizedBox(width: 12),
         _statCard('38', 'Sukarelawan', AppColors.safe, Icons.handshake_rounded),
-        const SizedBox(width: 10),
+        const SizedBox(width: 12),
         _statCard('12', 'Zon Aktif', AppColors.officerAccent, Icons.map_rounded),
       ],
     );
@@ -1024,27 +1094,47 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
   Widget _statCard(String value, String label, Color color, IconData icon) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.divider)),
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.divider),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            )
+          ],
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 18),
+            ),
+            const SizedBox(height: 12),
             Text(value, style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-            Text(label, style: GoogleFonts.inter(fontSize: 10, color: AppColors.textSecondary)),
+            Text(label, style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500)),
           ],
         ),
       ),
     );
   }
 
-  Widget _sectionTitle(String t) =>
-      Text(t, style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary));
+  Widget _sectionTitle(String t) => Padding(
+        padding: const EdgeInsets.only(bottom: 4),
+        child: Text(t, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+      );
 
   Widget _mapMarker(Color color) {
     return Container(
+
       width: 40, height: 40,
       decoration: BoxDecoration(color: color.withOpacity(0.2), shape: BoxShape.circle),
       child: Center(
@@ -1054,6 +1144,163 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
             color: color, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _sosCard(String title, String level, Color color, String count, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(14)),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
+                const SizedBox(height: 4),
+                Text(count, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w500)),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+            child: Text(level, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: color)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _resourceCard() {
+    final resources = [
+      {'label': 'Bot Penyelamat', 'used': 8, 'total': 12, 'color': AppColors.primary},
+      {'label': 'Khemah Sementara', 'used': 45, 'total': 60, 'color': AppColors.volunteerAccent},
+      {'label': 'Bekalan Makanan', 'used': 320, 'total': 500, 'color': AppColors.safe},
+    ];
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        children: resources.map((r) {
+          final used = r['used'] as int;
+          final total = r['total'] as int;
+          final ratio = used / total;
+          final color = r['color'] as Color;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(r['label'] as String, 
+                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                    Text('$used / $total', 
+                      style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Stack(
+                  children: [
+                    Container(
+                      height: 8,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    FractionallySizedBox(
+                      widthFactor: ratio,
+                      child: Container(
+                        height: 8,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [color.withOpacity(0.7), color],
+                          ),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _volunteerSummaryCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Status Sukarelawan', 
+                style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(color: AppColors.safe.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                child: Row(
+                  children: [
+                    Container(width: 6, height: 6, decoration: const BoxDecoration(color: AppColors.safe, shape: BoxShape.circle)),
+                    const SizedBox(width: 6),
+                    Text('38 Aktif', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.safe)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              _volunteerStat('12', 'Medikal', AppColors.danger),
+              _volunteerStat('08', 'Penyelamat', AppColors.primary),
+              _volunteerStat('06', 'Logistik', AppColors.volunteerAccent),
+              _volunteerStat('12', 'Am', AppColors.textSecondary),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _volunteerStat(String count, String label, Color color) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(count, style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w800, color: color)),
+          Text(label, style: GoogleFonts.inter(fontSize: 10, color: AppColors.textSecondary, fontWeight: FontWeight.w600), textAlign: TextAlign.center),
+        ],
+
       ),
     );
   }

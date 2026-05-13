@@ -195,6 +195,7 @@ class AppTheme {
         fontSize: 12,
         color: AppColors.danger,
       ),
+      errorMaxLines: 3,
     );
   }
 

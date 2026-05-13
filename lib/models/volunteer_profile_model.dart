@@ -5,6 +5,7 @@ class VolunteerProfileModel {
   final String phone;
   final String skills;
   final String location;
+  final String? profileImageUrl;
   final bool isActive;
   final int sigapMataPoints;
 
@@ -15,6 +16,7 @@ class VolunteerProfileModel {
     this.phone = '',
     this.skills = '',
     this.location = '',
+    this.profileImageUrl,
     this.isActive = false,
     this.sigapMataPoints = 0,
   });
@@ -27,6 +29,7 @@ class VolunteerProfileModel {
       phone: map['phone'] as String? ?? '',
       skills: map['skills'] as String? ?? '',
       location: map['location'] as String? ?? '',
+      profileImageUrl: map['profileImageUrl'] as String?,
       isActive: map['isActive'] as bool? ?? false,
       sigapMataPoints: map['sigapMataPoints'] as int? ?? 0,
     );
@@ -39,6 +42,7 @@ class VolunteerProfileModel {
         'phone': phone,
         'skills': skills,
         'location': location,
+        'profileImageUrl': profileImageUrl,
         'isActive': isActive,
         'sigapMataPoints': sigapMataPoints,
       };
@@ -50,6 +54,7 @@ class VolunteerProfileModel {
     String? phone,
     String? skills,
     String? location,
+    String? profileImageUrl,
     bool? isActive,
     int? sigapMataPoints,
   }) {
@@ -60,6 +65,7 @@ class VolunteerProfileModel {
       phone: phone ?? this.phone,
       skills: skills ?? this.skills,
       location: location ?? this.location,
+      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       isActive: isActive ?? this.isActive,
       sigapMataPoints: sigapMataPoints ?? this.sigapMataPoints,
     );

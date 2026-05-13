@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -23,6 +24,8 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
   int _sigapMataPoints = 0;
   bool _isToggling = false;
   
+  String? _profileImageUrl;
+  
   // Future features: Tracking for upcoming modules
   int _openIncidentsCount = 0;
   int _pendingMissionsCount = 0;
@@ -41,10 +44,22 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
     final data = await _firestoreService.getVolunteerProfile(authState.uid);
     if (data != null && mounted) {
       setState(() {
+        _profileImageUrl = data['profileImageUrl'] as String?;
         _isActive = data['isActive'] as bool? ?? false;
         _sigapMataPoints = data['sigapMataPoints'] as int? ?? 0;
       });
     }
+  }
+
+  ImageProvider? _getAvatarProvider() {
+    if (_profileImageUrl != null && _profileImageUrl!.isNotEmpty) {
+      if (_profileImageUrl!.startsWith('data:image')) {
+        final base64Str = _profileImageUrl!.split(',').last;
+        return MemoryImage(base64Decode(base64Str));
+      }
+      return NetworkImage(_profileImageUrl!);
+    }
+    return null;
   }
 
   Future<void> _toggleAvailability(String uid, bool value) async {
@@ -90,10 +105,17 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                 color: AppColors.textSecondary,
                 onPressed: () {},
               ),
-              IconButton(
-                icon: const Icon(Icons.person_outline_rounded),
-                color: AppColors.textSecondary,
-                onPressed: () => context.push(AppRoutes.volunteerProfile),
+              GestureDetector(
+                onTap: () => context.push(AppRoutes.volunteerProfile),
+                child: Container(
+                  margin: const EdgeInsets.only(right: 16),
+                  child: CircleAvatar(
+                    radius: 14,
+                    backgroundColor: AppColors.volunteerAccent.withOpacity(0.1),
+                    backgroundImage: _getAvatarProvider(),
+                    child: _profileImageUrl == null ? const Icon(Icons.person_outline_rounded, size: 18, color: AppColors.textSecondary) : null,
+                  ),
+                ),
               ),
             ],
           ),
@@ -138,7 +160,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
           const SizedBox(height: 20),
           _buildStatsRow(),
           const SizedBox(height: 24),
-          _buildSectionHeader('Tindakan Pantas'),
+          _buildSectionHeader('Tindakan Pantas', actionLabel: 'Lihat Semua', onAction: () {}),
           const SizedBox(height: 12),
           _buildQuickActions(),
           const SizedBox(height: 24),
@@ -146,7 +168,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
           const SizedBox(height: 12),
           _buildModuleGrid(),
           const SizedBox(height: 24),
-          _buildSectionHeader('Aktiviti Terkini'),
+          _buildSectionHeader('Aktiviti Terkini', actionLabel: 'Sejarah', onAction: () {}),
           const SizedBox(height: 12),
           _buildActivityPlaceholder(),
           const SizedBox(height: 24),
@@ -178,13 +200,55 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
         children: [
           Row(
             children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${_greeting()},',
+                      style: GoogleFonts.inter(color: Colors.white70, fontSize: 13),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      name.isNotEmpty ? name : 'Sukarelawan',
+                      style: GoogleFonts.poppins(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Hero(
+                tag: 'volunteer_avatar',
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: CircleAvatar(
+                    radius: 28,
+                    backgroundColor: Colors.white.withOpacity(0.1),
+                    backgroundImage: _getAvatarProvider(),
+                    child: _profileImageUrl == null
+                        ? const Icon(Icons.volunteer_activism_rounded, color: Colors.white, size: 28)
+                        : null,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
               // Live status badge
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
+                  color: Colors.white.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -195,9 +259,17 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                       decoration: BoxDecoration(
                         color: _isActive ? Colors.greenAccent : Colors.white54,
                         shape: BoxShape.circle,
+                        boxShadow: [
+                          if (_isActive)
+                            BoxShadow(
+                              color: Colors.greenAccent.withOpacity(0.5),
+                              blurRadius: 4,
+                              spreadRadius: 2,
+                            ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 8),
                     Text(
                       _isActive ? 'Aktif' : 'Tidak Aktif',
                       style: GoogleFonts.inter(
@@ -209,59 +281,36 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                   ],
                 ),
               ),
-              const Spacer(),
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.volunteer_activism_rounded,
-                  color: Colors.white,
-                  size: 26,
+              const SizedBox(width: 12),
+              // SIGAP Mata Points inline
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.stars_rounded, color: Colors.amber, size: 18),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          '$_sigapMataPoints SIGAP Mata',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
-          ),
-          const SizedBox(height: 20),
-          Text(
-            '${_greeting()},',
-            style: GoogleFonts.inter(color: Colors.white70, fontSize: 13),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            name.isNotEmpty ? name : 'Sukarelawan',
-            style: GoogleFonts.poppins(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 16),
-          // SIGAP Mata Points inline
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.stars_rounded, color: Colors.amber, size: 18),
-                const SizedBox(width: 8),
-                Text(
-                  '$_sigapMataPoints SIGAP Mata',
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
           ),
         ],
       ),
@@ -415,11 +464,14 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
       decoration: _cardDecoration(),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(icon, color: color, size: 24),
           const SizedBox(height: 8),
           Text(
             value,
+            textAlign: TextAlign.center,
             style: GoogleFonts.poppins(
               fontSize: 22,
               fontWeight: FontWeight.w700,
@@ -559,24 +611,33 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
           children: [
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.15),
-                    shape: BoxShape.circle,
+                SizedBox(
+                  width: double.infinity,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(icon, color: color, size: 28),
+                    ),
                   ),
-                  child: Icon(icon, color: color, size: 28),
                 ),
                 const SizedBox(height: 12),
-                Text(
-                  title,
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    title,
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -586,6 +647,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                     color: color,
                     fontWeight: FontWeight.w500,
                   ),
+                  textAlign: TextAlign.center,
                 ),
               ],
             ),
@@ -1265,25 +1327,21 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
   // ── Bottom Nav ────────────────────────────────────────────────────────────
 
   Widget _buildBottomNav() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: BottomAppBar(
-        color: AppColors.surface,
-        elevation: 20,
-        shadowColor: Colors.black.withOpacity(0.2),
-        child: SizedBox(
-          height: 65,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _navItem(Icons.home_rounded, 'Utama', 0),
-              _navItem(Icons.assignment_rounded, 'Tugas', 1),
-              _navItem(Icons.notifications_rounded, 'Surat', 2),
-              _navItem(Icons.leaderboard_rounded, 'Papan', 3),
-              _navItem(Icons.location_on_rounded, 'Peta', 4),
-              _navItem(Icons.card_giftcard_rounded, 'Sijil', 5),
-            ],
-          ),
+    return BottomAppBar(
+      color: AppColors.surface,
+      elevation: 20,
+      shadowColor: Colors.black.withOpacity(0.2),
+      child: SizedBox(
+        height: 65,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _navItem(Icons.home_rounded, 'Utama', 0),
+            _navItem(Icons.assignment_rounded, 'Tugas', 1),
+            _navItem(Icons.leaderboard_rounded, 'Peringkat', 3),
+            _navItem(Icons.map_rounded, 'Peta', 4),
+            _navItem(Icons.card_giftcard_rounded, 'Sijil', 5),
+          ],
         ),
       ),
     );
@@ -1291,23 +1349,22 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
 
   Widget _navItem(IconData icon, String label, int index) {
     final isSelected = _currentIndex == index;
-    final color =
-        isSelected ? AppColors.volunteerAccent : AppColors.textSecondary;
+    final color = isSelected ? AppColors.volunteerAccent : AppColors.textSecondary;
     return InkWell(
       onTap: () => setState(() => _currentIndex = index),
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(height: 2),
+            Icon(icon, color: color, size: 24),
+            const SizedBox(height: 4),
             Text(
               label,
               style: GoogleFonts.inter(
-                fontSize: 8,
+                fontSize: 10,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 color: color,
               ),
@@ -1321,14 +1378,32 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  Widget _buildSectionHeader(String title) {
-    return Text(
-      title,
-      style: GoogleFonts.poppins(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary,
-      ),
+  Widget _buildSectionHeader(String title, {String? actionLabel, VoidCallback? onAction}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        if (actionLabel != null)
+          TextButton(
+            onPressed: onAction,
+            style: TextButton.styleFrom(minimumSize: Size.zero, padding: EdgeInsets.zero),
+            child: Text(
+              actionLabel,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.volunteerAccent,
+              ),
+            ),
+          )
+      ],
     );
   }
 
