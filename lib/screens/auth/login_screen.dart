@@ -42,7 +42,6 @@ class _LoginScreenState extends State<LoginScreen> {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is AuthAuthenticated) {
-          // Navigate based on role
           switch (state.role) {
             case 'volunteer':
               context.go(AppRoutes.volunteer);
@@ -67,6 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
         body: BlocBuilder<AuthBloc, AuthState>(
           builder: (context, state) {
             final isLoading = state is AuthLoading;
+
             return SafeArea(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -80,26 +80,37 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 40),
                       _buildHeader(),
                       const SizedBox(height: 32),
-                      SigapTextField(
-                        label: AppStrings.email,
-                        hint: AppStrings.emailHint,
-                        controller: _emailCtrl,
-                        validator: Validators.validateEmail,
-                        keyboardType: TextInputType.emailAddress,
-                        prefixIcon: const Icon(Icons.email_outlined, size: 20),
+
+                      _glow(
+                        child: SigapTextField(
+                          label: AppStrings.email,
+                          hint: AppStrings.emailHint,
+                          controller: _emailCtrl,
+                          validator: Validators.validateEmail,
+                          keyboardType: TextInputType.emailAddress,
+                          prefixIcon:
+                              const Icon(Icons.email_outlined, size: 20),
+                        ),
                       ),
+
                       const SizedBox(height: 20),
-                      SigapTextField(
-                        label: AppStrings.password,
-                        hint: AppStrings.passwordHint,
-                        controller: _passwordCtrl,
-                        validator: Validators.validatePassword,
-                        obscureText: true,
-                        textInputAction: TextInputAction.done,
-                        onSubmitted: (_) => _submit(),
-                        prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+
+                      _glow(
+                        child: SigapTextField(
+                          label: AppStrings.password,
+                          hint: AppStrings.passwordHint,
+                          controller: _passwordCtrl,
+                          validator: Validators.validatePassword,
+                          obscureText: true,
+                          textInputAction: TextInputAction.done,
+                          onSubmitted: (_) => _submit(),
+                          prefixIcon:
+                              const Icon(Icons.lock_outline_rounded, size: 20),
+                        ),
                       ),
+
                       const SizedBox(height: 12),
+
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
@@ -114,14 +125,19 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ),
+
                       const SizedBox(height: 8),
+
                       SigapButton(
                         label: AppStrings.loginButton,
                         onPressed: isLoading ? null : _submit,
                         isLoading: isLoading,
                       ),
+
                       const SizedBox(height: 24),
+
                       _buildRegisterLink(),
+
                       const SizedBox(height: 40),
                     ],
                   ),
@@ -134,27 +150,50 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  // Soft glow for inputs
+  Widget _glow({required Widget child}) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+
   Widget _buildLogo() {
     return Center(
       child: Column(
         children: [
-          Hero(
-            tag: 'auth_logo',
-            child: Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withOpacity(0.35),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: const Icon(Icons.bolt_rounded, color: Colors.white, size: 40),
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              gradient: AppColors.primaryGradient,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withOpacity(0.25),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
+                ),
+                BoxShadow(
+                  color: AppColors.primary.withOpacity(0.08),
+                  blurRadius: 25,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.bolt_rounded,
+              color: Colors.white,
+              size: 40,
             ),
           ),
           const SizedBox(height: 12),
@@ -205,7 +244,10 @@ class _LoginScreenState extends State<LoginScreen> {
       children: [
         Text(
           AppStrings.noAccount,
-          style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 14),
+          style: GoogleFonts.inter(
+            color: AppColors.textSecondary,
+            fontSize: 14,
+          ),
         ),
         GestureDetector(
           onTap: () => context.push(AppRoutes.register),
