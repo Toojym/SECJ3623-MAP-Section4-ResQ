@@ -34,6 +34,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
   final _emerPhoneCtrl = TextEditingController();
   final _locationCtrl = TextEditingController();
   final _experienceCtrl = TextEditingController();
+  final _customSkillsCtrl = TextEditingController();
 
   // Skill chip selection — FIX: use List<String>, not a TextEditingController
   List<String> _selectedSkills = [];
@@ -74,6 +75,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
     _emerPhoneCtrl.dispose();
     _locationCtrl.dispose();
     _experienceCtrl.dispose();
+    _customSkillsCtrl.dispose();
     super.dispose();
   }
 
@@ -111,14 +113,16 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
 
           // Parse skills — stored as comma-separated string in Firestore
           final skillsRaw = data['skills'];
+          List<String> allSkills = [];
           if (skillsRaw is String && skillsRaw.isNotEmpty) {
-            _selectedSkills =
-                skillsRaw.split(',').map((s) => s.trim()).toList();
+            allSkills = skillsRaw.split(',').map((s) => s.trim()).toList();
           } else if (skillsRaw is List) {
-            _selectedSkills = List<String>.from(skillsRaw);
-          } else {
-            _selectedSkills = [];
+            allSkills = List<String>.from(skillsRaw);
           }
+
+          _selectedSkills = allSkills.where((s) => _availableExpertise.contains(s)).toList();
+          final customSkills = allSkills.where((s) => !_availableExpertise.contains(s)).toList();
+          _customSkillsCtrl.text = customSkills.join(', ');
         });
       }
     } catch (_) {
@@ -143,6 +147,13 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
             (_) => currentUser.updateEmail(_emailCtrl.text));
       }
 
+      final customSkillsList = _customSkillsCtrl.text
+          .split(',')
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .toList();
+      final allSkillsToSave = [..._selectedSkills, ...customSkillsList];
+
       await FirestoreService().createVolunteerProfile(state.uid, {
         'fullName': _fullNameCtrl.text.trim(),
         'email': _emailCtrl.text.trim(),
@@ -152,7 +163,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
         'address': _addressCtrl.text.trim(),
         'emergencyContactName': _emerNameCtrl.text.trim(),
         'emergencyContactPhone': _emerPhoneCtrl.text.trim(),
-        'skills': _selectedSkills.join(', '),
+        'skills': allSkillsToSave.join(', '),
         'location': _locationCtrl.text.trim(),
         'experience': _experienceCtrl.text.trim(),
       });
@@ -753,6 +764,16 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
               fontSize: 12,
               color: AppColors.textHint,
               fontStyle: FontStyle.italic),
+        ),
+      ],
+      if (_isEditing || _customSkillsCtrl.text.isNotEmpty) ...[
+        const SizedBox(height: 16),
+        SigapTextField(
+          label: 'Kepakaran Lain',
+          hint: 'cth: Memasak, Menyelam (pisahkan dengan koma)',
+          controller: _customSkillsCtrl,
+          enabled: _isEditing,
+          prefixIcon: const Icon(Icons.add_circle_outline_rounded, size: 20),
         ),
       ],
     ]);
