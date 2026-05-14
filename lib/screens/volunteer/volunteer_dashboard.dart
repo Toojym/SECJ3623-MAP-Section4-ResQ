@@ -46,7 +46,14 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
         _isActive = data['isActive'] as bool? ?? false;
         _sigapMataPoints = data['sigapMataPoints'] as int? ?? 0;
         _profileImageUrl = data['profileImageUrl'] as String?;
-        _skills = data['skills'] as String? ?? '';
+        final skillsRaw = data['skills'];
+        if (skillsRaw is List) {
+          _skills = skillsRaw.join(', ');
+        } else if (skillsRaw is String) {
+          _skills = skillsRaw;
+        } else {
+          _skills = '';
+        }
       });
     }
   }
