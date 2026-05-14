@@ -59,7 +59,7 @@ class Validators {
     if (value == null || value.trim().isEmpty) {
       return 'Nombor telefon diperlukan';
     }
-    final phoneRegex = RegExp(r'^(\+?6?01)[02-46-9]-*[0-9]{7,8}$');
+    final phoneRegex = RegExp(r'^(\+?6?01)[01-46-9]-*[0-9]{7,8}$');
     if (!phoneRegex.hasMatch(value.replaceAll(' ', '').replaceAll('-', ''))) {
       return 'Format telefon tidak sah';
     }
