@@ -122,12 +122,10 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
       case 1:
         return _buildTasksPlaceholder();
       case 2:
-        return _buildNotificationsPlaceholder();
+        return _buildTaskBoardPlaceholder(); // Map/TaskBoard
       case 3:
         return _buildLeaderboardPlaceholder();
       case 4:
-        return _buildTaskBoardPlaceholder();
-      case 5:
         return _buildCertificatesPlaceholder();
       default:
         return const SizedBox.shrink();
@@ -508,8 +506,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
           'Papan Tugas',
           'Segera',
           Color(0xFF8B5CF6),
-          () => _showComingSoonDialog(
-              'Papan Tugas', 'Lihat insiden terbuka berdekatan dengan anda'),
+          () => setState(() => _currentIndex = 2),
         ),
         _moduleCard(
           Icons.card_giftcard_rounded,
@@ -668,7 +665,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
           'Misi Tersedia',
           'Lihat misi yang memerlukan anda',
           AppColors.warning,
-          () => setState(() => _currentIndex = 4),
+          () => setState(() => _currentIndex = 2),
         ),
         const SizedBox(height: 10),
         _actionCard(
@@ -1064,40 +1061,6 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
     );
   }
 
-  // ── Activity Placeholder ──────────────────────────────────────────────────
-
-  Widget _buildActivityPlaceholder() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
-      decoration: _cardDecoration(),
-      child: Center(
-        child: Column(
-          children: [
-            Icon(Icons.inbox_rounded, size: 48, color: AppColors.textHint),
-            const SizedBox(height: 12),
-            Text(
-              'Tiada aktiviti lagi',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Aktifkan status anda untuk mula\nmenerima misi.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                color: AppColors.textHint,
-                height: 1.5,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   // ── Tasks Placeholder (Sprint 2) ──────────────────────────────────────────
 
@@ -1129,37 +1092,6 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
     );
   }
 
-  // ── Notifications Placeholder ────────────────────────────────────────────
-
-  Widget _buildNotificationsPlaceholder() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.notifications_none_rounded,
-              size: 64, color: AppColors.textHint),
-          const SizedBox(height: 16),
-          Text(
-            'Tiada Notifikasi',
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Anda akan menerima notifikasi tentang\nmisi dan aktiviti penting di sini',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              color: AppColors.textHint,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   // ── Leaderboard Placeholder ──────────────────────────────────────────────
 
@@ -1618,35 +1550,22 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
   // ── Bottom Nav ────────────────────────────────────────────────────────────
 
   Widget _buildBottomNav() {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isNarrowScreen = screenWidth < 400;
-
-    final navItems = [
-      _navItem(Icons.home_rounded, 'Utama', 0),
-      _navItem(Icons.assignment_rounded, 'Tugas', 1),
-      _navItem(Icons.notifications_rounded, 'Surat', 2),
-      _navItem(Icons.leaderboard_rounded, 'Papan', 3),
-      _navItem(Icons.location_on_rounded, 'Peta', 4),
-      _navItem(Icons.card_giftcard_rounded, 'Sijil', 5),
-    ];
-
     return BottomAppBar(
       color: AppColors.surface,
       elevation: 20,
       shadowColor: Colors.black.withOpacity(0.2),
       child: SizedBox(
         height: 65,
-        child: isNarrowScreen
-            ? SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: navItems,
-                ),
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: navItems,
-              ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _navItem(Icons.home_rounded, 'Utama', 0),
+            _navItem(Icons.assignment_rounded, 'Misi', 1),
+            _navItem(Icons.location_on_rounded, 'Peta', 2),
+            _navItem(Icons.leaderboard_rounded, 'Papan', 3),
+            _navItem(Icons.card_giftcard_rounded, 'Ganjaran', 4),
+          ],
+        ),
       ),
     );
   }
@@ -1664,12 +1583,12 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(height: 2),
+            Icon(icon, color: color, size: 24),
+            const SizedBox(height: 4),
             Text(
               label,
               style: GoogleFonts.inter(
-                fontSize: 8,
+                fontSize: 10,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 color: color,
               ),
