@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; 
 import '../../blocs/auth/auth_bloc.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_routes.dart';
 import '../../core/constants/app_strings.dart';
 import '../../services/firestore_service.dart';
 import '../../widgets/common/sigap_app_bar.dart';
+import '../../models/incident_model.dart'; // Added Model
 
 class OfficerDashboard extends StatefulWidget {
   const OfficerDashboard({super.key});
@@ -22,10 +24,55 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
   String? _profileImageUrl;
   bool _isLoadingProfile = false;
 
+  // Filters State for Krisis Tab
+  String _filterSeverity = 'Semua'; 
+  String _filterType = 'Semua';
+  String _filterDuration = 'Semua';
+
+  // Local Mock State for Incidents (Bypassing Firebase Rules)
+  final List<IncidentModel> _mockIncidents = [
+    IncidentModel(
+      id: '1',
+      title: 'Banjir Kilat — Ampang',
+      description: 'Air naik mendadak di kawasan perumahan utama.',
+      severity: 'Kritikal',
+      type: 'Banjir',
+      status: 'active',
+      reportedAt: DateTime.now().subtract(const Duration(hours: 3)),
+      latitude: 3.14925,
+      longitude: 101.7610,
+    ),
+    IncidentModel(
+      id: '2',
+      title: 'Tanah Runtuh — Gombak',
+      description: 'Pokok tumbang dan tanah runtuh di jalan utama.',
+      severity: 'Sederhana',
+      type: 'Tanah Runtuh',
+      status: 'active',
+      reportedAt: DateTime.now().subtract(const Duration(hours: 40)),
+      latitude: 3.2217,
+      longitude: 101.7262,
+    ),
+    IncidentModel(
+      id: '3',
+      title: 'Kecemasan Perubatan — Cheras',
+      description: 'Pesakit perlukan bantuan oksigen.',
+      severity: 'Rendah',
+      type: 'Kecemasan Perubatan',
+      status: 'active',
+      reportedAt: DateTime.now().subtract(const Duration(days: 4)),
+      latitude: 3.1065,
+      longitude: 101.7259,
+    ),
+  ];
+
+  final List<IncidentModel> _mockResolvedIncidents = [];
+
   @override
   void initState() {
     super.initState();
     _loadOfficerData();
+    // FirestoreService().seedDummyIncidentsIfEmpty(); // Disabled due to permission
   }
 
   Future<void> _loadOfficerData() async {
@@ -255,11 +302,26 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
-              _filterChip('Tahap: Kritikal', true),
+              _buildFilterDropdown(
+                label: 'Tahap',
+                value: _filterSeverity,
+                items: ['Semua', 'Kritikal', 'Sederhana', 'Rendah'],
+                onChanged: (v) => setState(() => _filterSeverity = v!),
+              ),
               const SizedBox(width: 8),
-              _filterChip('Jenis: Semua', false),
+              _buildFilterDropdown(
+                label: 'Jenis',
+                value: _filterType,
+                items: ['Semua', 'Banjir', 'Tanah Runtuh', 'Kecemasan Perubatan', 'Lain-lain'],
+                onChanged: (v) => setState(() => _filterType = v!),
+              ),
               const SizedBox(width: 8),
-              _filterChip('Masa: 24 Jam', false),
+              _buildFilterDropdown(
+                label: 'Masa',
+                value: _filterDuration,
+                items: ['Semua', '< 1 Hari', '< 3 Hari', '> 3 Hari'],
+                onChanged: (v) => setState(() => _filterDuration = v!),
+              ),
             ],
           ),
         ),
@@ -316,25 +378,128 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           ),
         ),
         const SizedBox(height: 24),
-        _sectionTitle('Insiden Aktif & Penyelesaian'),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _sectionTitle('Insiden Aktif & Penyelesaian'),
+            InkWell(
+              onTap: _showHistoryDialog,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                child: Text(
+                  'History',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.officerAccent,
+                    decoration: TextDecoration.underline,
+                    decorationColor: AppColors.officerAccent,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
         const SizedBox(height: 12),
-        _resolvableIncidentCard('Banjir Kilat — Ampang', 'Kritikal', AppColors.danger, 'Durasi: 3 Jam', Icons.water_rounded),
-        const SizedBox(height: 8),
-        _resolvableIncidentCard('Tanah Runtuh — Gombak', 'Sederhana', AppColors.warning, 'Durasi: 1 Hari', Icons.landscape_rounded),
+        // USING MOCK DATA INSTEAD OF STREAM DUE TO FIREBASE RULES
+        Builder(
+          builder: (context) {
+            var incidents = List<IncidentModel>.from(_mockIncidents);
+
+            // Local sort
+            incidents.sort((a, b) => b.reportedAt.compareTo(a.reportedAt));
+
+            // Apply Filters Locally
+            if (_filterSeverity != 'Semua') {
+              incidents = incidents.where((i) => i.severity == _filterSeverity).toList();
+            }
+            if (_filterType != 'Semua') {
+              incidents = incidents.where((i) => i.type == _filterType).toList();
+            }
+            if (_filterDuration != 'Semua') {
+              final now = DateTime.now();
+              incidents = incidents.where((i) {
+                final diff = now.difference(i.reportedAt);
+                if (_filterDuration == '< 1 Hari') return diff.inDays < 1;
+                if (_filterDuration == '< 3 Hari') return diff.inDays < 3;
+                if (_filterDuration == '> 3 Hari') return diff.inDays >= 3;
+                return true;
+              }).toList();
+            }
+
+            if (incidents.isEmpty) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Text('Tiada insiden aktif ditemui.', style: GoogleFonts.inter(color: AppColors.textSecondary)),
+                ),
+              );
+            }
+
+            return Column(
+              children: incidents.map((incident) => Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: Dismissible(
+                  key: Key(incident.id),
+                  direction: DismissDirection.endToStart,
+                  background: Container(
+                    padding: const EdgeInsets.only(right: 20),
+                    alignment: Alignment.centerRight,
+                    decoration: BoxDecoration(
+                      color: AppColors.safe,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.check_circle_rounded, color: Colors.white, size: 28),
+                  ),
+                  confirmDismiss: (direction) async {
+                    return await _confirmResolveDialog(incident);
+                  },
+                  onDismissed: (direction) {
+                    _resolveIncident(incident);
+                  },
+                  child: _resolvableIncidentCard(incident),
+                ),
+              )).toList(),
+            );
+          },
+        ),
         const SizedBox(height: 80),
       ],
     );
   }
 
-  Widget _filterChip(String label, bool isSelected) {
+  Widget _buildFilterDropdown({
+    required String label,
+    required String value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+  }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      height: 36,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: isSelected ? AppColors.officerAccent.withOpacity(0.1) : Colors.transparent,
+        color: value != 'Semua' ? AppColors.officerAccent.withOpacity(0.1) : Colors.transparent,
         borderRadius: BorderRadius.circular(99),
-        border: Border.all(color: isSelected ? AppColors.officerAccent : AppColors.divider),
+        border: Border.all(color: value != 'Semua' ? AppColors.officerAccent : AppColors.divider),
       ),
-      child: Text(label, style: GoogleFonts.inter(fontSize: 12, fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500, color: isSelected ? AppColors.officerAccent : AppColors.textSecondary)),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: value,
+          icon: Icon(Icons.arrow_drop_down, color: value != 'Semua' ? AppColors.officerAccent : AppColors.textSecondary),
+          style: GoogleFonts.inter(
+            fontSize: 12,
+            fontWeight: value != 'Semua' ? FontWeight.w600 : FontWeight.w500,
+            color: value != 'Semua' ? AppColors.officerAccent : AppColors.textSecondary,
+          ),
+          onChanged: onChanged,
+          items: items.map((String item) {
+            return DropdownMenuItem<String>(
+              value: item,
+              child: Text(item == 'Semua' ? '$label: Semua' : item),
+            );
+          }).toList(),
+        ),
+      ),
     );
   }
 
@@ -369,57 +534,233 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
     );
   }
 
-  Widget _resolvableIncidentCard(String title, String level, Color color, String duration, IconData icon) {
+  void _resolveIncident(IncidentModel incident) {
+    setState(() {
+      _mockIncidents.removeWhere((i) => i.id == incident.id);
+      _mockResolvedIncidents.add(
+        IncidentModel(
+          id: incident.id,
+          title: incident.title,
+          description: incident.description,
+          severity: incident.severity,
+          type: incident.type,
+          status: 'resolved',
+          reportedAt: incident.reportedAt,
+          latitude: incident.latitude,
+          longitude: incident.longitude,
+        )
+      );
+    });
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Insiden ${incident.title} diselesaikan.')));
+  }
+
+  Future<bool> _confirmResolveDialog(IncidentModel incident) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Selesaikan Insiden?', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600)),
+        content: Text('Adakah anda pasti ingin menyelesaikan kes ini?\n\n"${incident.title}"', style: GoogleFonts.inter(fontSize: 14)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Batal', style: GoogleFonts.inter(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.safe),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('Ya, Selesai', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
+          ),
+        ],
+      )
+    );
+    return result ?? false;
+  }
+
+  void _showIncidentDetails(IncidentModel incident, Color color, IconData icon) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+                  child: Icon(icon, color: color, size: 28),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(incident.title, style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700)),
+                      Text(incident.durationString, style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                _detailBadge('Tahap', incident.severity, color),
+                const SizedBox(width: 12),
+                _detailBadge('Jenis', incident.type, AppColors.officerAccent),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Text('Keterangan', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.normal, color: AppColors.textPrimary)), // changed weight
+            const SizedBox(height: 8),
+            Text(incident.description, style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary, height: 1.5)),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(ctx),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, padding: const EdgeInsets.symmetric(vertical: 14)),
+                child: const Text('Tutup', style: TextStyle(color: Colors.white)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _detailBadge(String label, String value, Color color) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary)),
+          const SizedBox(height: 2),
+          Text(value, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: color)),
+        ],
+      ),
+    );
+  }
+
+  void _showHistoryDialog() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Sejarah Insiden Selesai', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 16),
+            Expanded(
+              child: _mockResolvedIncidents.isEmpty 
+                ? Center(child: Text('Tiada sejarah insiden ditemui.', style: GoogleFonts.inter(color: AppColors.textSecondary)))
+                : ListView.builder(
+                    itemCount: _mockResolvedIncidents.length,
+                    itemBuilder: (context, index) {
+                      final inc = _mockResolvedIncidents[index];
+                      return ListTile(
+                        leading: const Icon(Icons.check_circle_rounded, color: AppColors.safe),
+                        title: Text(inc.title, style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                        subtitle: Text(inc.type, style: GoogleFonts.inter(fontSize: 12)),
+                        trailing: Text(inc.severity, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textPrimary)),
+                      );
+                    },
+                  ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _resolvableIncidentCard(IncidentModel incident) {
+    Color color = AppColors.primary;
+    IconData icon = Icons.warning_amber_rounded;
+
+    if (incident.severity == 'Kritikal') color = AppColors.danger;
+    else if (incident.severity == 'Sederhana') color = AppColors.warning;
+    else if (incident.severity == 'Rendah') color = AppColors.safe;
+
+    if (incident.type == 'Banjir') icon = Icons.water_rounded;
+    else if (incident.type == 'Tanah Runtuh') icon = Icons.landscape_rounded;
+    else if (incident.type == 'Kecemasan Perubatan') icon = Icons.medical_services_rounded;
+
+    return Container(
       decoration: BoxDecoration(
         color: AppColors.surface, borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color.withOpacity(0.3)),
       ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 44, height: 44,
-                decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                child: Icon(icon, color: color, size: 22),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => _showIncidentDetails(incident, color, icon),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              children: [
+                Row(
                   children: [
-                    Text(title, style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textPrimary)),
-                    const SizedBox(height: 2),
-                    Text(duration, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+                    Container(
+                      width: 44, height: 44,
+                      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                      child: Icon(icon, color: color, size: 22),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(incident.title, style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textPrimary)),
+                          const SizedBox(height: 2),
+                          Text('Durasi: ${incident.durationString}', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(99)),
+                      child: Text(incident.severity, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
+                    ),
                   ],
                 ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(99)),
-                child: Text(level, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Insiden diselesaikan.')));
-              },
-              icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
-              label: const Text('Selesaikan Insiden'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.safe,
-                side: const BorderSide(color: AppColors.safe),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      final confirm = await _confirmResolveDialog(incident);
+                      if (confirm) {
+                        _resolveIncident(incident);
+                      }
+                    },
+                    icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
+                    label: const Text('Selesaikan Insiden'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.safe,
+                      side: const BorderSide(color: AppColors.safe),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }

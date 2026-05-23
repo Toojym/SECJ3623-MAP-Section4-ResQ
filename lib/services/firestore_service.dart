@@ -99,4 +99,59 @@ class FirestoreService {
   Future<void> updateVolunteerActiveStatus(String uid, bool isActive) async {
     await _db.collection('volunteer_profiles').doc(uid).update({'isActive': isActive});
   }
+
+  // ── Incidents (SOS) ──────────────────────────────────────────────────────
+
+  Stream<QuerySnapshot> getActiveIncidentsStream() {
+    return _db
+        .collection('incidents')
+        .where('status', isEqualTo: 'active')
+        // Removed orderBy to prevent composite index requirement. We will sort locally.
+        .snapshots();
+  }
+
+  Future<void> resolveIncident(String incidentId) async {
+    await _db.collection('incidents').doc(incidentId).update({
+      'status': 'resolved',
+      'resolvedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Temporary method to seed dummy data if collection is empty
+  Future<void> seedDummyIncidentsIfEmpty() async {
+    final snapshot = await _db.collection('incidents').limit(1).get();
+    if (snapshot.docs.isEmpty) {
+      final now = DateTime.now();
+      await _db.collection('incidents').add({
+        'title': 'Banjir Kilat — Ampang',
+        'description': 'Air naik mendadak di kawasan perumahan utama.',
+        'severity': 'Kritikal',
+        'type': 'Banjir',
+        'status': 'active',
+        'reportedAt': Timestamp.fromDate(now.subtract(const Duration(hours: 3))),
+        'latitude': 3.14925,
+        'longitude': 101.7610,
+      });
+      await _db.collection('incidents').add({
+        'title': 'Tanah Runtuh — Gombak',
+        'description': 'Pokok tumbang dan tanah runtuh di jalan utama.',
+        'severity': 'Sederhana',
+        'type': 'Tanah Runtuh',
+        'status': 'active',
+        'reportedAt': Timestamp.fromDate(now.subtract(const Duration(hours: 40))), // < 3 hari
+        'latitude': 3.2217,
+        'longitude': 101.7262,
+      });
+      await _db.collection('incidents').add({
+        'title': 'Kecemasan Perubatan — Cheras',
+        'description': 'Pesakit perlukan bantuan oksigen di pusat pemindahan.',
+        'severity': 'Rendah',
+        'type': 'Kecemasan Perubatan',
+        'status': 'active',
+        'reportedAt': Timestamp.fromDate(now.subtract(const Duration(days: 4))), // > 3 Hari
+        'latitude': 3.1065,
+        'longitude': 101.7259,
+      });
+    }
+  }
 }
