@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; 
+import 'package:google_maps_flutter/google_maps_flutter.dart'; 
 import '../../blocs/auth/auth_bloc.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_routes.dart';
@@ -24,12 +26,25 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
   String? _profileImageUrl;
   bool _isLoadingProfile = false;
 
+  GoogleMapController? _mapController;
+  final CameraPosition _kInitialPosition = const CameraPosition(
+    target: LatLng(3.1390, 101.6869), // KL Center
+    zoom: 8.0,
+  );
+
   // Filters State for Krisis Tab
   String _filterSeverity = 'Semua'; 
   String _filterType = 'Semua';
   String _filterDuration = 'Semua';
 
+  // Disaster Zone State
+  bool _isSelectingDisasterZone = false;
+  LatLng? _selectedDisasterEpicenter;
+  double _disasterRadius = 5000.0; // meters
+  final List<Circle> _disasterZones = [];
+
   // Local Mock State for Incidents (Bypassing Firebase Rules)
+  // We will map these coordinates using google maps.
   final List<IncidentModel> _mockIncidents = [
     IncidentModel(
       id: '1',
@@ -285,20 +300,55 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
         const SizedBox(height: 12),
         SizedBox(
           width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: _declareDisasterZone,
-            icon: const Icon(Icons.campaign_rounded, size: 18),
-            label: const Text('Isytihar Darurat (Zon Bencana)'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.danger,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-          ),
+          child: _isSelectingDisasterZone 
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                   Container(
+                     padding: const EdgeInsets.all(12),
+                     decoration: BoxDecoration(color: AppColors.warning.withOpacity(0.1), borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.warning)),
+                     child: Text('Sila tap pada peta untuk memilih pusat zon darurat.', style: GoogleFonts.inter(color: AppColors.warning, fontWeight: FontWeight.w600, fontSize: 13)),
+                   ),
+                   const SizedBox(height: 8),
+                   Row(
+                     children: [
+                       Expanded(
+                         child: OutlinedButton(
+                           onPressed: () {
+                             setState(() {
+                               _isSelectingDisasterZone = false;
+                               _selectedDisasterEpicenter = null;
+                             });
+                           },
+                           child: const Text('Batal'),
+                         ),
+                       ),
+                       const SizedBox(width: 8),
+                       Expanded(
+                         child: ElevatedButton(
+                           onPressed: _selectedDisasterEpicenter == null ? null : _confirmDisasterZone,
+                           style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
+                           child: const Text('Sahkan Zon', style: TextStyle(color: Colors.white)),
+                         ),
+                       ),
+                     ],
+                   ),
+                ],
+              )
+            : ElevatedButton.icon(
+                onPressed: _declareDisasterZone,
+                icon: const Icon(Icons.campaign_rounded, size: 18),
+                label: const Text('Isytihar Darurat (Zon Bencana)'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.danger,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
         ),
-        const SizedBox(height: 12),
-        SingleChildScrollView(
+        if (!_isSelectingDisasterZone) const SizedBox(height: 12),
+        if (!_isSelectingDisasterZone) SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
@@ -327,38 +377,31 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
         ),
         const SizedBox(height: 16),
         Container(
-          height: 250,
+          height: 300, // Make map slightly taller for easier picking
           decoration: BoxDecoration(
             color: const Color(0xFFE5E3DF),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.divider),
+            border: Border.all(color: _isSelectingDisasterZone ? AppColors.danger : AppColors.divider, width: _isSelectingDisasterZone ? 2 : 1),
           ),
           clipBehavior: Clip.hardEdge,
           child: Stack(
             children: [
-              InteractiveViewer(
-                minScale: 0.5,
-                maxScale: 3.0,
-                constrained: false,
-                boundaryMargin: const EdgeInsets.all(double.infinity),
-                child: Container(
-                  width: 800,
-                  height: 600,
-                  color: const Color(0xFFE5E3DF),
-                  child: Stack(
-                    children: [
-                      CustomPaint(
-                        size: const Size(800, 600),
-                        painter: _MockMapPainter(),
-                      ),
-                      Positioned(top: 250, left: 350, child: _mapMarker(AppColors.danger)),
-                      Positioned(top: 280, left: 400, child: _mapMarker(AppColors.danger)),
-                      Positioned(top: 200, left: 450, child: _mapMarker(AppColors.warning)),
-                      Positioned(top: 350, left: 300, child: _mapMarker(AppColors.primary)),
-                      Positioned(top: 400, left: 500, child: _mapMarker(AppColors.safe)),
-                    ],
-                  ),
-                ),
+              GoogleMap(
+                initialCameraPosition: _kInitialPosition,
+                onMapCreated: (controller) => _mapController = controller,
+                myLocationEnabled: true,
+                myLocationButtonEnabled: false,
+                mapToolbarEnabled: false,
+                zoomControlsEnabled: true,
+                markers: _buildMarkers(),
+                circles: _buildCircles(),
+                onTap: (LatLng location) {
+                  if (_isSelectingDisasterZone) {
+                    setState(() {
+                      _selectedDisasterEpicenter = location;
+                    });
+                  }
+                },
               ),
               Positioned(
                 top: 12, right: 12,
@@ -468,6 +511,83 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
     );
   }
 
+  Set<Marker> _buildMarkers() {
+    // Generate markers based on our _mockIncidents (and active filters)
+    var incidents = List<IncidentModel>.from(_mockIncidents);
+    
+    // Apply Filters Locally
+    if (_filterSeverity != 'Semua') {
+      incidents = incidents.where((i) => i.severity == _filterSeverity).toList();
+    }
+    if (_filterType != 'Semua') {
+      incidents = incidents.where((i) => i.type == _filterType).toList();
+    }
+    if (_filterDuration != 'Semua') {
+      final now = DateTime.now();
+      incidents = incidents.where((i) {
+        final diff = now.difference(i.reportedAt);
+        if (_filterDuration == '< 1 Hari') return diff.inDays < 1;
+        if (_filterDuration == '< 3 Hari') return diff.inDays < 3;
+        if (_filterDuration == '> 3 Hari') return diff.inDays >= 3;
+        return true;
+      }).toList();
+    }
+
+    return incidents.map((incident) {
+      Color markerColor = Colors.blue; // default
+      if (incident.severity == 'Kritikal') markerColor = AppColors.danger;
+      if (incident.severity == 'Sederhana') markerColor = AppColors.warning;
+      if (incident.severity == 'Rendah') markerColor = AppColors.safe;
+
+      // In real scenario, use custom bitmap icons for color. For simplicity, we use hue
+      double hue = BitmapDescriptor.hueRed; // Kritikal
+      if (incident.severity == 'Sederhana') hue = BitmapDescriptor.hueOrange;
+      if (incident.severity == 'Rendah') hue = BitmapDescriptor.hueGreen;
+
+      return Marker(
+        markerId: MarkerId(incident.id),
+        position: LatLng(incident.latitude, incident.longitude),
+        icon: BitmapDescriptor.defaultMarkerWithHue(hue),
+        infoWindow: InfoWindow(
+          title: incident.title,
+          snippet: incident.type,
+          onTap: () {
+            IconData icon = Icons.warning_amber_rounded;
+            if (incident.type == 'Banjir') icon = Icons.water_rounded;
+            else if (incident.type == 'Tanah Runtuh') icon = Icons.landscape_rounded;
+            else if (incident.type == 'Kecemasan Perubatan') icon = Icons.medical_services_rounded;
+            _showIncidentDetails(incident, markerColor, icon);
+          },
+        ),
+      );
+    }).toSet();
+  }
+
+  Set<Circle> _buildCircles() {
+    Set<Circle> circles = {};
+    
+    // Add existing declared zones
+    for (int i = 0; i < _disasterZones.length; i++) {
+       circles.add(_disasterZones[i]);
+    }
+
+    // Add active selection circle
+    if (_isSelectingDisasterZone && _selectedDisasterEpicenter != null) {
+      circles.add(
+        Circle(
+          circleId: const CircleId('preview_zone'),
+          center: _selectedDisasterEpicenter!,
+          radius: _disasterRadius,
+          fillColor: AppColors.danger.withOpacity(0.3),
+          strokeColor: AppColors.danger,
+          strokeWidth: 2,
+        ),
+      );
+    }
+    
+    return circles;
+  }
+
   Widget _buildFilterDropdown({
     required String label,
     required String value,
@@ -504,6 +624,12 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
   }
 
   void _declareDisasterZone() {
+    setState(() {
+      _isSelectingDisasterZone = true;
+    });
+  }
+
+  void _confirmDisasterZone() {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -516,7 +642,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           ],
         ),
         content: Text(
-          'Tindakan ini akan menghantar amaran kecemasan (push alerts) secara meluas kepada semua rakyat di radius sasaran. Teruskan?',
+          'Tindakan ini akan menghantar amaran kecemasan (push alerts) secara meluas kepada semua rakyat di dalam radius ${_disasterRadius / 1000}km dari pusat yang dipilih. Teruskan?',
           style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary),
         ),
         actions: [
@@ -524,10 +650,84 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
             onPressed: () {
+              final epicenter = _selectedDisasterEpicenter!;
               Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Amaran zon darurat telah dihantar!')));
+              
+              // Calculate affected citizens (simulated logic based on active incidents + area density)
+              int affectedCount = _calculateAffectedUsers(epicenter, _disasterRadius);
+              
+              setState(() {
+                _disasterZones.add(
+                  Circle(
+                    circleId: CircleId('zone_${DateTime.now().millisecondsSinceEpoch}'),
+                    center: epicenter,
+                    radius: _disasterRadius,
+                    fillColor: AppColors.danger.withOpacity(0.2),
+                    strokeColor: AppColors.danger,
+                    strokeWidth: 2,
+                  )
+                );
+                _isSelectingDisasterZone = false;
+                _selectedDisasterEpicenter = null;
+              });
+
+              // Show success simulated push notification metric
+              _showGeofenceSuccessDialog(affectedCount);
             },
             child: Text('Sah & Hantar', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  int _calculateAffectedUsers(LatLng center, double radiusInMeters) {
+    int affectedIncidents = 0;
+    for (var incident in _mockIncidents) {
+      if (_calculateDistance(center.latitude, center.longitude, incident.latitude, incident.longitude) <= radiusInMeters) {
+        affectedIncidents++;
+      }
+    }
+    // Simulate surrounding citizens/devices based on incident density or purely radius-based fallback
+    return affectedIncidents > 0 ? (affectedIncidents * 124) : (radiusInMeters / 10).round();
+  }
+
+  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+    const R = 6371e3; // metres
+    final phi1 = lat1 * math.pi / 180;
+    final phi2 = lat2 * math.pi / 180;
+    final deltaPhi = (lat2 - lat1) * math.pi / 180;
+    final deltaLambda = (lon2 - lon1) * math.pi / 180;
+
+    final a = math.sin(deltaPhi / 2) * math.sin(deltaPhi / 2) +
+        math.cos(phi1) * math.cos(phi2) * math.sin(deltaLambda / 2) * math.sin(deltaLambda / 2);
+    final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+
+    return R * c;
+  }
+
+  void _showGeofenceSuccessDialog(int totalReached) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.podcasts_rounded, color: AppColors.safe, size: 40),
+            const SizedBox(height: 12),
+            Text('Amaran Darurat Dihantar!', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+          ],
+        ),
+        content: Text(
+          'Sistem geofencing SIGAP telah berjaya memancarkan Push Alerts kepada anggaran $totalReached peranti pengguna awam di dalam radius sasaran.',
+          style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
+        ),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Tutup', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -1645,36 +1845,4 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
       ),
     );
   }
-}
-
-class _MockMapPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white
-      ..strokeWidth = 6
-      ..style = PaintingStyle.stroke;
-
-    // Draw grid/roads
-    for (double i = 0; i < size.width; i += 80) {
-      canvas.drawLine(Offset(i, 0), Offset(i, size.height), paint);
-    }
-    for (double i = 0; i < size.height; i += 80) {
-      canvas.drawLine(Offset(0, i), Offset(size.width, i), paint);
-    }
-
-    // Main arteries
-    paint.strokeWidth = 12;
-    paint.color = Colors.amber.withOpacity(0.5);
-    canvas.drawLine(const Offset(0, 200), const Offset(800, 400), paint);
-    canvas.drawLine(const Offset(300, 0), const Offset(500, 600), paint);
-
-    // River
-    paint.strokeWidth = 16;
-    paint.color = Colors.blue.withOpacity(0.3);
-    canvas.drawLine(const Offset(100, 0), const Offset(200, 600), paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
