@@ -16,6 +16,7 @@ import 'screens/officer/officer_dashboard.dart';
 import 'screens/officer/officer_profile_screen.dart';
 import 'screens/volunteer/volunteer_dashboard.dart';
 import 'screens/volunteer/volunteer_profile_screen.dart';
+import 'screens/volunteer/sos_response_screen.dart';
 import 'services/auth_service.dart';
 import 'services/firestore_service.dart';
 
@@ -143,6 +144,13 @@ class _SigapAppState extends State<SigapApp> {
         GoRoute(
           path: AppRoutes.volunteerProfile,
           builder: (_, __) => const VolunteerProfileScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.sosResponse,
+          builder: (context, state) {
+            final sosDocId = state.extra as String? ?? '';
+            return SosResponseScreen(sosDocId: sosDocId);
+          },
         ),
         GoRoute(
           path: AppRoutes.officer,

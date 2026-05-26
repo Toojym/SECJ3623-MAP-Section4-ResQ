@@ -1,11 +1,16 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:intl/intl.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_routes.dart';
+import '../../models/sos_report_model.dart';
 import '../../services/firestore_service.dart';
+import '../../services/location_service.dart';
 import '../../widgets/common/sigap_app_bar.dart';
 
 class VolunteerDashboard extends StatefulWidget {
@@ -17,6 +22,7 @@ class VolunteerDashboard extends StatefulWidget {
 
 class _VolunteerDashboardState extends State<VolunteerDashboard> {
   final _firestoreService = FirestoreService();
+  final _locationService = LocationService();
 
   int _currentIndex = 0;
   bool _isActive = false;
@@ -24,6 +30,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
   bool _isToggling = false;
   String? _profileImageUrl;
   String _skills = '';
+  Position? _currentPosition;
 
   // Future features: Tracking for upcoming modules
   final int _openIncidentsCount = 0;
@@ -34,6 +41,16 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
   void initState() {
     super.initState();
     _loadProfile();
+    _initLocation();
+  }
+
+  Future<void> _initLocation() async {
+    try {
+      final pos = await _locationService.getCurrentPosition();
+      if (mounted) setState(() => _currentPosition = pos);
+    } catch (_) {
+      // Handle gracefully if permissions denied
+    }
   }
 
   Future<void> _loadProfile() async {
@@ -120,13 +137,13 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
       case 0:
         return _buildHomeTab(uid, name);
       case 1:
-        return _buildTasksPlaceholder();
+        return _buildMyMissionsTab(uid);
       case 2:
-        return _buildTaskBoardPlaceholder(); // Map/TaskBoard
+        return _buildTaskBoard(); // Map/TaskBoard
       case 3:
         return _buildLeaderboardPlaceholder();
       case 4:
-        return _buildCertificatesPlaceholder();
+        return _buildCertificatesTab();
       default:
         return const SizedBox.shrink();
     }
@@ -500,21 +517,20 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
           Color(0xFFF97316),
           () {},
         ),
-        // Future features
+        // Modules
         _moduleCard(
           Icons.location_on_rounded,
           'Papan Tugas',
-          'Segera',
+          'Aktif',
           Color(0xFF8B5CF6),
           () => setState(() => _currentIndex = 2),
         ),
         _moduleCard(
           Icons.card_giftcard_rounded,
           'Pelepasan Mata',
-          'Sprint 2+',
+          'Baru',
           Color(0xFFEC4899),
-          () => _showComingSoonDialog('Pelepasan SIGAP Mata',
-              'Tukarkan poin anda dengan sijil NADMA/Bomba'),
+          () => setState(() => _currentIndex = 4),
         ),
       ],
     );
@@ -547,7 +563,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Akan datang dalam sprint yang akan datang',
+                      'Akan datang dalam masa terdekat',
                       style: GoogleFonts.inter(
                           fontSize: 12,
                           color: AppColors.warning,
@@ -1062,33 +1078,154 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
   }
 
 
-  // ── Tasks Placeholder (Sprint 2) ──────────────────────────────────────────
+  // ── My Missions Tab ───────────────────────────────────────────────────────
 
-  Widget _buildTasksPlaceholder() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.construction_rounded, size: 64, color: AppColors.textHint),
-          const SizedBox(height: 16),
-          Text(
-            'Modul Tugas',
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
-            ),
+  Widget _buildMyMissionsTab(String uid) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Misi Saya',
+                style: GoogleFonts.poppins(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Senarai misi yang anda sedang atau telah kendalikan',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Akan datang dalam Sprint 2',
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              color: AppColors.textHint,
-            ),
+        ),
+        Expanded(
+          child: StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('sos_reports')
+                .where('responderId', isEqualTo: uid)
+                .orderBy('respondedAt', descending: true)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator(color: AppColors.volunteerAccent));
+              }
+
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.assignment_rounded, size: 64, color: AppColors.textHint),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Tiada Misi',
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Anda belum menerima sebarang misi lagi.\nSemak Papan Tugas untuk misi terkini.',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: AppColors.textHint,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              final docs = snapshot.data!.docs;
+              final reports = docs.map((doc) => SosReportModel.fromDocument(doc)).toList();
+
+              return ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                itemCount: reports.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  final report = reports[index];
+                  final bool isResolved = report.status == SosReportModel.statusResolved;
+
+                  return GestureDetector(
+                    onTap: () => context.push('/volunteer/sos-response', extra: report.id),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.divider),
+                        boxShadow: [
+                          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: isResolved ? AppColors.safe.withOpacity(0.1) : AppColors.volunteerAccent.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              isResolved ? Icons.check_circle_rounded : Icons.directions_run_rounded,
+                              color: isResolved ? AppColors.safe : AppColors.volunteerAccent,
+                              size: 28,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  report.type,
+                                  style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  report.address,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: isResolved ? AppColors.safe : AppColors.volunteerAccent,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              isResolved ? 'Selesai' : 'Aktif',
+                              style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -1126,147 +1263,231 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
 
   // ── Task Board Placeholder (Sprint 2+) ───────────────────────────────────
 
-  Widget _buildTaskBoardPlaceholder() {
-    return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-      children: [
-        // Header
-        Text(
-          'Papan Tugas Langsung',
-          style: GoogleFonts.poppins(
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Lihat insiden terbuka berdekatan dengan anda',
-          style: GoogleFonts.inter(
-            fontSize: 13,
-            color: AppColors.textSecondary,
-          ),
-        ),
-        const SizedBox(height: 24),
-
-        // Info banner
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.primary.withOpacity(0.2)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.info_rounded, size: 20, color: AppColors.primary),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Ciri-ciri Papan Tugas',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _featureListItem(
-                  '📍 Jarak dari lokasi anda', 'Lihat jarak ke setiap insiden'),
-              const SizedBox(height: 8),
-              _featureListItem(
-                  '🚨 Jenis Insiden', 'Banjir, Kebakaran, Pencapaian, dsb'),
-              const SizedBox(height: 8),
-              _featureListItem(
-                  '🎯 Kemahiran Diperlukan', 'Padankan dengan profil anda'),
-              const SizedBox(height: 8),
-              _featureListItem(
-                  '⚡ Skor Kecemasan', 'Dari rendah hingga kritikal'),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 24),
-
-        // Coming Soon
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Center(
-            child: Column(
-              children: [
-                Icon(Icons.construction_rounded,
-                    size: 48, color: AppColors.textHint),
-                const SizedBox(height: 16),
-                Text(
-                  'Akan Datang dalam Sprint 2+',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Kami sedang menyediakan peta interaktif\ndengan insiden real-time di kawasan anda',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: AppColors.textHint,
-                    height: 1.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _featureListItem(String title, String description) {
+  Widget _buildTaskBoard() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: GoogleFonts.inter(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Papan Tugas Langsung',
+                style: GoogleFonts.poppins(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Misi kecemasan berdekatan dengan anda',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 2),
-        Text(
-          description,
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            color: AppColors.textSecondary,
+        Expanded(
+          child: StreamBuilder<QuerySnapshot>(
+            stream: _firestoreService.streamActiveSOSReports(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator(color: AppColors.volunteerAccent));
+              }
+
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return _buildEmptyTaskBoard();
+              }
+
+              final docs = snapshot.data!.docs;
+              final reports = docs.map((doc) => SosReportModel.fromDocument(doc)).toList();
+
+              // Sort by Urgency first, then distance
+              reports.sort((a, b) {
+                final urgencyComp = a.urgencyPriority.compareTo(b.urgencyPriority);
+                if (urgencyComp != 0) return urgencyComp;
+
+                if (_currentPosition != null) {
+                  final distA = LocationService.calculateDistanceKm(
+                    _currentPosition!.latitude, _currentPosition!.longitude, a.latitude, a.longitude);
+                  final distB = LocationService.calculateDistanceKm(
+                    _currentPosition!.latitude, _currentPosition!.longitude, b.latitude, b.longitude);
+                  return distA.compareTo(distB);
+                }
+                return 0;
+              });
+
+              return ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                itemCount: reports.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemBuilder: (context, index) => _buildSOSCard(reports[index]),
+              );
+            },
           ),
         ),
       ],
     );
   }
 
-  // ── Certificates Placeholder (Sprint 2+) ─────────────────────────────────
+  Widget _buildSOSCard(SosReportModel report) {
+    // Distance
+    String distanceStr = '';
+    if (_currentPosition != null) {
+      final dist = LocationService.calculateDistanceKm(
+        _currentPosition!.latitude, _currentPosition!.longitude, report.latitude, report.longitude);
+      if (dist <= 50) {
+        distanceStr = LocationService.formatDistance(dist);
+      } else {
+        return const SizedBox.shrink(); // Filter out > 50km
+      }
+    }
 
-  Widget _buildCertificatesPlaceholder() {
+    // Skills match
+    final mySkillsList = _skills.split(',').map((s) => s.trim()).toList();
+    final hasMatchingSkill = report.requiredSkills.any((s) => mySkillsList.contains(s));
+
+    // Urgency colors
+    Color urgencyColor;
+    switch (report.urgency) {
+      case SosReportModel.urgencyKritikal: urgencyColor = const Color(0xFFDC2626); break;
+      case SosReportModel.urgencyTinggi: urgencyColor = const Color(0xFFF97316); break;
+      case SosReportModel.urgencySedang: urgencyColor = const Color(0xFFFBBF24); break;
+      default: urgencyColor = const Color(0xFF22C55E); break;
+    }
+
+    // Time ago
+    String timeAgo = 'Baru sahaja';
+    if (report.createdAt != null) {
+      final diff = DateTime.now().difference(report.createdAt!);
+      if (diff.inMinutes < 60) timeAgo = '${diff.inMinutes} min lalu';
+      else if (diff.inHours < 24) timeAgo = '${diff.inHours} jam lalu';
+      else timeAgo = '${diff.inDays} hari lalu';
+    }
+
+    return GestureDetector(
+      onTap: () => context.push('/volunteer/sos-response', extra: report.id),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.divider),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: urgencyColor.withOpacity(0.08),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(color: urgencyColor, borderRadius: BorderRadius.circular(6)),
+                    child: Text(report.urgency, style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white)),
+                  ),
+                  const Spacer(),
+                  Text(timeAgo, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                ],
+              ),
+            ),
+            
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(color: AppColors.volunteerAccent.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                        child: Icon(Icons.warning_rounded, color: AppColors.volunteerAccent, size: 24),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(report.type, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                            const SizedBox(height: 4),
+                            Text(report.address, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      if (distanceStr.isNotEmpty)
+                        _infoChip(Icons.location_on_rounded, distanceStr, AppColors.textPrimary, Colors.grey[100]!),
+                      if (report.requiredSkills.isNotEmpty)
+                        _infoChip(
+                          hasMatchingSkill ? Icons.check_circle_rounded : Icons.psychology_rounded,
+                          report.requiredSkills.first + (report.requiredSkills.length > 1 ? ' +${report.requiredSkills.length - 1}' : ''),
+                          hasMatchingSkill ? AppColors.safe : AppColors.textSecondary,
+                          hasMatchingSkill ? AppColors.safe.withOpacity(0.1) : Colors.grey[100]!,
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _infoChip(IconData icon, String label, Color textColor, Color bgColor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(6)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: textColor),
+          const SizedBox(width: 6),
+          Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: textColor)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyTaskBoard() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.task_alt_rounded, size: 64, color: AppColors.textHint),
+          const SizedBox(height: 16),
+          Text('Tiada Insiden Aktif', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+          const SizedBox(height: 8),
+          Text('Kawasan anda selamat buat masa ini.\nTerima kasih atas kesiapsiagaan anda!', textAlign: TextAlign.center, style: GoogleFonts.inter(fontSize: 13, color: AppColors.textHint, height: 1.5)),
+        ],
+      ),
+    );
+  }
+
+  // ── Certificates Tab ──────────────────────────────────────────────────────
+
+  Widget _buildCertificatesTab() {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       children: [
@@ -1385,8 +1606,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.lightbulb_rounded,
-                      size: 20, color: AppColors.safe),
+                  const Icon(Icons.lightbulb_rounded, size: 20, color: AppColors.safe),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -1401,107 +1621,83 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                 ],
               ),
               const SizedBox(height: 12),
-              _pointsExplanation('Selesaikan misi darurat',
-                  'Dapatkan poin per misi yang selesai'),
+              _pointsExplanation('Selesaikan misi darurat', 'Dapatkan poin per misi yang selesai'),
               const SizedBox(height: 8),
-              _pointsExplanation('Bantuan kepada korban',
-                  'Bonus poin untuk bantuan kualiti tinggi'),
+              _pointsExplanation('Bantuan kepada korban', 'Bonus poin untuk bantuan kualiti tinggi'),
               const SizedBox(height: 8),
-              _pointsExplanation('Peringkat Leaderboard',
-                  'Bonus mingguan untuk volunteer terbaik'),
+              _pointsExplanation('Peringkat Leaderboard', 'Bonus mingguan untuk volunteer terbaik'),
             ],
-          ),
-        ),
-
-        const SizedBox(height: 24),
-
-        // Coming Soon Banner
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-          decoration: BoxDecoration(
-            color: AppColors.warning.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.warning.withOpacity(0.2)),
-          ),
-          child: Center(
-            child: Column(
-              children: [
-                Icon(Icons.schedule_rounded,
-                    size: 32, color: AppColors.warning),
-                const SizedBox(height: 12),
-                Text(
-                  'Sistem Pelepasan Akan Datang',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Persiapkan diri anda untuk memperoleh\nsijil NADMA dan Bomba yang diiktiraf',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                    height: 1.5,
-                  ),
-                ),
-              ],
-            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _certificateCard(
-      String title, String cost, Color color, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3), width: 1.5),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: color, size: 24),
+  Widget _certificateCard(String title, String cost, Color color, IconData icon) {
+    return GestureDetector(
+      onTap: () {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Text('Tebus $title?', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 16)),
+            content: Text('Anda memerlukan $cost. Adakah anda pasti ingin menebus sijil ini?', style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary)),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Sijil $title berjaya ditebus!'),
+                      backgroundColor: AppColors.safe,
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: color),
+                child: const Text('Ya, Tebus'),
+              ),
+            ],
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  cost,
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: color,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.3), width: 1.5),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: color, size: 24),
             ),
-          ),
-          Icon(Icons.arrow_forward_rounded,
-              color: AppColors.textHint, size: 20),
-        ],
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    cost,
+                    style: GoogleFonts.inter(fontSize: 12, color: color, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_rounded, color: AppColors.textHint, size: 20),
+          ],
+        ),
       ),
     );
   }

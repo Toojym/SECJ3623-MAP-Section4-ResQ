@@ -99,4 +99,70 @@ class FirestoreService {
   Future<void> updateVolunteerActiveStatus(String uid, bool isActive) async {
     await _db.collection('volunteer_profiles').doc(uid).update({'isActive': isActive});
   }
+
+  // ── SOS Reports ─────────────────────────────────────────────────────────────
+
+  /// Create a new SOS report and return the document ID.
+  Future<String> createSOSReport(Map<String, dynamic> data) async {
+    final docRef = await _db.collection('sos_reports').add(data);
+    return docRef.id;
+  }
+
+  /// Stream active SOS reports (real-time). Only reports with status 'active'
+  /// are returned, ordered by creation time (newest first).
+  Stream<QuerySnapshot> streamActiveSOSReports() {
+    return _db
+        .collection('sos_reports')
+        .where('status', isEqualTo: 'active')
+        .orderBy('createdAt', descending: true)
+        .snapshots();
+  }
+
+  /// Stream the current user's active SOS reports (for cancellation UI).
+  Stream<QuerySnapshot> streamMyActiveSOSReports(String uid) {
+    return _db
+        .collection('sos_reports')
+        .where('reporterId', isEqualTo: uid)
+        .where('status', isEqualTo: 'active')
+        .snapshots();
+  }
+
+  /// Update any fields on an SOS report document.
+  Future<void> updateSOSReport(String docId, Map<String, dynamic> data) async {
+    await _db.collection('sos_reports').doc(docId).update({
+      ...data,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Cancel an SOS report (citizen side — false alarm).
+  Future<void> cancelSOSReport(String docId, String reason) async {
+    await _db.collection('sos_reports').doc(docId).update({
+      'status': 'cancelled',
+      'cancelReason': reason,
+      'cancelledAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Volunteer accepts / responds to an SOS report.
+  Future<void> respondToSOS(
+    String docId,
+    String volunteerId,
+    String volunteerName,
+  ) async {
+    await _db.collection('sos_reports').doc(docId).update({
+      'status': 'responded',
+      'responderId': volunteerId,
+      'responderName': volunteerName,
+      'respondedAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Get a single SOS report by ID.
+  Future<Map<String, dynamic>?> getSOSReport(String docId) async {
+    final doc = await _db.collection('sos_reports').doc(docId).get();
+    return doc.exists ? {'id': doc.id, ...doc.data()!} : null;
+  }
 }

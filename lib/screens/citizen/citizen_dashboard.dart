@@ -7,6 +7,9 @@ import '../../blocs/auth/auth_bloc.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_routes.dart';
 import '../../core/constants/app_strings.dart';
+import '../../models/sos_report_model.dart';
+import '../../services/firestore_service.dart';
+import '../../services/location_service.dart';
 import '../../widgets/common/sigap_app_bar.dart';
 import '../../widgets/common/sigap_button.dart';
 
@@ -18,7 +21,10 @@ class CitizenDashboard extends StatefulWidget {
 }
 
 class _CitizenDashboardState extends State<CitizenDashboard> {
+  final _firestoreService = FirestoreService();
+  final _locationService = LocationService();
   int _currentIndex = 0;
+  bool _isSubmittingSOS = false;
 
   String _greeting() {
     final hour = DateTime.now().hour;
@@ -401,7 +407,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
+      builder: (ctx) => Container(
         padding: const EdgeInsets.all(24),
         decoration: const BoxDecoration(
           color: AppColors.surface,
@@ -413,6 +419,9 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
             Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
             const SizedBox(height: 24),
             Text('Pilih Jenis Kecemasan', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+            const SizedBox(height: 8),
+            Text('Laporan SOS akan dihantar kepada sukarelawan berdekatan.',
+                style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
             const SizedBox(height: 24),
             Wrap(
               spacing: 16,
@@ -426,10 +435,13 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                 _sosOption(Icons.person_search_rounded, 'Orang Hilang', Colors.purple),
               ],
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
+            // Cancel active SOS button
+            _buildCancelActiveSOSButton(),
+            const SizedBox(height: 12),
             SigapButton(
               label: 'Batal',
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(ctx),
               variant: SigapButtonVariant.outlined,
             ),
             const SizedBox(height: 24),
@@ -440,21 +452,396 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
   }
 
   Widget _sosOption(IconData icon, String label, Color color) {
-    return Column(
-      children: [
-        Container(
-          width: 64,
-          height: 64,
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            shape: BoxShape.circle,
-            border: Border.all(color: color.withOpacity(0.3)),
+    return GestureDetector(
+      onTap: () {
+        Navigator.pop(context);
+        _showSOSDescriptionDialog(label);
+      },
+      child: Column(
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              shape: BoxShape.circle,
+              border: Border.all(color: color.withOpacity(0.3)),
+            ),
+            child: Icon(icon, color: color, size: 32),
           ),
-          child: Icon(icon, color: color, size: 32),
+          const SizedBox(height: 8),
+          Text(label, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
+        ],
+      ),
+    );
+  }
+
+  /// Step 2 — Description input after selecting type
+  void _showSOSDescriptionDialog(String type) {
+    final descCtrl = TextEditingController();
+    final urgency = SosReportModel.urgencyForType(type);
+    final skills = SosReportModel.skillsForType(type);
+
+    Color urgencyColor;
+    switch (urgency) {
+      case 'KRITIKAL':
+        urgencyColor = const Color(0xFFDC2626);
+        break;
+      case 'TINGGI':
+        urgencyColor = const Color(0xFFF97316);
+        break;
+      default:
+        urgencyColor = const Color(0xFFFBBF24);
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: const BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text('Laporan SOS: $type',
+                        style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: urgencyColor,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(urgency,
+                        style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: skills
+                    .map((s) => Chip(
+                          label: Text(s, style: GoogleFonts.inter(fontSize: 10, color: AppColors.textSecondary)),
+                          backgroundColor: AppColors.background,
+                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          visualDensity: VisualDensity.compact,
+                        ))
+                    .toList(),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: descCtrl,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'Huraikan keadaan kecemasan anda...',
+                  hintStyle: GoogleFonts.inter(fontSize: 13, color: AppColors.textHint),
+                  filled: true,
+                  fillColor: AppColors.background,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.divider),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.divider),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(Icons.gps_fixed_rounded, size: 14, color: AppColors.textSecondary),
+                  const SizedBox(width: 6),
+                  Text('Lokasi GPS akan dikesan secara automatik',
+                      style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary)),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: SigapButton(
+                      label: 'Batal',
+                      onPressed: () => Navigator.pop(ctx),
+                      variant: SigapButtonVariant.outlined,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: StatefulBuilder(
+                      builder: (context, setInnerState) {
+                        return SigapButton(
+                          label: _isSubmittingSOS ? 'Menghantar...' : 'Hantar SOS',
+                          isLoading: _isSubmittingSOS,
+                          onPressed: _isSubmittingSOS
+                              ? null
+                              : () async {
+                                  setInnerState(() {});
+                                  setState(() => _isSubmittingSOS = true);
+                                  await _submitSOS(type, descCtrl.text.trim(), urgency, skills);
+                                  if (mounted) setState(() => _isSubmittingSOS = false);
+                                  if (mounted) Navigator.pop(ctx);
+                                },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
         ),
-        const SizedBox(height: 8),
-        Text(label, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
-      ],
+      ),
+    );
+  }
+
+  /// Submit SOS to Firestore with GPS location
+  Future<void> _submitSOS(
+    String type,
+    String description,
+    String urgency,
+    List<String> requiredSkills,
+  ) async {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is! AuthAuthenticated) return;
+
+    try {
+      // Get GPS location
+      final position = await _locationService.getCurrentPosition();
+      final address = await _locationService.getAddressFromCoords(
+        position.latitude,
+        position.longitude,
+      );
+
+      // Get citizen phone from profile
+      final citizenProfile = await _firestoreService.getCitizenProfile(authState.uid);
+      final phone = citizenProfile?['phone'] as String? ?? '';
+
+      final reportData = SosReportModel(
+        id: '',
+        reporterId: authState.uid,
+        reporterName: authState.displayName,
+        reporterPhone: phone,
+        type: type,
+        description: description.isNotEmpty ? description : 'Kecemasan $type — Perlukan bantuan segera.',
+        urgency: urgency,
+        latitude: position.latitude,
+        longitude: position.longitude,
+        address: address,
+        requiredSkills: requiredSkills,
+      ).toMap();
+
+      await _firestoreService.createSOSReport(reportData);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text('SOS berjaya dihantar! Sukarelawan berdekatan akan dimaklumkan.',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.safe,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal menghantar SOS: $e'),
+            backgroundColor: AppColors.danger,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    }
+  }
+
+  /// Button to cancel an active SOS
+  Widget _buildCancelActiveSOSButton() {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is! AuthAuthenticated) return const SizedBox.shrink();
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: _firestoreService.streamMyActiveSOSReports(authState.uid),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        final activeCount = snapshot.data!.docs.length;
+
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.danger.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.danger.withOpacity(0.3)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.warning_amber_rounded, size: 18, color: AppColors.danger),
+                  const SizedBox(width: 8),
+                  Text('$activeCount laporan SOS aktif',
+                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.danger)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              ...snapshot.data!.docs.map((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${data['type'] ?? 'SOS'} — ${data['address'] ?? 'Lokasi tidak diketahui'}',
+                          style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () => _confirmCancelSOS(doc.id, data['type'] as String? ?? 'SOS'),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.danger,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text('Batalkan',
+                              style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white)),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// Confirm SOS cancellation with reason
+  void _confirmCancelSOS(String docId, String type) {
+    final reasonCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.cancel_rounded, color: AppColors.danger, size: 24),
+            const SizedBox(width: 12),
+            Text('Batalkan SOS $type?',
+                style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Laporan SOS ini akan dibatalkan dan dibuang dari papan tugas sukarelawan.',
+                style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+            const SizedBox(height: 16),
+            TextField(
+              controller: reasonCtrl,
+              decoration: InputDecoration(
+                hintText: 'Sebab pembatalan (pilihan)',
+                hintStyle: GoogleFonts.inter(fontSize: 13, color: AppColors.textHint),
+                filled: true,
+                fillColor: AppColors.background,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: AppColors.divider),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Tidak', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.danger,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await _firestoreService.cancelSOSReport(
+                  docId,
+                  reasonCtrl.text.trim().isNotEmpty
+                      ? reasonCtrl.text.trim()
+                      : 'Penggera palsu / Situasi terkawal',
+                );
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('SOS berjaya dibatalkan.'),
+                      backgroundColor: AppColors.safe,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Gagal membatalkan SOS: $e'),
+                      backgroundColor: AppColors.danger,
+                    ),
+                  );
+                }
+              }
+            },
+            child: Text('Ya, Batalkan', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
     );
   }
 
