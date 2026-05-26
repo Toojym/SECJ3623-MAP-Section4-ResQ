@@ -25,6 +25,9 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = context.read<AuthBloc>().state;
+    final bool isOfficer = authState is AuthAuthenticated && authState.role == 'officer';
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -55,9 +58,17 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
 
           final report = SosReportModel.fromDocument(snapshot.data!);
 
-          // If already cancelled or responded, show status
-          if (report.status != SosReportModel.statusActive) {
-            return _buildInactiveState(report);
+          // If the user is an officer, let them view active or responded reports
+          // If the report is resolved or cancelled, show inactive state
+          if (isOfficer) {
+            if (report.status == SosReportModel.statusResolved || report.status == SosReportModel.statusCancelled) {
+              return _buildInactiveState(report);
+            }
+          } else {
+            // For volunteers: If already cancelled or responded, show status
+            if (report.status != SosReportModel.statusActive) {
+              return _buildInactiveState(report);
+            }
           }
 
           return _buildActiveReport(report);
@@ -88,15 +99,47 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
   }
 
   Widget _buildInactiveState(SosReportModel report) {
+    final authState = context.read<AuthBloc>().state;
+    final bool isOfficer = authState is AuthAuthenticated && authState.role == 'officer';
+
     final isCancelled = report.status == SosReportModel.statusCancelled;
-    final color = isCancelled ? AppColors.textSecondary : AppColors.safe;
-    final icon = isCancelled
-        ? Icons.cancel_rounded
-        : Icons.check_circle_rounded;
-    final label = isCancelled ? 'Dibatalkan' : 'Telah Direspons';
-    final subtitle = isCancelled
-        ? (report.cancelReason ?? 'Penggera palsu / Situasi terkawal')
-        : 'Direspons oleh ${report.responderName ?? 'sukarelawan'}';
+    final isResolved = report.status == SosReportModel.statusResolved;
+
+    final Color color;
+    if (isCancelled) {
+      color = AppColors.textSecondary;
+    } else if (isResolved) {
+      color = AppColors.safe;
+    } else {
+      color = AppColors.volunteerAccent;
+    }
+
+    final IconData icon;
+    if (isCancelled) {
+      icon = Icons.cancel_rounded;
+    } else if (isResolved) {
+      icon = Icons.check_circle_rounded;
+    } else {
+      icon = Icons.handshake_rounded;
+    }
+
+    final String label;
+    if (isCancelled) {
+      label = 'Dibatalkan';
+    } else if (isResolved) {
+      label = 'Telah Diselesaikan';
+    } else {
+      label = 'Telah Direspons';
+    }
+
+    final String subtitle;
+    if (isCancelled) {
+      subtitle = report.cancelReason ?? 'Penggera palsu / Situasi terkawal';
+    } else if (isResolved) {
+      subtitle = 'Insiden ini telah selesai dan ditutup.';
+    } else {
+      subtitle = 'Direspons oleh ${report.responderName ?? 'sukarelawan'}';
+    }
 
     return Center(
       child: Padding(
@@ -120,14 +163,15 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
             ElevatedButton(
               onPressed: () => Navigator.pop(context),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.volunteerAccent,
+                backgroundColor: isOfficer ? AppColors.officerAccent : AppColors.volunteerAccent,
                 foregroundColor: Colors.white,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
               ),
-              child: Text('Kembali ke Papan Tugas',
+              child: Text(
+                  isOfficer ? 'Kembali ke Pusat Kawalan' : 'Kembali ke Papan Tugas',
                   style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
             ),
           ],

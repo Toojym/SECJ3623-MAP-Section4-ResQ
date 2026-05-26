@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +8,7 @@ import '../../blocs/auth/auth_bloc.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_routes.dart';
 import '../../core/constants/app_strings.dart';
+import '../../models/sos_report_model.dart';
 import '../../services/firestore_service.dart';
 import '../../widgets/common/sigap_app_bar.dart';
 
@@ -318,9 +320,66 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
         const SizedBox(height: 24),
         _sectionTitle('Insiden Aktif & Penyelesaian'),
         const SizedBox(height: 12),
-        _resolvableIncidentCard('Banjir Kilat — Ampang', 'Kritikal', AppColors.danger, 'Durasi: 3 Jam', Icons.water_rounded),
-        const SizedBox(height: 8),
-        _resolvableIncidentCard('Tanah Runtuh — Gombak', 'Sederhana', AppColors.warning, 'Durasi: 1 Hari', Icons.landscape_rounded),
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('sos_reports')
+              .where('status', whereIn: ['active', 'responded'])
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24.0),
+                  child: CircularProgressIndicator(color: AppColors.officerAccent),
+                ),
+              );
+            }
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 32),
+                  child: Column(
+                    children: [
+                      const Icon(Icons.check_circle_outline_rounded, size: 48, color: AppColors.safe),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Tiada Insiden Aktif',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            final docs = snapshot.data!.docs;
+            final reports = docs.map((doc) => SosReportModel.fromDocument(doc)).toList();
+
+            // Sort by urgency priority first, then createdAt descending
+            reports.sort((a, b) {
+              final urgencyComp = a.urgencyPriority.compareTo(b.urgencyPriority);
+              if (urgencyComp != 0) return urgencyComp;
+              if (a.createdAt != null && b.createdAt != null) {
+                return b.createdAt!.compareTo(a.createdAt!);
+              }
+              return 0;
+            });
+
+            return ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: reports.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                return _buildResolvableSOSCard(reports[index]);
+              },
+            );
+          },
+        ),
         const SizedBox(height: 80),
       ],
     );
@@ -1080,14 +1139,23 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
   }
 
   Widget _buildStatsRow() {
-    return Row(
-      children: [
-        _statCard('247', 'Jumlah SOS', AppColors.danger, Icons.sos_rounded),
-        const SizedBox(width: 12),
-        _statCard('38', 'Sukarelawan', AppColors.safe, Icons.handshake_rounded),
-        const SizedBox(width: 12),
-        _statCard('12', 'Zon Aktif', AppColors.officerAccent, Icons.map_rounded),
-      ],
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('sos_reports')
+          .where('status', whereIn: ['active', 'responded'])
+          .snapshots(),
+      builder: (context, snapshot) {
+        final sosCount = snapshot.hasData ? snapshot.data!.docs.length.toString() : '...';
+        return Row(
+          children: [
+            _statCard(sosCount, 'SOS Aktif', AppColors.danger, Icons.sos_rounded),
+            const SizedBox(width: 12),
+            _statCard('38', 'Sukarelawan', AppColors.safe, Icons.handshake_rounded),
+            const SizedBox(width: 12),
+            _statCard('12', 'Zon Aktif', AppColors.officerAccent, Icons.map_rounded),
+          ],
+        );
+      },
     );
   }
 
@@ -1301,6 +1369,266 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           Text(label, style: GoogleFonts.inter(fontSize: 10, color: AppColors.textSecondary, fontWeight: FontWeight.w600), textAlign: TextAlign.center),
         ],
 
+      ),
+    );
+  }
+
+  String _formatTimeAgo(DateTime? dateTime) {
+    if (dateTime == null) return 'Baru sahaja';
+    final diff = DateTime.now().difference(dateTime);
+    if (diff.inMinutes < 1) return 'Baru sahaja';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} min lalu';
+    if (diff.inHours < 24) return '${diff.inHours} jam lalu';
+    return '${diff.inDays} hari lalu';
+  }
+
+  Color _urgencyColor(String urgency) {
+    switch (urgency) {
+      case SosReportModel.urgencyKritikal:
+        return const Color(0xFFDC2626);
+      case SosReportModel.urgencyTinggi:
+        return const Color(0xFFF97316);
+      case SosReportModel.urgencySedang:
+        return const Color(0xFFFBBF24);
+      default:
+        return const Color(0xFF22C55E);
+    }
+  }
+
+  IconData _typeIcon(String type) {
+    switch (type) {
+      case 'Banjir':
+        return Icons.water_drop_rounded;
+      case 'Kebakaran':
+        return Icons.local_fire_department_rounded;
+      case 'Tanah Runtuh':
+        return Icons.landscape_rounded;
+      case 'Perubatan':
+        return Icons.medical_services_rounded;
+      case 'Orang Hilang':
+        return Icons.person_search_rounded;
+      default:
+        return Icons.warning_rounded;
+    }
+  }
+
+  Widget _buildResolvableSOSCard(SosReportModel report) {
+    final urgencyColor = _urgencyColor(report.urgency);
+    final icon = _typeIcon(report.type);
+    final timeAgo = _formatTimeAgo(report.createdAt);
+    final bool isResponded = report.status == SosReportModel.statusResponded;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: urgencyColor.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => context.push(AppRoutes.sosResponse, extra: report.id),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: urgencyColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: urgencyColor, size: 24),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        report.type,
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          const Icon(Icons.access_time_rounded, size: 12, color: AppColors.textSecondary),
+                          const SizedBox(width: 4),
+                          Text(
+                            timeAgo,
+                            style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: urgencyColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    report.urgency,
+                    style: GoogleFonts.inter(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: urgencyColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Info section (Address, Reporter, Responder status)
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => context.push(AppRoutes.sosResponse, extra: report.id),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.location_on_rounded, size: 14, color: AppColors.textSecondary),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        report.address.isNotEmpty ? report.address : 'Tiada alamat',
+                        style: GoogleFonts.inter(fontSize: 12, color: AppColors.textPrimary),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    const Icon(Icons.person_outline_rounded, size: 14, color: AppColors.textSecondary),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Pelapor: ${report.reporterName}',
+                      style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                // Status banner
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isResponded ? AppColors.safe.withOpacity(0.08) : Colors.amber.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        isResponded ? Icons.handshake_rounded : Icons.pending_rounded,
+                        size: 14,
+                        color: isResponded ? AppColors.safe : Colors.amber[800],
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          isResponded
+                              ? 'Direspons oleh: ${report.responderName ?? "Sukarelawan"}'
+                              : 'Menunggu Sukarelawan...',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: isResponded ? AppColors.safe : Colors.amber[800],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Action button
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => _confirmResolveSOS(report),
+              icon: const Icon(Icons.check_circle_outline_rounded, size: 16),
+              label: const Text('Selesaikan Insiden', style: TextStyle(fontSize: 12)),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.safe,
+                side: const BorderSide(color: AppColors.safe),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmResolveSOS(SosReportModel report) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Selesaikan Insiden?', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        content: Text(
+          'Adakah anda pasti insiden ${report.type} di ${report.address} telah selesai and terkawal?',
+          style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Batal', style: GoogleFonts.inter(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.safe),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await FirestoreService().updateSOSReport(report.id, {
+                  'status': 'resolved',
+                });
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Insiden berjaya diselesaikan!'),
+                      backgroundColor: AppColors.safe,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Gagal menyelesaikan insiden: $e'),
+                      backgroundColor: AppColors.danger,
+                    ),
+                  );
+                }
+              }
+            },
+            child: Text('Sah & Selesai', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
+          ),
+        ],
       ),
     );
   }
