@@ -448,45 +448,82 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
           etaStr = 'Anggaran Masa Tiba: $etaMin minit';
         }
 
-        return Container(
-          margin: const EdgeInsets.only(top: 20),
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: cardColor.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: cardColor.withValues(alpha: 0.3), width: 1.5),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: cardColor,
-                      shape: BoxShape.circle,
+        return GestureDetector(
+          onTap: () => _showCitizenActiveSOSDetails(report, cardColor),
+          child: Container(
+            margin: const EdgeInsets.only(top: 20),
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: cardColor.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: cardColor.withValues(alpha: 0.3), width: 1.5),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: cardColor,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(icon, color: Colors.white, size: 20),
                     ),
-                    child: Icon(icon, color: Colors.white, size: 20),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          statusLabel,
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 15,
-                            color: cardColor,
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            statusLabel,
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
+                              color: cardColor,
+                            ),
                           ),
-                        ),
+                          Text(
+                            'Jenis: ${report.type} • Ketik untuk butiran',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  statusDesc,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                    height: 1.4,
+                  ),
+                ),
+                if (isResponded) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.divider),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.timer_outlined, size: 16, color: AppColors.textSecondary),
+                        const SizedBox(width: 8),
                         Text(
-                          'Jenis: ${report.type}',
+                          etaStr,
                           style: GoogleFonts.inter(
                             fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.bold,
                             color: AppColors.textPrimary,
                           ),
                         ),
@@ -494,76 +531,17 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                statusDesc,
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  color: AppColors.textSecondary,
-                  height: 1.4,
-                ),
-              ),
-              if (isResponded) ...[
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.divider),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.timer_outlined, size: 16, color: AppColors.textSecondary),
-                      const SizedBox(width: 8),
-                      Text(
-                        etaStr,
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => _confirmCancelSOS(report.id, report.type),
-                      icon: const Icon(Icons.cancel_outlined, size: 16),
-                      label: const Text('Batal SOS'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.danger,
-                        side: const BorderSide(color: AppColors.danger),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                      ),
-                    ),
-                  ),
-                  if (isResponded && report.reporterPhone.isNotEmpty) ...[
-                    const SizedBox(width: 12),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
                     Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Menghubungi ${report.responderName ?? "Penyelamat"}...'),
-                              backgroundColor: AppColors.primary,
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.phone_rounded, size: 16),
-                        label: const Text('Hubungi'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
+                      child: OutlinedButton.icon(
+                        onPressed: () => _confirmCancelSOS(report.id, report.type),
+                        icon: const Icon(Icons.cancel_outlined, size: 16),
+                        label: const Text('Batal SOS'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.danger,
+                          side: const BorderSide(color: AppColors.danger),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -571,13 +549,304 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                         ),
                       ),
                     ),
+                    if (isResponded && report.reporterPhone.isNotEmpty) ...[
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Menghubungi ${report.responderName ?? "Penyelamat"}...'),
+                                backgroundColor: AppColors.primary,
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.phone_rounded, size: 16),
+                          label: const Text('Hubungi'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
         );
       },
+    );
+  }
+
+  void _showCitizenActiveSOSDetails(SosReportModel report, Color cardColor) {
+    final bool isResponded = report.status == SosReportModel.statusResponded;
+    String etaStr = 'Anggaran Masa Tiba: 8 - 15 minit';
+    if (isResponded) {
+      final int hash = report.id.hashCode.abs();
+      final int etaMin = 5 + (hash % 10);
+      etaStr = '$etaMin minit';
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        height: MediaQuery.of(context).size.height * 0.85,
+        decoration: const BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.divider,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                children: [
+                  Text(
+                    'Perincian Laporan SOS',
+                    style: GoogleFonts.poppins(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Live map view showing locations
+                  Container(
+                    height: 220,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.divider),
+                    ),
+                    clipBehavior: Clip.hardEdge,
+                    child: GoogleMap(
+                      initialCameraPosition: CameraPosition(
+                        target: LatLng(report.latitude, report.longitude),
+                        zoom: 14.5,
+                      ),
+                      myLocationEnabled: false,
+                      zoomControlsEnabled: false,
+                      markers: {
+                        Marker(
+                          markerId: const MarkerId('victim'),
+                          position: LatLng(report.latitude, report.longitude),
+                          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+                          infoWindow: InfoWindow(title: 'Lokasi Anda (${report.type})'),
+                        ),
+                        if (isResponded)
+                          Marker(
+                            markerId: const MarkerId('responder'),
+                            position: LatLng(report.latitude + 0.003, report.longitude + 0.003),
+                            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+                            infoWindow: InfoWindow(title: 'Penyelamat: ${report.responderName}'),
+                          ),
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  
+                  // Status & ETA Card
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cardColor.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: cardColor.withValues(alpha: 0.2)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              isResponded ? Icons.check_circle_rounded : Icons.pending_rounded,
+                              color: cardColor,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              isResponded ? 'Bantuan Sedang Menuju' : 'Menunggu Penyelamat',
+                              style: GoogleFonts.inter(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: cardColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          isResponded
+                              ? 'Laporan SOS anda telah diterima oleh ${report.responderName}. Sila kekal di lokasi anda yang selamat.'
+                              : 'Laporan SOS anda telah dihantar ke sistem. Sukarelawan berhampiran sedang dipanggil.',
+                          style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                        ),
+                        if (isResponded) ...[
+                          const SizedBox(height: 12),
+                          const Divider(height: 1),
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Anggaran Masa Tiba:',
+                                style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                              ),
+                              Text(
+                                etaStr,
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Reinforcement needed banner (if volunteer requested backup)
+                  if (isResponded && report.needBackup) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.dangerLight,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.danger.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.warning_rounded, color: AppColors.danger, size: 24),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Bantuan Tambahan Diminta',
+                                  style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.danger),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Penyelamat sedang meminta unit tambahan/squad sokongan ke lokasi.',
+                                  style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      color: AppColors.danger),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+
+                  // Report Details Section
+                  Text(
+                    'Maklumat Laporan',
+                    style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
+                  ),
+                  const SizedBox(height: 8),
+                  _detailField('Jenis Kecemasan', report.type),
+                  _detailField('Tahap Keutamaan', report.urgency),
+                  if (report.description.isNotEmpty)
+                    _detailField('Keterangan', report.description),
+                  _detailField('Lokasi/Alamat', report.address.isNotEmpty ? report.address : '${report.latitude}, ${report.longitude}'),
+                  const SizedBox(height: 24),
+
+                  // Actions
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            _confirmCancelSOS(report.id, report.type);
+                          },
+                          icon: const Icon(Icons.cancel_outlined, size: 16),
+                          label: const Text('Batal SOS'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.danger,
+                            side: const BorderSide(color: AppColors.danger),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                        ),
+                      ),
+                      if (isResponded && report.reporterPhone.isNotEmpty) ...[
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              ScaffoldMessenger.of(ctx).showSnackBar(
+                                SnackBar(
+                                  content: Text('Menghubungi ${report.responderName ?? "Penyelamat"}...'),
+                                  backgroundColor: AppColors.primary,
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.phone_rounded, size: 16),
+                            label: const Text('Hubungi'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 40),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _detailField(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary)),
+          const SizedBox(height: 2),
+          Text(value, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+          const SizedBox(height: 8),
+          const Divider(height: 1),
+        ],
+      ),
     );
   }
 
