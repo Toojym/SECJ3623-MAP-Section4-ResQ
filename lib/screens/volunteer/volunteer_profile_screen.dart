@@ -143,8 +143,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
       if (currentUser != null &&
           _emailCtrl.text.isNotEmpty &&
           _emailCtrl.text != currentUser.email) {
-        await currentUser.verifyBeforeUpdateEmail(_emailCtrl.text).catchError(
-            (_) => currentUser.updateEmail(_emailCtrl.text));
+        await currentUser.verifyBeforeUpdateEmail(_emailCtrl.text);
       }
 
       final customSkillsList = _customSkillsCtrl.text
@@ -268,6 +267,12 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
               Navigator.pop(ctx);
 
               try {
+                final state = context.read<AuthBloc>().state;
+                if (state is! AuthAuthenticated) {
+                  throw 'Pengguna tidak disahkan.';
+                }
+                final uid = state.uid;
+
                 final user = FirebaseAuth.instance.currentUser;
                 if (user == null || user.email == null) {
                   throw 'Pengguna tidak dijumpai.';
@@ -278,13 +283,10 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                 await user.updatePassword(newPassCtrl.text);
                 setState(() => _passwordCtrl.text = newPassCtrl.text);
 
-                final state = context.read<AuthBloc>().state;
-                if (state is AuthAuthenticated) {
-                  await FirestoreService()
-                      .createVolunteerProfile(state.uid, {
-                    'password': newPassCtrl.text,
-                  });
-                }
+                await FirestoreService()
+                    .createVolunteerProfile(uid, {
+                  'password': newPassCtrl.text,
+                });
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                       content: Text('Kata Laluan berjaya ditukar!'),

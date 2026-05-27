@@ -21,7 +21,7 @@ class FirestoreService {
       'createdAt': FieldValue.serverTimestamp(),
       'profileComplete': false,
     });
-    
+
     // Also initialize the citizen profile with the password so it can be fetched immediately
     if (role == 'citizen') {
       await _db.collection('citizen_profiles').doc(uid).set({
@@ -39,7 +39,11 @@ class FirestoreService {
   }
 
   Future<bool> checkEmailExists(String email) async {
-    final query = await _db.collection('users').where('email', isEqualTo: email.trim()).limit(1).get();
+    final query = await _db
+        .collection('users')
+        .where('email', isEqualTo: email.trim())
+        .limit(1)
+        .get();
     return query.docs.isNotEmpty;
   }
 
@@ -97,7 +101,10 @@ class FirestoreService {
   }
 
   Future<void> updateVolunteerActiveStatus(String uid, bool isActive) async {
-    await _db.collection('volunteer_profiles').doc(uid).update({'isActive': isActive});
+    await _db
+        .collection('volunteer_profiles')
+        .doc(uid)
+        .update({'isActive': isActive});
   }
 
   // ── SOS Reports ─────────────────────────────────────────────────────────────
@@ -108,8 +115,8 @@ class FirestoreService {
     return docRef.id;
   }
 
-  /// Stream active SOS reports (real-time). Only reports with status 'active'
-  /// are returned, ordered by creation time (newest first).
+  /// Stream active SOS reports (real-time) for the Volunteer Task Board.
+  /// Only reports with status 'active' are returned, ordered newest-first.
   Stream<QuerySnapshot> streamActiveSOSReports() {
     return _db
         .collection('sos_reports')
@@ -118,7 +125,7 @@ class FirestoreService {
         .snapshots();
   }
 
-  /// Stream the current user's active SOS reports (for cancellation UI).
+  /// Stream the current user's active SOS reports (for citizen cancellation UI).
   Stream<QuerySnapshot> streamMyActiveSOSReports(String uid) {
     return _db
         .collection('sos_reports')
@@ -166,58 +173,76 @@ class FirestoreService {
     return doc.exists ? {'id': doc.id, ...doc.data()!} : null;
   }
 
-  // ── Incidents (SOS) ──────────────────────────────────────────────────────
+  // ── Officer SOS Monitoring ────────────────────────────────────────────────
 
-  Stream<QuerySnapshot> getActiveIncidentsStream() {
+  /// Officer: stream ALL SOS reports that are active or responded (need monitoring).
+  /// Ordered by creation time newest-first. Requires a Firestore composite index on
+  /// (status, createdAt desc) — or fall back to client-side sorting without orderBy.
+  Stream<QuerySnapshot> streamAllActiveSOSReportsForOfficer() {
     return _db
-        .collection('incidents')
-        .where('status', isEqualTo: 'active')
-        // Removed orderBy to prevent composite index requirement. We will sort locally.
-        .snapshots();
+        .collection('sos_reports')
+        .where('status', whereIn: ['active', 'responded'])
+        .snapshots(); // Sorted client-side to avoid composite index requirement
   }
 
-  Future<void> resolveIncident(String incidentId) async {
-    await _db.collection('incidents').doc(incidentId).update({
+  /// Officer: stream SOS reports that have been resolved (for history view).
+  Stream<QuerySnapshot> streamResolvedSOSReports() {
+    return _db
+        .collection('sos_reports')
+        .where('status', isEqualTo: 'resolved')
+        .snapshots(); // Sorted client-side
+  }
+
+  /// Officer resolves a citizen SOS report. This automatically removes it from
+  /// the volunteer task board (which only streams 'active' status) and from the
+  /// officer's active monitoring list.
+  Future<void> resolveSOSReportByOfficer(String docId) async {
+    await _db.collection('sos_reports').doc(docId).update({
       'status': 'resolved',
       'resolvedAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
     });
   }
 
-  /// Temporary method to seed dummy data if collection is empty
-  Future<void> seedDummyIncidentsIfEmpty() async {
-    final snapshot = await _db.collection('incidents').limit(1).get();
-    if (snapshot.docs.isEmpty) {
-      final now = DateTime.now();
-      await _db.collection('incidents').add({
-        'title': 'Banjir Kilat — Ampang',
-        'description': 'Air naik mendadak di kawasan perumahan utama.',
-        'severity': 'Kritikal',
-        'type': 'Banjir',
-        'status': 'active',
-        'reportedAt': Timestamp.fromDate(now.subtract(const Duration(hours: 3))),
-        'latitude': 3.14925,
-        'longitude': 101.7610,
-      });
-      await _db.collection('incidents').add({
-        'title': 'Tanah Runtuh — Gombak',
-        'description': 'Pokok tumbang dan tanah runtuh di jalan utama.',
-        'severity': 'Sederhana',
-        'type': 'Tanah Runtuh',
-        'status': 'active',
-        'reportedAt': Timestamp.fromDate(now.subtract(const Duration(hours: 40))), // < 3 hari
-        'latitude': 3.2217,
-        'longitude': 101.7262,
-      });
-      await _db.collection('incidents').add({
-        'title': 'Kecemasan Perubatan — Cheras',
-        'description': 'Pesakit perlukan bantuan oksigen di pusat pemindahan.',
-        'severity': 'Rendah',
-        'type': 'Kecemasan Perubatan',
-        'status': 'active',
-        'reportedAt': Timestamp.fromDate(now.subtract(const Duration(days: 4))), // > 3 Hari
-        'latitude': 3.1065,
-        'longitude': 101.7259,
-      });
-    }
+  // ── Disaster Zones ────────────────────────────────────────────────────────
+
+  /// Create a new disaster zone in Firestore.
+  Future<String> createDisasterZone(Map<String, dynamic> data) async {
+    final docRef = await _db.collection('disaster_zones').add({
+      ...data,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+    return docRef.id;
+  }
+
+  /// Stream all declared disaster zones in real time.
+  Stream<QuerySnapshot> streamDisasterZones() {
+    return _db.collection('disaster_zones').snapshots();
+  }
+
+  /// Stream active or responded SOS reports for a specific citizen.
+  Stream<QuerySnapshot> streamMyActiveAndRespondedSOSReports(String uid) {
+    return _db
+        .collection('sos_reports')
+        .where('reporterId', isEqualTo: uid)
+        .where('status', whereIn: ['active', 'responded'])
+        .snapshots();
+  }
+
+  /// Request backup/reinforcements for a specific SOS report.
+  Future<void> updateSOSReportBackupRequest(String docId, bool needBackup) async {
+    await _db.collection('sos_reports').doc(docId).update({
+      'needBackup': needBackup,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Volunteer resolves a citizen SOS report.
+  Future<void> resolveSOSReportByVolunteer(String docId) async {
+    await _db.collection('sos_reports').doc(docId).update({
+      'status': 'resolved',
+      'resolvedAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
   }
 }

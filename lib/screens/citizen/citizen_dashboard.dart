@@ -1,8 +1,13 @@
+import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_routes.dart';
@@ -86,7 +91,8 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
       child: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         children: [
-          _buildEmergencyHeader(name),
+          _buildEmergencyHeader(uid, name),
+          _buildActiveSOSTracker(uid),
           const SizedBox(height: 24),
           _buildAlertBanner(),
           const SizedBox(height: 32),
@@ -132,7 +138,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: AppColors.danger.withOpacity(0.4),
+            color: AppColors.danger.withValues(alpha: 0.4),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -156,7 +162,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
       notchMargin: 8.0,
       color: AppColors.surface,
       elevation: 20,
-      shadowColor: Colors.black.withOpacity(0.2),
+      shadowColor: Colors.black.withValues(alpha: 0.2),
       child: SizedBox(
         height: 65,
         child: Row(
@@ -201,12 +207,12 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
       color: Colors.white,
       borderRadius: BorderRadius.circular(20),
       boxShadow: [
-        BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
+        BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4)),
       ],
     );
   }
 
-  Widget _buildEmergencyHeader(String name) {
+  Widget _buildEmergencyHeader(String uid, String name) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -214,7 +220,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: AppColors.primary.withValues(alpha: 0.3),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -249,7 +255,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.white.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.person_rounded, color: Colors.white, size: 30),
@@ -257,43 +263,321 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
             ],
           ),
           const SizedBox(height: 24),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: const BoxDecoration(
-                    color: AppColors.safe,
-                    shape: BoxShape.circle,
+          StreamBuilder<DocumentSnapshot>(
+            stream: FirebaseFirestore.instance.collection('citizen_profiles').doc(uid).snapshots(),
+            builder: (context, snapshot) {
+              String status = 'Selamat';
+              String statusDesc = 'Selamat di lokasi berdaftar';
+              Color statusColor = AppColors.safe;
+              IconData statusIcon = Icons.check_circle_rounded;
+
+              if (snapshot.hasData && snapshot.data!.exists) {
+                final profileData = snapshot.data!.data() as Map<String, dynamic>;
+                final savedStatus = profileData['safetyStatus'] as String? ?? 'Selamat';
+                
+                if (savedStatus == 'Berpindah') {
+                  status = 'Berpindah';
+                  statusDesc = 'Telah dipindahkan ke pusat pemindahan';
+                  statusColor = AppColors.warning;
+                  statusIcon = Icons.home_work_rounded;
+                } else if (savedStatus == 'Perlu Bantuan') {
+                  status = 'Perlu Bantuan';
+                  statusDesc = 'Memerlukan bantuan penyelamat segera!';
+                  statusColor = AppColors.danger;
+                  statusIcon = Icons.error_rounded;
+                }
+              }
+
+              return InkWell(
+                onTap: () => _showSafetyStatusDialog(uid, status),
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Icon(Icons.check_rounded, color: Colors.white, size: 20),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
                     children: [
-                      Text(
-                        'Status Keselamatan',
-                        style: GoogleFonts.inter(color: Colors.white70, fontSize: 12),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: statusColor,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(statusIcon, color: Colors.white, size: 20),
                       ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Status Keselamatan (Ketik untuk tukar)',
+                              style: GoogleFonts.inter(color: Colors.white70, fontSize: 12),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              status,
+                              style: GoogleFonts.inter(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+                            ),
+                            Text(
+                              statusDesc,
+                              style: GoogleFonts.inter(color: Colors.white70, fontSize: 11),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.edit_rounded, color: Colors.white70, size: 16),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSafetyStatusDialog(String uid, String currentStatus) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Kemaskini Status Keselamatan', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _safetyStatusOption(uid, 'Selamat', 'Safe 🟢', 'Saya selamat dan tidak memerlukan bantuan.', AppColors.safe, currentStatus),
+            const SizedBox(height: 12),
+            _safetyStatusOption(uid, 'Berpindah', 'Evacuated 🟡', 'Saya telah dipindahkan ke pusat pemindahan.', AppColors.warning, currentStatus),
+            const SizedBox(height: 12),
+            _safetyStatusOption(uid, 'Perlu Bantuan', 'Need Help 🔴', 'Saya terperangkap atau memerlukan bantuan segera!', AppColors.danger, currentStatus),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Tutup', style: GoogleFonts.inter(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _safetyStatusOption(String uid, String value, String label, String desc, Color color, String current) {
+    final isSelected = current == value;
+    return InkWell(
+      onTap: () async {
+        Navigator.pop(context);
+        await FirebaseFirestore.instance.collection('citizen_profiles').doc(uid).set({
+          'safetyStatus': value,
+        }, SetOptions(merge: true));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Status keselamatan anda dikemaskini kepada $label.'),
+              backgroundColor: color,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        }
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isSelected ? color.withValues(alpha: 0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: isSelected ? color : AppColors.divider, width: isSelected ? 2 : 1),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 16,
+              height: 16,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary)),
+                  const SizedBox(height: 2),
+                  Text(desc, style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActiveSOSTracker(String uid) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: _firestoreService.streamMyActiveAndRespondedSOSReports(uid),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        final doc = snapshot.data!.docs.first;
+        final report = SosReportModel.fromDocument(doc);
+
+        final bool isResponded = report.status == SosReportModel.statusResponded;
+        final Color cardColor = isResponded ? AppColors.safe : AppColors.danger;
+        final IconData icon = isResponded ? Icons.handshake_rounded : Icons.radar_rounded;
+        final String statusLabel = isResponded
+            ? 'Penyelamat Sedang Datang!'
+            : 'Mencari Penyelamat...';
+        final String statusDesc = isResponded
+            ? 'Misi diterima oleh ${report.responderName ?? "Sukarelawan"}. Sila bertenang, penyelamat dalam perjalanan.'
+            : 'Laporan SOS anda telah diterima sistem. Sukarelawan berdekatan sedang dimaklumkan.';
+
+        String etaStr = 'Anggaran Masa Tiba: 8 - 15 minit';
+        if (isResponded) {
+          final int hash = report.id.hashCode.abs();
+          final int etaMin = 5 + (hash % 10);
+          etaStr = 'Anggaran Masa Tiba: $etaMin minit';
+        }
+
+        return Container(
+          margin: const EdgeInsets.only(top: 20),
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: cardColor.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: cardColor.withValues(alpha: 0.3), width: 1.5),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: cardColor,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(icon, color: Colors.white, size: 20),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          statusLabel,
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                            color: cardColor,
+                          ),
+                        ),
+                        Text(
+                          'Jenis: ${report.type}',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                statusDesc,
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                  height: 1.4,
+                ),
+              ),
+              if (isResponded) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.divider),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.timer_outlined, size: 16, color: AppColors.textSecondary),
+                      const SizedBox(width: 8),
                       Text(
-                        'Selamat di lokasi berdaftar',
-                        style: GoogleFonts.inter(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+                        etaStr,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                     ],
                   ),
                 ),
               ],
-            ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _confirmCancelSOS(report.id, report.type),
+                      icon: const Icon(Icons.cancel_outlined, size: 16),
+                      label: const Text('Batal SOS'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.danger,
+                        side: const BorderSide(color: AppColors.danger),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                    ),
+                  ),
+                  if (isResponded && report.reporterPhone.isNotEmpty) ...[
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Menghubungi ${report.responderName ?? "Penyelamat"}...'),
+                              backgroundColor: AppColors.primary,
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.phone_rounded, size: 16),
+                        label: const Text('Hubungi'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -324,7 +608,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                 const SizedBox(height: 16),
                 Container(
                   padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: AppColors.warningLight.withOpacity(0.3), borderRadius: BorderRadius.circular(8)),
+                  decoration: BoxDecoration(color: AppColors.warningLight.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(8)),
                   child: Row(
                     children: [
                       const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.warning),
@@ -360,16 +644,16 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.warningLight.withOpacity(0.5),
+          color: AppColors.warningLight.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+          border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppColors.warning.withOpacity(0.15),
+                color: AppColors.warning.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 24),
@@ -463,9 +747,9 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
-              border: Border.all(color: color.withOpacity(0.3)),
+              border: Border.all(color: color.withValues(alpha: 0.3)),
             ),
             child: Icon(icon, color: color, size: 32),
           ),
@@ -494,134 +778,257 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
         urgencyColor = const Color(0xFFFBBF24);
     }
 
+    File? pickedSOSImage;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) {
+          return Padding(
+            padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: const BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
-              const SizedBox(height: 20),
-              Row(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Text('Laporan SOS: $type',
-                        style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                  Center(
+                    child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: urgencyColor,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(urgency,
-                        style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white)),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text('Laporan SOS: $type',
+                            style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: urgencyColor,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(urgency,
+                            style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white)),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: skills
-                    .map((s) => Chip(
-                          label: Text(s, style: GoogleFonts.inter(fontSize: 10, color: AppColors.textSecondary)),
-                          backgroundColor: AppColors.background,
-                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          visualDensity: VisualDensity.compact,
-                        ))
-                    .toList(),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: descCtrl,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: 'Huraikan keadaan kecemasan anda...',
-                  hintStyle: GoogleFonts.inter(fontSize: 13, color: AppColors.textHint),
-                  filled: true,
-                  fillColor: AppColors.background,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.divider),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: skills
+                        .map((s) => Chip(
+                              label: Text(s, style: GoogleFonts.inter(fontSize: 10, color: AppColors.textSecondary)),
+                              backgroundColor: AppColors.background,
+                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              visualDensity: VisualDensity.compact,
+                            ))
+                        .toList(),
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.divider),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.primary, width: 2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(Icons.gps_fixed_rounded, size: 14, color: AppColors.textSecondary),
-                  const SizedBox(width: 6),
-                  Text('Lokasi GPS akan dikesan secara automatik',
-                      style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary)),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: SigapButton(
-                      label: 'Batal',
-                      onPressed: () => Navigator.pop(ctx),
-                      variant: SigapButtonVariant.outlined,
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: descCtrl,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      hintText: 'Huraikan keadaan kecemasan anda...',
+                      hintStyle: GoogleFonts.inter(fontSize: 13, color: AppColors.textHint),
+                      filled: true,
+                      fillColor: AppColors.background,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: AppColors.divider),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: AppColors.divider),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: StatefulBuilder(
-                      builder: (context, setInnerState) {
-                        return SigapButton(
+                  const SizedBox(height: 12),
+
+                  // Image Picker Section
+                  Text('Gambar Bukti (Pilihan)',
+                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                  const SizedBox(height: 8),
+                  if (pickedSOSImage == null)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: () async {
+                              final picker = ImagePicker();
+                              final pickedFile = await picker.pickImage(
+                                source: ImageSource.camera,
+                                maxWidth: 800,
+                                imageQuality: 60,
+                              );
+                              if (pickedFile != null) {
+                                setModalState(() {
+                                  pickedSOSImage = File(pickedFile.path);
+                                });
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              height: 50,
+                              decoration: BoxDecoration(
+                                color: AppColors.background,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: AppColors.divider),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.camera_alt_rounded, color: AppColors.primary, size: 20),
+                                  const SizedBox(width: 8),
+                                  Text('Kamera', style: GoogleFonts.inter(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () async {
+                              final picker = ImagePicker();
+                              final pickedFile = await picker.pickImage(
+                                source: ImageSource.gallery,
+                                maxWidth: 800,
+                                imageQuality: 60,
+                              );
+                              if (pickedFile != null) {
+                                setModalState(() {
+                                  pickedSOSImage = File(pickedFile.path);
+                                });
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              height: 50,
+                              decoration: BoxDecoration(
+                                color: AppColors.background,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: AppColors.divider),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.photo_library_rounded, color: AppColors.primary, size: 20),
+                                  const SizedBox(width: 8),
+                                  Text('Galeri', style: GoogleFonts.inter(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  else
+                    Stack(
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          height: 140,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            image: DecorationImage(
+                              image: FileImage(pickedSOSImage!),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: GestureDetector(
+                            onTap: () {
+                              setModalState(() {
+                                pickedSOSImage = null;
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: const BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.close_rounded, color: Colors.white, size: 16),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Icon(Icons.gps_fixed_rounded, size: 14, color: AppColors.textSecondary),
+                      const SizedBox(width: 6),
+                      Text('Lokasi GPS akan dikesan secara automatik',
+                          style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary)),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SigapButton(
+                          label: 'Batal',
+                          onPressed: () => Navigator.pop(ctx),
+                          variant: SigapButtonVariant.outlined,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: SigapButton(
                           label: _isSubmittingSOS ? 'Menghantar...' : 'Hantar SOS',
                           isLoading: _isSubmittingSOS,
                           onPressed: _isSubmittingSOS
                               ? null
                               : () async {
-                                  setInnerState(() {});
-                                  setState(() => _isSubmittingSOS = true);
-                                  await _submitSOS(type, descCtrl.text.trim(), urgency, skills);
-                                  if (mounted) setState(() => _isSubmittingSOS = false);
-                                  if (mounted) Navigator.pop(ctx);
+                                  setModalState(() {
+                                    _isSubmittingSOS = true;
+                                  });
+                                  final navigator = Navigator.of(ctx);
+                                  await _submitSOS(type, descCtrl.text.trim(), urgency, skills, pickedSOSImage);
+                                  if (mounted) {
+                                    setState(() {
+                                      _isSubmittingSOS = false;
+                                    });
+                                  }
+                                  navigator.pop();
                                 },
-                        );
-                      },
-                    ),
+                        ),
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: 16),
                 ],
               ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
 
-  /// Submit SOS to Firestore with GPS location
   Future<void> _submitSOS(
     String type,
     String description,
     String urgency,
     List<String> requiredSkills,
+    File? imageFile,
   ) async {
     final authState = context.read<AuthBloc>().state;
     if (authState is! AuthAuthenticated) return;
@@ -638,6 +1045,32 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
       final citizenProfile = await _firestoreService.getCitizenProfile(authState.uid);
       final phone = citizenProfile?['phone'] as String? ?? '';
 
+      // Upload image
+      String? imageUrl;
+      if (imageFile != null) {
+        try {
+          final filename = 'sos_${DateTime.now().millisecondsSinceEpoch}.jpg';
+          final storageRef = FirebaseStorage.instance.ref().child('sos_evidence/$filename');
+          final uploadTask = storageRef.putFile(
+            imageFile,
+            SettableMetadata(contentType: 'image/jpeg'),
+          );
+          final snapshot = await uploadTask;
+          imageUrl = await snapshot.ref.getDownloadURL();
+          debugPrint('Uploaded to Firebase Storage: $imageUrl');
+        } catch (storageError) {
+          debugPrint('Firebase Storage upload failed: $storageError. Falling back to Base64.');
+          try {
+            final bytes = await imageFile.readAsBytes();
+            final base64String = base64Encode(bytes);
+            imageUrl = 'data:image/jpeg;base64,$base64String';
+            debugPrint('Image encoded to Base64 successfully.');
+          } catch (base64Error) {
+            debugPrint('Base64 encoding failed: $base64Error');
+          }
+        }
+      }
+
       final reportData = SosReportModel(
         id: '',
         reporterId: authState.uid,
@@ -650,6 +1083,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
         longitude: position.longitude,
         address: address,
         requiredSkills: requiredSkills,
+        imageUrl: imageUrl,
       ).toMap();
 
       await _firestoreService.createSOSReport(reportData);
@@ -706,9 +1140,9 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.danger.withOpacity(0.08),
+            color: AppColors.danger.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.danger.withOpacity(0.3)),
+            border: Border.all(color: AppColors.danger.withValues(alpha: 0.3)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -867,40 +1301,157 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
   }
 
   Widget _buildLiveCrisisMap() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionHeader('Peta Krisis Langsung', actionLabel: 'Lihat Peta', onAction: () {}),
-        const SizedBox(height: 16),
-        Container(
-          height: 500,
-          decoration: _cardDecoration().copyWith(
-            image: const DecorationImage(
-              image: NetworkImage('https://maps.googleapis.com/maps/api/staticmap?center=3.1390,101.6869&zoom=11&size=600x300&maptype=roadmap&markers=color:red%7C3.1390,101.6869'),
-              fit: BoxFit.cover,
-            ),
+    return StreamBuilder<QuerySnapshot>(
+      stream: _firestoreService.streamDisasterZones(),
+      builder: (context, zoneSnapshot) {
+        final Set<Circle> circles = {
+          Circle(
+            circleId: const CircleId('danger_zone_1'),
+            center: const LatLng(3.1390, 101.6869),
+            radius: 1200,
+            fillColor: Colors.red.withValues(alpha: 0.15),
+            strokeColor: Colors.red,
+            strokeWidth: 2,
           ),
-          child: Stack(
-            children: [
-              Positioned(
-                bottom: 16,
-                left: 16,
-                right: 16,
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
+        };
+
+        if (zoneSnapshot.hasData) {
+          for (final doc in zoneSnapshot.data!.docs) {
+            final data = doc.data() as Map<String, dynamic>;
+            final lat = (data['epicenterLat'] as num).toDouble();
+            final lng = (data['epicenterLng'] as num).toDouble();
+            final rad = (data['radius'] as num).toDouble();
+            circles.add(
+              Circle(
+                circleId: CircleId('fire_zone_${doc.id}'),
+                center: LatLng(lat, lng),
+                radius: rad,
+                fillColor: Colors.red.withValues(alpha: 0.15),
+                strokeColor: Colors.red,
+                strokeWidth: 2,
+              ),
+            );
+          }
+        }
+
+        return StreamBuilder<QuerySnapshot>(
+          stream: _firestoreService.streamActiveSOSReports(),
+          builder: (context, sosSnapshot) {
+            final Set<Marker> markers = {
+              // Shelters
+              Marker(
+                markerId: const MarkerId('shelter_1'),
+                position: const LatLng(3.1550, 101.7100),
+                infoWindow: const InfoWindow(title: 'PPS Dewan Komuniti Ampang', snippet: 'Kapasiti: 150/300 orang | Status: Aktif'),
+                icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+              ),
+              Marker(
+                markerId: const MarkerId('shelter_2'),
+                position: const LatLng(3.2000, 101.6800),
+                infoWindow: const InfoWindow(title: 'PPS SK Selayang', snippet: 'Kapasiti: 80/200 orang | Status: Aktif'),
+                icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+              ),
+              // Relief Trucks
+              Marker(
+                markerId: const MarkerId('truck_1'),
+                position: const LatLng(3.1450, 101.6950),
+                infoWindow: const InfoWindow(title: 'Trak Bantuan Makanan APM', snippet: 'Status: Bergerak ke PPS Ampang'),
+                icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+              ),
+              Marker(
+                markerId: const MarkerId('truck_2'),
+                position: const LatLng(3.1800, 101.6700),
+                infoWindow: const InfoWindow(title: 'Lori Logistik SIGAP', snippet: 'Status: Mengedar selimut & khemah'),
+                icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+              ),
+            };
+
+            if (sosSnapshot.hasData) {
+              for (final doc in sosSnapshot.data!.docs) {
+                final report = SosReportModel.fromDocument(doc);
+                markers.add(
+                  Marker(
+                    markerId: MarkerId('sos_${report.id}'),
+                    position: LatLng(report.latitude, report.longitude),
+                    infoWindow: InfoWindow(
+                      title: 'SOS: ${report.type} (${report.urgency})',
+                      snippet: report.description.isNotEmpty ? report.description : report.address,
+                    ),
+                    icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+                  ),
+                );
+              }
+            }
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSectionHeader('Peta Krisis Langsung', actionLabel: 'Lihat Peta', onAction: () {}),
+                const SizedBox(height: 12),
+                Container(
+                  height: 480,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE5E3DF),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.divider),
+                  ),
+                  clipBehavior: Clip.hardEdge,
+                  child: Stack(
                     children: [
-                      _mapChip(Icons.water_rounded, 'Zon Banjir', Colors.blue),
-                      const SizedBox(width: 8),
-                      _mapChip(Icons.home_work_rounded, 'Pusat Pemindahan', Colors.green),
+                      GoogleMap(
+                        initialCameraPosition: const CameraPosition(
+                          target: LatLng(3.1500, 101.6900),
+                          zoom: 12.0,
+                        ),
+                        myLocationEnabled: true,
+                        myLocationButtonEnabled: true,
+                        markers: markers,
+                        circles: circles,
+                        onMapCreated: (_) {},
+                      ),
+                      Positioned(
+                        top: 12,
+                        left: 12,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.black87,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.greenAccent, shape: BoxShape.circle)),
+                              const SizedBox(width: 6),
+                              Text('Peta Masa Nyata', style: GoogleFonts.inter(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 16,
+                        left: 16,
+                        right: 16,
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              _mapChip(Icons.home_work_rounded, 'PPS (Shelter) 🟢', Colors.green),
+                              const SizedBox(width: 8),
+                              _mapChip(Icons.local_shipping_rounded, 'Trak Bantuan 🔵', Colors.blue),
+                              const SizedBox(width: 8),
+                              _mapChip(Icons.dangerous_rounded, 'Zon Bahaya 🔴', Colors.red),
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
-              )
-            ],
-          ),
-        ),
-      ],
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
@@ -910,7 +1461,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(99),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 4, offset: const Offset(0, 2))],
       ),
       child: Row(
         children: [
@@ -928,7 +1479,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [const Color(0xFF6B4EE6).withOpacity(0.05), Colors.white],
+          colors: [const Color(0xFF6B4EE6).withValues(alpha: 0.05), Colors.white],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
@@ -939,7 +1490,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: const Color(0xFF6B4EE6).withOpacity(0.1),
+              color: const Color(0xFF6B4EE6).withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.smart_toy_rounded, color: Color(0xFF6B4EE6), size: 80),
@@ -954,7 +1505,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
             decoration: BoxDecoration(
               color: Colors.white, 
               borderRadius: BorderRadius.circular(16),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 16, offset: const Offset(0, 8))],
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 16, offset: const Offset(0, 8))],
             ),
             child: Row(
               children: [
@@ -987,8 +1538,8 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(99),
-        border: Border.all(color: const Color(0xFF6B4EE6).withOpacity(0.2)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2))],
+        border: Border.all(color: const Color(0xFF6B4EE6).withValues(alpha: 0.2)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2))],
       ),
       child: Text(text, style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF6B4EE6), fontWeight: FontWeight.w600)),
     );
@@ -1058,7 +1609,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
   Widget _familyMemberRow(String name, String status, String detail, Color color, IconData icon) {
     return Row(
       children: [
-        CircleAvatar(radius: 24, backgroundColor: color.withOpacity(0.1), child: Icon(Icons.person_rounded, color: color, size: 24)),
+        CircleAvatar(radius: 24, backgroundColor: color.withValues(alpha: 0.1), child: Icon(Icons.person_rounded, color: color, size: 24)),
         const SizedBox(width: 16),
         Expanded(
           child: Column(
@@ -1072,7 +1623,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
         ),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+          decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
           child: Row(
             children: [
               Icon(icon, color: color, size: 14),
@@ -1103,7 +1654,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                   Container(
                     width: 56,
                     height: 56,
-                    decoration: BoxDecoration(color: AppColors.primaryLight.withOpacity(0.5), borderRadius: BorderRadius.circular(16)),
+                    decoration: BoxDecoration(color: AppColors.primaryLight.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(16)),
                     child: const Icon(Icons.home_work_rounded, color: AppColors.primary, size: 28),
                   ),
                   const SizedBox(width: 16),
@@ -1283,7 +1834,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: color.withOpacity(0.05), borderRadius: BorderRadius.circular(16), border: Border.all(color: color.withOpacity(0.2))),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(16), border: Border.all(color: color.withValues(alpha: 0.2))),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1335,7 +1886,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
             child: Icon(icon, color: color, size: 28),
           ),
           const SizedBox(height: 12),

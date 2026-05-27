@@ -20,6 +20,8 @@ class SosReportModel {
   final DateTime? respondedAt;
   final DateTime? cancelledAt;
   final String? cancelReason;
+  final String? imageUrl;
+  final bool needBackup;
 
   const SosReportModel({
     required this.id,
@@ -41,6 +43,8 @@ class SosReportModel {
     this.respondedAt,
     this.cancelledAt,
     this.cancelReason,
+    this.imageUrl,
+    this.needBackup = false,
   });
 
   // ── Status Constants ─────────────────────────────────────────────────────
@@ -133,6 +137,8 @@ class SosReportModel {
       respondedAt: (data['respondedAt'] as Timestamp?)?.toDate(),
       cancelledAt: (data['cancelledAt'] as Timestamp?)?.toDate(),
       cancelReason: data['cancelReason'] as String?,
+      imageUrl: data['imageUrl'] as String?,
+      needBackup: data['needBackup'] as bool? ?? false,
     );
   }
 
@@ -148,6 +154,8 @@ class SosReportModel {
         'longitude': longitude,
         'address': address,
         'requiredSkills': requiredSkills,
+        'imageUrl': imageUrl,
+        'needBackup': needBackup,
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       };
@@ -172,6 +180,8 @@ class SosReportModel {
     DateTime? respondedAt,
     DateTime? cancelledAt,
     String? cancelReason,
+    String? imageUrl,
+    bool? needBackup,
   }) {
     return SosReportModel(
       id: id ?? this.id,
@@ -193,6 +203,8 @@ class SosReportModel {
       respondedAt: respondedAt ?? this.respondedAt,
       cancelledAt: cancelledAt ?? this.cancelledAt,
       cancelReason: cancelReason ?? this.cancelReason,
+      imageUrl: imageUrl ?? this.imageUrl,
+      needBackup: needBackup ?? this.needBackup,
     );
   }
 }

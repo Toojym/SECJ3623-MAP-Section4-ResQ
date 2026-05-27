@@ -1,13 +1,17 @@
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/sos_report_model.dart';
 import '../../services/firestore_service.dart';
 import '../../services/location_service.dart';
+
 
 /// Full-screen detail view for a volunteer to review and respond to an SOS.
 class SosResponseScreen extends StatefulWidget {
@@ -21,7 +25,30 @@ class SosResponseScreen extends StatefulWidget {
 
 class _SosResponseScreenState extends State<SosResponseScreen> {
   final _firestoreService = FirestoreService();
+  final _locationService = LocationService();
   bool _isResponding = false;
+  Position? _volunteerPosition;
+  bool _isTogglingBackup = false;
+  bool _isCompleting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initVolunteerLocation();
+  }
+
+  Future<void> _initVolunteerLocation() async {
+    try {
+      final pos = await _locationService.getCurrentPosition();
+      if (mounted) {
+        setState(() {
+          _volunteerPosition = pos;
+        });
+      }
+    } catch (_) {
+      // Gracefully handle if GPS permission is not given
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,6 +94,10 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
           } else {
             // For volunteers: If already cancelled or responded, show status
             if (report.status != SosReportModel.statusActive) {
+              if (report.status == SosReportModel.statusResponded &&
+                  report.responderId == (authState is AuthAuthenticated ? authState.uid : '')) {
+                return _buildAcceptedReport(report);
+              }
               return _buildInactiveState(report);
             }
           }
@@ -181,10 +212,6 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
   }
 
   Widget _buildActiveReport(SosReportModel report) {
-    // Load volunteer skills for match display
-    final authState = context.read<AuthBloc>().state;
-    final volunteerSkills = <String>[];
-
     final urgencyColor = _urgencyColor(report.urgency);
 
     // Format time
@@ -279,6 +306,45 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
                     height: 1.5)),
           ],
         ),
+
+        if (report.imageUrl != null && report.imageUrl!.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _detailCard(
+            icon: Icons.image_rounded,
+            iconColor: Colors.teal,
+            title: 'Gambar Bukti Kecemasan',
+            children: [
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: report.imageUrl!.startsWith('data:image')
+                    ? Image.memory(
+                        base64Decode(report.imageUrl!.split(',').last),
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: 200,
+                      )
+                    : Image.network(
+                        report.imageUrl!,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: 200,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            height: 100,
+                            color: Colors.grey[100],
+                            alignment: Alignment.center,
+                            child: Text(
+                              'Gagal memuatkan gambar bukti.',
+                              style: GoogleFonts.inter(color: AppColors.textSecondary),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        ],
 
         const SizedBox(height: 12),
 
@@ -610,5 +676,385 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
     if (diff.inMinutes < 60) return '${diff.inMinutes} min lalu';
     if (diff.inHours < 24) return '${diff.inHours} jam lalu';
     return '${diff.inDays} hari lalu';
+  }
+
+  Widget _buildAcceptedReport(SosReportModel report) {
+    final urgencyColor = _urgencyColor(report.urgency);
+
+    double distanceKm = 0.0;
+    String distanceStr = 'Mengira jarak...';
+    String etaStr = 'Anggaran masa ketibaan...';
+    if (_volunteerPosition != null) {
+      distanceKm = LocationService.calculateDistanceKm(
+        _volunteerPosition!.latitude,
+        _volunteerPosition!.longitude,
+        report.latitude,
+        report.longitude,
+      );
+      distanceStr = LocationService.formatDistance(distanceKm);
+      final double travelTimeMinutes = (distanceKm / 40.0) * 60.0;
+      final int roundedMinutes = travelTimeMinutes.round().clamp(2, 60);
+      etaStr = '$roundedMinutes minit';
+    }
+
+    final Set<Marker> markers = {
+      Marker(
+        markerId: const MarkerId('citizen_loc'),
+        position: LatLng(report.latitude, report.longitude),
+        infoWindow: InfoWindow(title: 'Mangsa: ${report.reporterName}', snippet: report.type),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+      ),
+    };
+
+    if (_volunteerPosition != null) {
+      markers.add(
+        Marker(
+          markerId: const MarkerId('volunteer_loc'),
+          position: LatLng(_volunteerPosition!.latitude, _volunteerPosition!.longitude),
+          infoWindow: const InfoWindow(title: 'Lokasi Anda (Skuad Penyelamat)'),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet),
+        ),
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.volunteerAccent.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.volunteerAccent.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.directions_run_rounded, color: AppColors.volunteerAccent, size: 28),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Misi Sedang Berlangsung',
+                        style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.volunteerAccent)),
+                    const SizedBox(height: 2),
+                    Text('Sila bergerak ke lokasi mangsa dengan berhati-hati.',
+                        style: GoogleFonts.inter(
+                            fontSize: 12, color: AppColors.textSecondary)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text('Peta Navigasi Misi',
+            style: GoogleFonts.poppins(
+                fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+        const SizedBox(height: 8),
+        Container(
+          height: 280,
+          decoration: BoxDecoration(
+            color: const Color(0xFFE5E3DF),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.divider),
+          ),
+          clipBehavior: Clip.hardEdge,
+          child: GoogleMap(
+            initialCameraPosition: CameraPosition(
+              target: LatLng(report.latitude, report.longitude),
+              zoom: 13.5,
+            ),
+            myLocationEnabled: true,
+            myLocationButtonEnabled: false,
+            markers: markers,
+            onMapCreated: (_) {},
+          ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.divider),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              Column(
+                children: [
+                  Text('Jarak ke Mangsa',
+                      style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary)),
+                  const SizedBox(height: 4),
+                  Text(distanceStr,
+                      style: GoogleFonts.inter(
+                          fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+                ],
+              ),
+              Container(width: 1.5, height: 36, color: AppColors.divider),
+              Column(
+                children: [
+                  Text('Anggaran Masa Tiba',
+                      style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary)),
+                  const SizedBox(height: 4),
+                  Text(etaStr,
+                      style: GoogleFonts.inter(
+                          fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: report.needBackup
+                ? AppColors.danger.withValues(alpha: 0.08)
+                : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: report.needBackup
+                  ? AppColors.danger.withValues(alpha: 0.3)
+                  : AppColors.divider,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                report.needBackup ? Icons.warning_amber_rounded : Icons.group_add_rounded,
+                color: report.needBackup ? AppColors.danger : AppColors.textSecondary,
+                size: 24,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Bantuan Tambahan',
+                        style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: report.needBackup ? AppColors.danger : AppColors.textPrimary)),
+                    Text(
+                      report.needBackup
+                          ? 'Permintaan bantuan tambahan aktif. Pegawai kawalan telah dimaklumkan.'
+                          : 'Adakah keadaan memerlukan lebih ramai penyelamat?',
+                      style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              OutlinedButton(
+                onPressed: _isTogglingBackup
+                    ? null
+                    : () async {
+                        setState(() => _isTogglingBackup = true);
+                        try {
+                          await _firestoreService.updateSOSReportBackupRequest(
+                              report.id, !report.needBackup);
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(!report.needBackup
+                                    ? 'Permintaan bantuan tambahan dihantar kepada Pegawai!'
+                                    : 'Permintaan bantuan tambahan dibatalkan.'),
+                                backgroundColor: !report.needBackup ? AppColors.danger : AppColors.safe,
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Ralat: $e'), backgroundColor: AppColors.danger),
+                            );
+                          }
+                        } finally {
+                          if (mounted) setState(() => _isTogglingBackup = false);
+                        }
+                      },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: report.needBackup ? AppColors.danger : AppColors.primary,
+                  side: BorderSide(
+                    color: report.needBackup ? AppColors.danger : AppColors.primary,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text(
+                  report.needBackup ? 'Batal' : 'Minta',
+                  style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        _detailCard(
+          icon: Icons.info_outline_rounded,
+          iconColor: urgencyColor,
+          title: 'Perincian Misi SOS',
+          children: [
+            _infoRow('Jenis Kecemasan', report.type),
+            _infoRow('Alamat/Lokasi', report.address.isNotEmpty ? report.address : 'Koordinat Sahaja'),
+            if (report.description.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text('Penerangan Mangsa:',
+                  style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+              const SizedBox(height: 4),
+              Text(report.description,
+                  style: GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary, height: 1.4)),
+            ],
+          ],
+        ),
+        if (report.imageUrl != null && report.imageUrl!.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _detailCard(
+            icon: Icons.image_rounded,
+            iconColor: Colors.teal,
+            title: 'Gambar Bukti Kecemasan',
+            children: [
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: report.imageUrl!.startsWith('data:image')
+                    ? Image.memory(
+                        base64Decode(report.imageUrl!.split(',').last),
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: 200,
+                      )
+                    : Image.network(
+                        report.imageUrl!,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: 200,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            height: 100,
+                            color: Colors.grey[100],
+                            alignment: Alignment.center,
+                            child: Text(
+                              'Gagal memuatkan gambar bukti.',
+                              style: GoogleFonts.inter(color: AppColors.textSecondary),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        ],
+        const SizedBox(height: 12),
+        _detailCard(
+          icon: Icons.person_rounded,
+          iconColor: AppColors.safe,
+          title: 'Hubungi Mangsa',
+          children: [
+            _infoRow('Nama Mangsa', report.reporterName),
+            if (report.reporterPhone.isNotEmpty)
+              _infoRow('No. Telefon', report.reporterPhone),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Menghubungi mangsa ${report.reporterName}...'),
+                      backgroundColor: AppColors.safe,
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.phone_rounded, size: 16),
+                label: const Text('Panggil Telefon Mangsa'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.safe,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 32),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: _isCompleting
+                ? null
+                : () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        title: Text('Selesaikan Misi?', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                        content: Text('Adakah semua tindakan menyelamat telah diambil dan kes ini boleh ditutup?',
+                            style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: Text('Batal', style: TextStyle(color: AppColors.textSecondary)),
+                          ),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.safe,
+                            ),
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: Text('Ya, Selesai', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirm == true && mounted) {
+                      setState(() => _isCompleting = true);
+                      try {
+                        await _firestoreService.resolveSOSReportByVolunteer(report.id);
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Misi diselesaikan dengan jaya!'),
+                              backgroundColor: AppColors.safe,
+                            ),
+                          );
+                          Navigator.pop(context);
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Ralat: $e'), backgroundColor: AppColors.danger),
+                          );
+                        }
+                      } finally {
+                        if (mounted) setState(() => _isCompleting = false);
+                      }
+                    }
+                  },
+            icon: const Icon(Icons.check_circle_rounded, color: Colors.white),
+            label: const Text('SELESAIKAN MISI'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.safe,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              textStyle: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+          ),
+        ),
+        const SizedBox(height: 48),
+      ],
+    );
   }
 }

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../blocs/auth/auth_bloc.dart';
@@ -126,7 +126,7 @@ class _RoleOnboardingScreenState extends State<RoleOnboardingScreen> {
               borderRadius: BorderRadius.circular(22),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primary.withOpacity(0.3),
+                  color: AppColors.primary.withValues(alpha: 0.3),
                   blurRadius: 24,
                   offset: const Offset(0, 8),
                 ),
@@ -170,10 +170,10 @@ class _RoleOnboardingScreenState extends State<RoleOnboardingScreen> {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         border:
-            Border.all(color: (roleData['color'] as Color).withOpacity(0.3)),
+            Border.all(color: (roleData['color'] as Color).withValues(alpha: 0.3)),
         boxShadow: [
           BoxShadow(
-            color: (roleData['color'] as Color).withOpacity(0.08),
+            color: (roleData['color'] as Color).withValues(alpha: 0.08),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -185,7 +185,7 @@ class _RoleOnboardingScreenState extends State<RoleOnboardingScreen> {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: (roleData['color'] as Color).withOpacity(0.12),
+              color: (roleData['color'] as Color).withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(18),
             ),
             child: Icon(roleData['icon'] as IconData,
@@ -195,7 +195,7 @@ class _RoleOnboardingScreenState extends State<RoleOnboardingScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             decoration: BoxDecoration(
-              color: (roleData['color'] as Color).withOpacity(0.1),
+              color: (roleData['color'] as Color).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(99),
             ),
             child: Text(
@@ -243,7 +243,7 @@ class _RoleOnboardingScreenState extends State<RoleOnboardingScreen> {
                 width: 20,
                 height: 20,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.12),
+                  color: color.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(Icons.check_rounded, color: color, size: 12),
