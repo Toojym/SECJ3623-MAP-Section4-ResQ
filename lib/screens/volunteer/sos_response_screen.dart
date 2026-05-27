@@ -1074,23 +1074,6 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
                   }
                 }),
               ),
-                        report.imageUrl!,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        height: 200,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            height: 100,
-                            color: Colors.grey[100],
-                            alignment: Alignment.center,
-                            child: Text(
-                              'Gagal memuatkan gambar bukti.',
-                              style: GoogleFonts.inter(color: AppColors.textSecondary),
-                            ),
-                          );
-                        },
-                      ),
-              ),
             ],
           ),
         ],
