@@ -1101,7 +1101,6 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
             stream: FirebaseFirestore.instance
                 .collection('sos_reports')
                 .where('responderId', isEqualTo: uid)
-                .orderBy('respondedAt', descending: true)
                 .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
@@ -1139,6 +1138,9 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
 
               final docs = snapshot.data!.docs;
               final reports = docs.map((doc) => SosReportModel.fromDocument(doc)).toList();
+              
+              // Sort locally to avoid composite index requirement
+              reports.sort((a, b) => (b.respondedAt ?? DateTime(0)).compareTo(a.respondedAt ?? DateTime(0)));
 
               return ListView.separated(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

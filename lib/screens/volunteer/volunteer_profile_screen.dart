@@ -446,10 +446,10 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                                 borderRadius: BorderRadius.circular(12),
                                 side: BorderSide(
                                     color:
-                                        AppColors.danger.withOpacity(0.3)),
+                                        AppColors.danger.withValues(alpha: 0.3)),
                               ),
                               backgroundColor:
-                                  AppColors.danger.withOpacity(0.05),
+                                  AppColors.danger.withValues(alpha: 0.05),
                             ),
                           ),
                         ),
@@ -511,7 +511,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
           // No GestureDetector / onTap — photo editing not allowed yet
           CircleAvatar(
             radius: 40,
-            backgroundColor: AppColors.volunteerAccent.withOpacity(0.12),
+            backgroundColor: AppColors.volunteerAccent.withValues(alpha: 0.12),
             child: Text(
               _fullNameCtrl.text.isNotEmpty
                   ? _fullNameCtrl.text[0].toUpperCase()
@@ -537,7 +537,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
             padding:
                 const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
             decoration: BoxDecoration(
-                color: AppColors.volunteerAccent.withOpacity(0.1),
+                color: AppColors.volunteerAccent.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(99)),
             child: Text('Sukarelawan',
                 style: GoogleFonts.inter(
@@ -606,7 +606,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
           style: TextButton.styleFrom(
             padding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            backgroundColor: AppColors.primary.withOpacity(0.1),
+            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8)),
           ),

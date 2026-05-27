@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
+import 'dart:async';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -18,6 +20,127 @@ import '../../services/location_service.dart';
 import '../../widgets/common/sigap_app_bar.dart';
 import '../../widgets/common/sigap_button.dart';
 
+class SirenOverlay extends StatefulWidget {
+  final VoidCallback onClose;
+  const SirenOverlay({super.key, required this.onClose});
+
+  @override
+  State<SirenOverlay> createState() => _SirenOverlayState();
+}
+
+class _SirenOverlayState extends State<SirenOverlay> with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  late Timer? _timer;
+  bool _isRed = true;
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    )..repeat(reverse: true);
+
+    _audioPlayer.setReleaseMode(ReleaseMode.loop);
+    _audioPlayer.play(AssetSource('sounds/siren.mp3'));
+
+    // Flash background color every 250ms
+    _timer = Timer.periodic(const Duration(milliseconds: 250), (t) {
+      if (mounted) {
+        setState(() {
+          _isRed = !_isRed;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    _timer?.cancel();
+    _audioPlayer.stop();
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bgColor = _isRed ? const Color(0xFFDC2626) : Colors.white;
+    final fgColor = _isRed ? Colors.white : const Color(0xFFDC2626);
+
+    return Container(
+      color: bgColor,
+      width: double.infinity,
+      height: double.infinity,
+      child: SafeArea(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ScaleTransition(
+              scale: Tween<double>(begin: 0.9, end: 1.2).animate(
+                CurvedAnimation(parent: _animController, curve: Curves.easeInOut),
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: fgColor.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.campaign_rounded,
+                  color: fgColor,
+                  size: 100,
+                ),
+              ),
+            ),
+            const SizedBox(height: 40),
+            Text(
+              'SIREN KECEMASAN AKTIF',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 28,
+                fontWeight: FontWeight.w900,
+                color: fgColor,
+                letterSpacing: 2,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+                'Peranti anda sedang berkelip strobe dan memancarkan isyarat audio kelantangan maksimum untuk menarik perhatian penyelamat berhampiran.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: fgColor.withValues(alpha: 0.9),
+                ),
+              ),
+            ),
+            const SizedBox(height: 48),
+            ElevatedButton.icon(
+              onPressed: widget.onClose,
+              icon: const Icon(Icons.volume_off_rounded, size: 24),
+              label: Text(
+                'MATIKAN SIREN',
+                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: fgColor,
+                foregroundColor: bgColor,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                elevation: 8,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class CitizenDashboard extends StatefulWidget {
   const CitizenDashboard({super.key});
 
@@ -30,6 +153,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
   final _locationService = LocationService();
   int _currentIndex = 0;
   bool _isSubmittingSOS = false;
+  bool _isSirenActive = false;
 
   String _greeting() {
     final hour = DateTime.now().hour;
@@ -44,26 +168,40 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
       builder: (context, state) {
         final name = state is AuthAuthenticated ? state.displayName : '';
         final uid = state is AuthAuthenticated ? state.uid : '';
-        return Scaffold(
-          backgroundColor: AppColors.background,
-          appBar: SigapAppBar(
-            title: AppStrings.appName,
-            showLogout: false,
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.notifications_active_rounded, color: AppColors.warning),
-                onPressed: () {},
+        return Stack(
+          children: [
+            Scaffold(
+              backgroundColor: AppColors.background,
+              appBar: SigapAppBar(
+                title: AppStrings.appName,
+                showLogout: false,
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.notifications_active_rounded, color: AppColors.warning),
+                    onPressed: () {},
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.person_outline_rounded),
+                    onPressed: () => context.push(AppRoutes.citizenProfile),
+                  ),
+                ],
               ),
-              IconButton(
-                icon: const Icon(Icons.person_outline_rounded),
-                onPressed: () => context.push(AppRoutes.citizenProfile),
+              body: _buildBody(uid, name),
+              floatingActionButton: _buildSOSFab(),
+              floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+              bottomNavigationBar: _buildBottomAppBar(),
+            ),
+            if (_isSirenActive)
+              Positioned.fill(
+                child: SirenOverlay(
+                  onClose: () {
+                    setState(() {
+                      _isSirenActive = false;
+                    });
+                  },
+                ),
               ),
-            ],
-          ),
-          body: _buildBody(uid, name),
-          floatingActionButton: _buildSOSFab(),
-          floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-          bottomNavigationBar: _buildBottomAppBar(),
+          ],
         );
       },
     );
@@ -535,10 +673,8 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                 Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton.icon(
+                      child: OutlinedButton(
                         onPressed: () => _confirmCancelSOS(report.id, report.type),
-                        icon: const Icon(Icons.cancel_outlined, size: 16),
-                        label: const Text('Batal SOS'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.danger,
                           side: const BorderSide(color: AppColors.danger),
@@ -547,33 +683,50 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                           ),
                           padding: const EdgeInsets.symmetric(vertical: 10),
                         ),
+                        child: const Text('Batal SOS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       ),
                     ),
-                    if (isResponded && report.reporterPhone.isNotEmpty) ...[
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Menghubungi ${report.responderName ?? "Penyelamat"}...'),
-                                backgroundColor: AppColors.primary,
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.phone_rounded, size: 16),
-                          label: const Text('Hubungi'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 10),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            _isSirenActive = true;
+                          });
+                        },
+                        icon: const Icon(Icons.campaign_rounded, size: 16),
+                        label: const Text('Siren'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.warning,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
                           ),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
                         ),
                       ),
-                    ],
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          _showCallingSimulationOverlay(
+                            context,
+                            report.responderName ?? 'Skuad Sukarelawan Berhampiran',
+                          );
+                        },
+                        icon: const Icon(Icons.phone_rounded, size: 16),
+                        label: const Text('Hubungi'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -778,50 +931,76 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                   if (report.description.isNotEmpty)
                     _detailField('Keterangan', report.description),
                   _detailField('Lokasi/Alamat', report.address.isNotEmpty ? report.address : '${report.latitude}, ${report.longitude}'),
+                  if (report.formattedSpecificDetails.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      'Spesifikasi SOS',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primary),
+                    ),
+                    const SizedBox(height: 8),
+                    ...report.formattedSpecificDetails.entries.map((entry) {
+                      return _detailField(entry.key, entry.value);
+                    }),
+                  ],
                   const SizedBox(height: 24),
 
                   // Actions
                   Row(
                     children: [
                       Expanded(
-                        child: OutlinedButton.icon(
+                        child: OutlinedButton(
                           onPressed: () {
                             Navigator.pop(ctx);
                             _confirmCancelSOS(report.id, report.type);
                           },
-                          icon: const Icon(Icons.cancel_outlined, size: 16),
-                          label: const Text('Batal SOS'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AppColors.danger,
                             side: const BorderSide(color: AppColors.danger),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
+                          child: const Text('Batal SOS', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                         ),
                       ),
-                      if (isResponded && report.reporterPhone.isNotEmpty) ...[
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              ScaffoldMessenger.of(ctx).showSnackBar(
-                                SnackBar(
-                                  content: Text('Menghubungi ${report.responderName ?? "Penyelamat"}...'),
-                                  backgroundColor: AppColors.primary,
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.phone_rounded, size: 16),
-                            label: const Text('Hubungi'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                            ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            setState(() {
+                              _isSirenActive = true;
+                            });
+                          },
+                          icon: const Icon(Icons.campaign_rounded, size: 18),
+                          label: const Text('Siren'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.warning,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
                         ),
-                      ],
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            _showCallingSimulationOverlay(
+                              context,
+                              report.responderName ?? 'Skuad Sukarelawan Berhampiran',
+                            );
+                          },
+                          icon: const Icon(Icons.phone_rounded, size: 18),
+                          label: const Text('Hubungi'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 40),
@@ -1049,6 +1228,24 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
 
     File? pickedSOSImage;
 
+    // Dynamic specifications state variables
+    String waterLevel = 'Paras Pinggang';
+    String trappedPeople = 'Tiada';
+    bool needBoat = false;
+    
+    String fireType = 'Rumah Kediaman';
+    String fireTrappedPeople = 'Tiada';
+    
+    bool accessBlocked = false;
+    bool stillActive = false;
+    
+    String victimCondition = 'Sedar & Bernafas';
+    String ageGroup = 'Dewasa';
+    
+    final missingNameCtrl = TextEditingController();
+    final missingAgeCtrl = TextEditingController();
+    final lastSeenClothesCtrl = TextEditingController();
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1063,227 +1260,398 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                 color: AppColors.surface,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text('Laporan SOS: $type',
-                            style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: urgencyColor,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(urgency,
-                            style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: skills
-                        .map((s) => Chip(
-                              label: Text(s, style: GoogleFonts.inter(fontSize: 10, color: AppColors.textSecondary)),
-                              backgroundColor: AppColors.background,
-                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              visualDensity: VisualDensity.compact,
-                            ))
-                        .toList(),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: descCtrl,
-                    maxLines: 3,
-                    decoration: InputDecoration(
-                      hintText: 'Huraikan keadaan kecemasan anda...',
-                      hintStyle: GoogleFonts.inter(fontSize: 13, color: AppColors.textHint),
-                      filled: true,
-                      fillColor: AppColors.background,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: AppColors.divider),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: AppColors.divider),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.primary, width: 2),
-                      ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Image Picker Section
-                  Text('Gambar Bukti (Pilihan)',
-                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                  const SizedBox(height: 8),
-                  if (pickedSOSImage == null)
+                    const SizedBox(height: 20),
                     Row(
                       children: [
                         Expanded(
-                          child: InkWell(
-                            onTap: () async {
-                              final picker = ImagePicker();
-                              final pickedFile = await picker.pickImage(
-                                source: ImageSource.camera,
-                                maxWidth: 800,
-                                imageQuality: 60,
-                              );
-                              if (pickedFile != null) {
-                                setModalState(() {
-                                  pickedSOSImage = File(pickedFile.path);
-                                });
-                              }
-                            },
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              height: 50,
-                              decoration: BoxDecoration(
-                                color: AppColors.background,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: AppColors.divider),
+                          child: Text('Laporan SOS: $type',
+                              style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: urgencyColor,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(urgency,
+                              style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: skills
+                          .map((s) => Chip(
+                                label: Text(s, style: GoogleFonts.inter(fontSize: 10, color: AppColors.textSecondary)),
+                                backgroundColor: AppColors.background,
+                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                visualDensity: VisualDensity.compact,
+                              ))
+                          .toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: descCtrl,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        hintText: 'Huraikan keadaan kecemasan anda...',
+                        hintStyle: GoogleFonts.inter(fontSize: 13, color: AppColors.textHint),
+                        filled: true,
+                        fillColor: AppColors.background,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: AppColors.divider),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: AppColors.divider),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                        ),
+                      ),
+                    ),
+
+                    // DYNAMIC SPECIFICATION FIELDS PER EMERGENCY TYPE
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.assignment_turned_in_rounded, color: AppColors.primary, size: 18),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Spesifikasi Khusus: Laporan $type',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
                               ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(Icons.camera_alt_rounded, color: AppColors.primary, size: 20),
-                                  const SizedBox(width: 8),
-                                  Text('Kamera', style: GoogleFonts.inter(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w600)),
-                                ],
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          if (type == 'Banjir') ...[
+                            _buildDropdownField(
+                              label: 'Anggaran Paras Air',
+                              value: waterLevel,
+                              items: ['Bawah Lutut', 'Paras Pinggang', 'Paras Dada', 'Melepasi Bumbung'],
+                              onChanged: (val) {
+                                setModalState(() {
+                                  waterLevel = val!;
+                                });
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            _buildDropdownField(
+                              label: 'Jumlah Mangsa Terperangkap',
+                              value: trappedPeople,
+                              items: ['Tiada', '1 orang', '2 orang', '3 orang', '4 orang', '5+ orang'],
+                              onChanged: (val) {
+                                setModalState(() {
+                                  trappedPeople = val!;
+                                });
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            _buildSwitchField(
+                              label: 'Memerlukan Bot Penyelamat?',
+                              value: needBoat,
+                              onChanged: (val) {
+                                setModalState(() {
+                                  needBoat = val;
+                                });
+                              },
+                            ),
+                          ] else if (type == 'Tanah Runtuh') ...[
+                            _buildSwitchField(
+                              label: 'Laluan/Akses Utama Terhalang?',
+                              value: accessBlocked,
+                              onChanged: (val) {
+                                setModalState(() {
+                                  accessBlocked = val;
+                                });
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            _buildSwitchField(
+                              label: 'Pergerakan Tanah Masih Aktif?',
+                              value: stillActive,
+                              onChanged: (val) {
+                                setModalState(() {
+                                  stillActive = val;
+                                });
+                              },
+                            ),
+                          ] else if (type == 'Kebakaran') ...[
+                            _buildDropdownField(
+                              label: 'Jenis Kebakaran',
+                              value: fireType,
+                              items: ['Rumah Kediaman', 'Hutan / Belukar', 'Litar Pintas', 'Bahan Kimia / Gas'],
+                              onChanged: (val) {
+                                setModalState(() {
+                                  fireType = val!;
+                                });
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            _buildDropdownField(
+                              label: 'Ada Mangsa Terperangkap?',
+                              value: fireTrappedPeople,
+                              items: ['Tiada', '1 orang', '2 orang', '3 orang', '4 orang', '5+ orang'],
+                              onChanged: (val) {
+                                setModalState(() {
+                                  fireTrappedPeople = val!;
+                                });
+                              },
+                            ),
+                          ] else if (type == 'Perubatan') ...[
+                            _buildDropdownField(
+                              label: 'Keadaan/Kondisi Mangsa',
+                              value: victimCondition,
+                              items: ['Sedar & Bernafas', 'Pengsan / Tiada Respon', 'Pendarahan Teruk', 'Sakit Dada / Sesak Nafas'],
+                              onChanged: (val) {
+                                setModalState(() {
+                                  victimCondition = val!;
+                                });
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            _buildDropdownField(
+                              label: 'Kumpulan Umur Mangsa',
+                              value: ageGroup,
+                              items: ['Kanak-kanak / Bayi', 'Dewasa', 'Warga Emas'],
+                              onChanged: (val) {
+                                setModalState(() {
+                                  ageGroup = val!;
+                                });
+                              },
+                            ),
+                          ] else if (type == 'Orang Hilang') ...[
+                            _buildTextField(
+                              label: 'Nama Penuh Orang Hilang',
+                              controller: missingNameCtrl,
+                              hint: 'Masukkan nama mangsa...',
+                            ),
+                            const SizedBox(height: 12),
+                            _buildTextField(
+                              label: 'Anggaran Umur',
+                              controller: missingAgeCtrl,
+                              hint: 'Contoh: 12 tahun, 70 tahun...',
+                            ),
+                            const SizedBox(height: 12),
+                            _buildTextField(
+                              label: 'Pakaian Terakhir Dilihat',
+                              controller: lastSeenClothesCtrl,
+                              hint: 'Contoh: Baju T biru, seluar hitam...',
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Image Picker Section
+                    Text('Gambar Bukti (Pilihan)',
+                        style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                    const SizedBox(height: 8),
+                    if (pickedSOSImage == null)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: InkWell(
+                              onTap: () async {
+                                final picker = ImagePicker();
+                                final pickedFile = await picker.pickImage(
+                                  source: ImageSource.camera,
+                                  maxWidth: 800,
+                                  imageQuality: 60,
+                                );
+                                if (pickedFile != null) {
+                                  setModalState(() {
+                                    pickedSOSImage = File(pickedFile.path);
+                                  });
+                                }
+                              },
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  color: AppColors.background,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: AppColors.divider),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Icons.camera_alt_rounded, color: AppColors.primary, size: 20),
+                                    const SizedBox(width: 8),
+                                    Text('Kamera', style: GoogleFonts.inter(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w600)),
+                                  ],
+                                ),
                               ),
                             ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: InkWell(
+                              onTap: () async {
+                                final picker = ImagePicker();
+                                final pickedFile = await picker.pickImage(
+                                  source: ImageSource.gallery,
+                                  maxWidth: 800,
+                                  imageQuality: 60,
+                                );
+                                if (pickedFile != null) {
+                                  setModalState(() {
+                                    pickedSOSImage = File(pickedFile.path);
+                                  });
+                                }
+                              },
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  color: AppColors.background,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: AppColors.divider),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Icons.photo_library_rounded, color: AppColors.primary, size: 20),
+                                    const SizedBox(width: 8),
+                                    Text('Galeri', style: GoogleFonts.inter(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w600)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      Stack(
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            height: 140,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              image: DecorationImage(
+                                image: FileImage(pickedSOSImage!),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: GestureDetector(
+                              onTap: () {
+                                setModalState(() {
+                                  pickedSOSImage = null;
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: const BoxDecoration(
+                                  color: Colors.black54,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.close_rounded, color: Colors.white, size: 16),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        const Icon(Icons.gps_fixed_rounded, size: 14, color: AppColors.textSecondary),
+                        const SizedBox(width: 6),
+                        Text('Lokasi GPS akan dikesan secara automatik',
+                            style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary)),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SigapButton(
+                            label: 'Batal',
+                            onPressed: () => Navigator.pop(ctx),
+                            variant: SigapButtonVariant.outlined,
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: InkWell(
-                            onTap: () async {
-                              final picker = ImagePicker();
-                              final pickedFile = await picker.pickImage(
-                                source: ImageSource.gallery,
-                                maxWidth: 800,
-                                imageQuality: 60,
-                              );
-                              if (pickedFile != null) {
-                                setModalState(() {
-                                  pickedSOSImage = File(pickedFile.path);
-                                });
-                              }
-                            },
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              height: 50,
-                              decoration: BoxDecoration(
-                                color: AppColors.background,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: AppColors.divider),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(Icons.photo_library_rounded, color: AppColors.primary, size: 20),
-                                  const SizedBox(width: 8),
-                                  Text('Galeri', style: GoogleFonts.inter(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w600)),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  else
-                    Stack(
-                      children: [
-                        Container(
-                          width: double.infinity,
-                          height: 140,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            image: DecorationImage(
-                              image: FileImage(pickedSOSImage!),
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: GestureDetector(
-                            onTap: () {
-                              setModalState(() {
-                                pickedSOSImage = null;
-                              });
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: const BoxDecoration(
-                                color: Colors.black54,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(Icons.close_rounded, color: Colors.white, size: 16),
-                            ),
+                          child: SigapButton(
+                            label: _isSubmittingSOS ? 'Menghantar...' : 'Hantar SOS',
+                            isLoading: _isSubmittingSOS,
+                            onPressed: _isSubmittingSOS
+                                ? null
+                                : () async {
+                                    setModalState(() {
+                                      _isSubmittingSOS = true;
+                                    });
+
+                                    final Map<String, dynamic> specDetails = {};
+                                    if (type == 'Banjir') {
+                                      specDetails['waterLevel'] = waterLevel;
+                                      specDetails['trappedPeople'] = trappedPeople;
+                                      specDetails['needBoat'] = needBoat;
+                                    } else if (type == 'Tanah Runtuh') {
+                                      specDetails['accessBlocked'] = accessBlocked;
+                                      specDetails['stillActive'] = stillActive;
+                                    } else if (type == 'Kebakaran') {
+                                      specDetails['fireType'] = fireType;
+                                      specDetails['hasTrapped'] = fireTrappedPeople;
+                                    } else if (type == 'Perubatan') {
+                                      specDetails['victimCondition'] = victimCondition;
+                                      specDetails['ageGroup'] = ageGroup;
+                                    } else if (type == 'Orang Hilang') {
+                                      specDetails['missingName'] = missingNameCtrl.text.trim();
+                                      specDetails['missingAge'] = missingAgeCtrl.text.trim();
+                                      specDetails['lastSeenClothes'] = lastSeenClothesCtrl.text.trim();
+                                    }
+
+                                    final navigator = Navigator.of(ctx);
+                                    await _submitSOS(type, descCtrl.text.trim(), urgency, skills, pickedSOSImage, specDetails);
+                                    if (mounted) {
+                                      setState(() {
+                                        _isSubmittingSOS = false;
+                                      });
+                                    }
+                                    navigator.pop();
+                                  },
                           ),
                         ),
                       ],
                     ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      const Icon(Icons.gps_fixed_rounded, size: 14, color: AppColors.textSecondary),
-                      const SizedBox(width: 6),
-                      Text('Lokasi GPS akan dikesan secara automatik',
-                          style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary)),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: SigapButton(
-                          label: 'Batal',
-                          onPressed: () => Navigator.pop(ctx),
-                          variant: SigapButtonVariant.outlined,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: SigapButton(
-                          label: _isSubmittingSOS ? 'Menghantar...' : 'Hantar SOS',
-                          isLoading: _isSubmittingSOS,
-                          onPressed: _isSubmittingSOS
-                              ? null
-                              : () async {
-                                  setModalState(() {
-                                    _isSubmittingSOS = true;
-                                  });
-                                  final navigator = Navigator.of(ctx);
-                                  await _submitSOS(type, descCtrl.text.trim(), urgency, skills, pickedSOSImage);
-                                  if (mounted) {
-                                    setState(() {
-                                      _isSubmittingSOS = false;
-                                    });
-                                  }
-                                  navigator.pop();
-                                },
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                ],
+                    const SizedBox(height: 16),
+                  ],
+                ),
               ),
             ),
           );
@@ -1298,6 +1666,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
     String urgency,
     List<String> requiredSkills,
     File? imageFile,
+    Map<String, dynamic> specificDetails,
   ) async {
     final authState = context.read<AuthBloc>().state;
     if (authState is! AuthAuthenticated) return;
@@ -1353,6 +1722,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
         address: address,
         requiredSkills: requiredSkills,
         imageUrl: imageUrl,
+        specificDetails: specificDetails,
       ).toMap();
 
       await _firestoreService.createSOSReport(reportData);
@@ -2173,4 +2543,311 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
       ),
     );
   }
+
+  // ─── Dynamic SOS Form Helper Widgets ────────────────────────────────────────
+
+  Widget _buildDropdownField({
+    required String label,
+    required String value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: AppColors.divider),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: DropdownButton<String>(
+            isExpanded: true,
+            underline: const SizedBox(),
+            value: value,
+            style: GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary),
+            dropdownColor: AppColors.background,
+            items: items
+                .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                .toList(),
+            onChanged: onChanged,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSwitchField({
+    required String label,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+          ),
+        ),
+        Switch(
+          value: value,
+          onChanged: onChanged,
+          activeThumbColor: AppColors.primary,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTextField({
+    required String label,
+    required TextEditingController controller,
+    String hint = '',
+    int maxLines = 1,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+        ),
+        const SizedBox(height: 6),
+        TextField(
+          controller: controller,
+          maxLines: maxLines,
+          style: GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: GoogleFonts.inter(fontSize: 13, color: AppColors.textHint),
+            filled: true,
+            fillColor: AppColors.background,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: AppColors.divider),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: AppColors.divider),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: AppColors.primary, width: 2),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ─── Call Simulation Overlay ─────────────────────────────────────────────────
+
+  void _showCallingSimulationOverlay(BuildContext context, String calleeName) {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black87,
+        pageBuilder: (ctx, anim, _) => _CallSimulationScreen(calleeName: calleeName),
+        transitionsBuilder: (ctx, anim, _, child) => FadeTransition(opacity: anim, child: child),
+      ),
+    );
+  }
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Call Simulation Screen
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _CallSimulationScreen extends StatefulWidget {
+  final String calleeName;
+  const _CallSimulationScreen({required this.calleeName});
+
+  @override
+  State<_CallSimulationScreen> createState() => _CallSimulationScreenState();
+}
+
+class _CallSimulationScreenState extends State<_CallSimulationScreen>
+    with TickerProviderStateMixin {
+  late AnimationController _pulseCtrl;
+  late AnimationController _waveCtrl;
+  late Timer _statusTimer;
+  String _callStatus = 'Menghubungi...';
+  int _secondsElapsed = 0;
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))
+      ..repeat(reverse: true);
+    _waveCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1800))
+      ..repeat();
+
+    _audioPlayer.setReleaseMode(ReleaseMode.loop);
+    _audioPlayer.play(AssetSource('sounds/phone_calling.mp3'));
+
+    // Simulate call connecting after 3 seconds
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() => _callStatus = 'Bersambung...');
+      }
+    });
+    Future.delayed(const Duration(seconds: 4), () {
+      if (mounted) {
+        _audioPlayer.stop();
+        setState(() => _callStatus = 'Dalam Talian');
+      }
+    });
+
+    _statusTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (mounted && _callStatus == 'Dalam Talian') {
+        setState(() => _secondsElapsed++);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _pulseCtrl.dispose();
+    _waveCtrl.dispose();
+    _statusTimer.cancel();
+    _audioPlayer.stop();
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
+  String get _elapsedFormatted {
+    final m = (_secondsElapsed ~/ 60).toString().padLeft(2, '0');
+    final s = (_secondsElapsed % 60).toString().padLeft(2, '0');
+    return '$m:$s';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0A0F1E),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            // Radial background pulses
+            ...List.generate(3, (i) {
+              return Center(
+                child: AnimatedBuilder(
+                  animation: _waveCtrl,
+                  builder: (_, __) {
+                    final progress = (_waveCtrl.value + i * 0.33) % 1.0;
+                    return Container(
+                      width: 80 + 200 * progress,
+                      height: 80 + 200 * progress,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(0xFF3B82F6).withValues(alpha: (1.0 - progress) * 0.4),
+                          width: 1.5,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            }),
+
+            // Main content
+            Column(
+              children: [
+                const Spacer(),
+                // Satellite icon
+                AnimatedBuilder(
+                  animation: _pulseCtrl,
+                  builder: (_, __) {
+                    return Container(
+                      padding: const EdgeInsets.all(28),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: const Color(0xFF1E3A5F).withValues(alpha: 0.8 + _pulseCtrl.value * 0.2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF3B82F6).withValues(alpha: 0.4 + _pulseCtrl.value * 0.3),
+                            blurRadius: 30 + _pulseCtrl.value * 20,
+                            spreadRadius: 4,
+                          ),
+                        ],
+                      ),
+                      child: const Icon(Icons.satellite_alt_rounded, size: 64, color: Colors.white),
+                    );
+                  },
+                ),
+                const SizedBox(height: 32),
+                Text(
+                  'SIGAP SATELIT',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF3B82F6),
+                    letterSpacing: 3,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  widget.calleeName,
+                  style: GoogleFonts.poppins(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _callStatus == 'Dalam Talian' ? _elapsedFormatted : _callStatus,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: _callStatus == 'Dalam Talian'
+                        ? const Color(0xFF4ADE80)
+                        : Colors.white54,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const Spacer(),
+                // End call button
+                GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(0xFFEF4444),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFEF4444).withValues(alpha: 0.4),
+                          blurRadius: 20,
+                          spreadRadius: 4,
+                        ),
+                      ],
+                    ),
+                    child: const Icon(Icons.call_end_rounded, color: Colors.white, size: 32),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Tamatkan Panggilan',
+                  style: GoogleFonts.inter(fontSize: 12, color: Colors.white38),
+                ),
+                const SizedBox(height: 48),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+

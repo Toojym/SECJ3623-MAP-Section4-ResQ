@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/sos_report_model.dart';
@@ -248,7 +250,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
                         style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: Colors.white.withOpacity(0.9))),
+                            color: Colors.white.withValues(alpha: 0.9))),
                   ],
                 ),
               ),
@@ -256,7 +258,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(timeAgo,
@@ -306,6 +308,30 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
                     height: 1.5)),
           ],
         ),
+
+        // Specific Details Card
+        if (report.formattedSpecificDetails.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _detailCard(
+            icon: Icons.assignment_turned_in_rounded,
+            iconColor: AppColors.primary,
+            title: 'Spesifikasi Darurat',
+            children: [
+              ...report.formattedSpecificDetails.entries.map((entry) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(entry.key, style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+                      Text(entry.value, style: GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        ],
 
         if (report.imageUrl != null && report.imageUrl!.isNotEmpty) ...[
           const SizedBox(height: 12),
@@ -362,9 +388,9 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: AppColors.volunteerAccent.withOpacity(0.1),
+                    color: AppColors.volunteerAccent.withValues(alpha: 0.1),
                     border: Border.all(
-                        color: AppColors.volunteerAccent.withOpacity(0.3)),
+                        color: AppColors.volunteerAccent.withValues(alpha: 0.3)),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(skill,
@@ -463,7 +489,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 10,
               offset: const Offset(0, 4)),
         ],
@@ -476,7 +502,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.1),
+                  color: iconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(icon, color: iconColor, size: 20),
@@ -541,7 +567,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
               padding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: AppColors.volunteerAccent.withOpacity(0.08),
+                color: AppColors.volunteerAccent.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -912,8 +938,63 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
               Text(report.description,
                   style: GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary, height: 1.4)),
             ],
+            if (report.reporterPhone.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    final Uri url = Uri.parse('tel:${report.reporterPhone}');
+                    if (await canLaunchUrl(url)) {
+                      await launchUrl(url);
+                    } else {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Tidak dapat membuka panggilan telefon.'),
+                            backgroundColor: AppColors.danger,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.call_rounded, size: 20),
+                  label: Text('Hubungi Mangsa', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.safe,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
+
+        // Specific Details Card
+        if (report.formattedSpecificDetails.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _detailCard(
+            icon: Icons.assignment_turned_in_rounded,
+            iconColor: AppColors.primary,
+            title: 'Spesifikasi Darurat',
+            children: [
+              ...report.formattedSpecificDetails.entries.map((entry) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(entry.key, style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+                      Text(entry.value, style: GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        ],
         if (report.imageUrl != null && report.imageUrl!.isNotEmpty) ...[
           const SizedBox(height: 12),
           _detailCard(
@@ -966,12 +1047,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Menghubungi mangsa ${report.reporterName}...'),
-                      backgroundColor: AppColors.safe,
-                    ),
-                  );
+                  _showCallingSimulationOverlay(context, report.reporterName);
                 },
                 icon: const Icon(Icons.phone_rounded, size: 16),
                 label: const Text('Panggil Telefon Mangsa'),
@@ -1055,6 +1131,314 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
         ),
         const SizedBox(height: 48),
       ],
+    );
+  }
+
+  // ── Voice Call Simulation Overlay ─────────────────────────────────────────
+
+  void _showCallingSimulationOverlay(BuildContext context, String targetName) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black.withValues(alpha: 0.85),
+      transitionDuration: const Duration(milliseconds: 350),
+      pageBuilder: (context, anim1, anim2) {
+        return _CallSimulationScreen(
+          targetName: targetName,
+          roleAccent: AppColors.volunteerAccent,
+        );
+      },
+    );
+  }
+}
+
+class _CallSimulationScreen extends StatefulWidget {
+  final String targetName;
+  final Color roleAccent;
+
+  const _CallSimulationScreen({
+    required this.targetName,
+    required this.roleAccent,
+  });
+
+  @override
+  State<_CallSimulationScreen> createState() => _CallSimulationScreenState();
+}
+
+class _CallSimulationScreenState extends State<_CallSimulationScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _rippleController;
+  Timer? _timer;
+  int _secondsElapsed = 0;
+  bool _isConnected = false;
+  bool _isMuted = false;
+  bool _isSpeaker = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _rippleController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat();
+
+    // Simulate connection delay
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if (mounted) {
+        setState(() {
+          _isConnected = true;
+        });
+        _startTimer();
+      }
+    });
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (mounted) {
+        setState(() {
+          _secondsElapsed++;
+        });
+      }
+    });
+  }
+
+  String _formatDuration(int totalSeconds) {
+    final int minutes = totalSeconds ~/ 60;
+    final int seconds = totalSeconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  void dispose() {
+    _rippleController.dispose();
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final statusText = _isConnected ? 'PANGGILAN AKTIF' : 'MENYAMBUNGKAN TALIAN...';
+    
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: SafeArea(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Header
+              Column(
+                children: [
+                  const SizedBox(height: 20),
+                  Text(
+                    'SIGAP VOICE BROADCAST',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white60,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: _isConnected ? AppColors.safe.withValues(alpha: 0.2) : Colors.white10,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: _isConnected ? AppColors.safe.withValues(alpha: 0.5) : Colors.white24,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: _isConnected ? AppColors.safe : AppColors.warning,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          statusText,
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              // Animated Sound Waves and Contact avatar
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Outer concentric ripple circles
+                  ...List.generate(3, (index) {
+                    final double delay = index * 0.5;
+                    return AnimatedBuilder(
+                      animation: _rippleController,
+                      builder: (context, child) {
+                        final double progress = (_rippleController.value + delay) % 1.0;
+                        final double size = 120 + (progress * 160);
+                        final double opacity = (1.0 - progress) * 0.4;
+                        return Container(
+                          width: size,
+                          height: size,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: widget.roleAccent.withValues(alpha: opacity),
+                          ),
+                        );
+                      },
+                    );
+                  }),
+                  
+                  // Central contact circle
+                  Container(
+                    width: 140,
+                    height: 140,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white30, width: 2),
+                    ),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.phone_in_talk_rounded, color: widget.roleAccent, size: 40),
+                          if (_isConnected) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              _formatDuration(_secondsElapsed),
+                              style: GoogleFonts.inter(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              // Contact Name & Info
+              Column(
+                children: [
+                  Text(
+                    widget.targetName,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Menghubungkan anda dengan penyelamat berhampiran melalui talian audio satelit.',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: Colors.white54,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+
+              // Interactive Call Buttons
+              Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      // Mute Button
+                      _buildRoundOptionButton(
+                        icon: _isMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
+                        isActive: _isMuted,
+                        onTap: () {
+                          setState(() {
+                            _isMuted = !_isMuted;
+                          });
+                        },
+                      ),
+                      
+                      // Hang up Button
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          width: 72,
+                          height: 72,
+                          decoration: BoxDecoration(
+                            color: AppColors.danger,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.28),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(Icons.call_end_rounded, color: Colors.white, size: 32),
+                        ),
+                      ),
+
+                      // Speaker Button
+                      _buildRoundOptionButton(
+                        icon: _isSpeaker ? Icons.volume_up_rounded : Icons.volume_down_rounded,
+                        isActive: _isSpeaker,
+                        onTap: () {
+                          setState(() {
+                            _isSpeaker = !_isSpeaker;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRoundOptionButton({
+    required IconData icon,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          color: isActive ? Colors.white : Colors.white10,
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white24),
+        ),
+        child: Icon(
+          icon,
+          color: isActive ? Colors.black.withValues(alpha: 0.8) : Colors.white,
+          size: 24,
+        ),
+      ),
     );
   }
 }

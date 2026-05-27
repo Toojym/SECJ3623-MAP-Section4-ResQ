@@ -356,8 +356,8 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
                             label: Text('Log Keluar', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.danger)),
                             style: TextButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: AppColors.danger.withOpacity(0.3))),
-                              backgroundColor: AppColors.danger.withOpacity(0.05),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: AppColors.danger.withValues(alpha: 0.3))),
+                              backgroundColor: AppColors.danger.withValues(alpha: 0.05),
                             ),
                           ),
                         ),
@@ -404,7 +404,7 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
                   tag: 'officer_avatar',
                   child: CircleAvatar(
                     radius: 40,
-                    backgroundColor: AppColors.officerAccent.withOpacity(0.12),
+                    backgroundColor: AppColors.officerAccent.withValues(alpha: 0.12),
                     backgroundImage: _getAvatarProvider(),
                     child: (_selectedImageFile == null && (_profileImageUrl == null || _profileImageUrl!.isEmpty))
                         ? Text(
@@ -432,7 +432,7 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
           Container(
             margin: const EdgeInsets.only(top: 4),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-            decoration: BoxDecoration(color: AppColors.officerAccent.withOpacity(0.1), borderRadius: BorderRadius.circular(99)),
+            decoration: BoxDecoration(color: AppColors.officerAccent.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(99)),
             child: Text('Pegawai Kerajaan', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.officerAccent)),
           ),
           if (_isEditing)
@@ -490,7 +490,7 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
           label: Text('Tukar Kata Laluan', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary)),
           style: TextButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            backgroundColor: AppColors.primary.withOpacity(0.1),
+            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
         ),
