@@ -37,6 +37,16 @@ class LocationService {
     );
   }
 
+  /// Stream current location for real-time tracking
+  static Stream<Position> getPositionStream() {
+    return Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10, // Update every 10 meters
+      ),
+    );
+  }
+
   /// Haversine formula — distance in kilometres between two GPS coordinates.
   static double calculateDistanceKm(
     double lat1,

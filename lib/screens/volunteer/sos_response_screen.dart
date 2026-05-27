@@ -33,6 +33,8 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
   bool _isTogglingBackup = false;
   bool _isCompleting = false;
 
+  StreamSubscription<Position>? _positionStreamSub;
+
   @override
   void initState() {
     super.initState();
@@ -47,9 +49,26 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
           _volunteerPosition = pos;
         });
       }
+      _startLocationTracking();
     } catch (_) {
       // Gracefully handle if GPS permission is not given
     }
+  }
+
+  void _startLocationTracking() {
+    _positionStreamSub = LocationService.getPositionStream().listen((Position position) {
+      if (mounted) {
+        setState(() {
+          _volunteerPosition = position;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _positionStreamSub?.cancel();
+    super.dispose();
   }
 
   @override
