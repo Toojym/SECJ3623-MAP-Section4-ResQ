@@ -351,30 +351,44 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
               const SizedBox(height: 8),
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: report.imageUrl!.startsWith('data:image')
-                    ? Image.memory(
-                        base64Decode(report.imageUrl!.split(',').last),
+                child: Builder(builder: (context) {
+                  if (report.imageUrl!.startsWith('data:image')) {
+                    try {
+                      String base64Str = report.imageUrl!.split(',').last.replaceAll(RegExp(r'\s+'), '');
+                      int padding = base64Str.length % 4;
+                      if (padding > 0) base64Str += '=' * (4 - padding);
+                      if (base64Str.isEmpty) throw const FormatException('Empty base64');
+                      return Image.memory(
+                        base64Decode(base64Str),
                         fit: BoxFit.cover,
                         width: double.infinity,
                         height: 200,
-                      )
-                    : Image.network(
-                        report.imageUrl!,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        height: 200,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            height: 100,
-                            color: Colors.grey[100],
-                            alignment: Alignment.center,
-                            child: Text(
-                              'Gagal memuatkan gambar bukti.',
-                              style: GoogleFonts.inter(color: AppColors.textSecondary),
-                            ),
-                          );
-                        },
-                      ),
+                      );
+                    } catch (e) {
+                      return Container(
+                        height: 100,
+                        color: Colors.grey[100],
+                        alignment: Alignment.center,
+                        child: Text('Gagal memuatkan gambar bukti.', style: GoogleFonts.inter(color: AppColors.textSecondary)),
+                      );
+                    }
+                  } else {
+                    return Image.network(
+                      report.imageUrl!,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: 200,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          height: 100,
+                          color: Colors.grey[100],
+                          alignment: Alignment.center,
+                          child: Text('Gagal memuatkan gambar bukti.', style: GoogleFonts.inter(color: AppColors.textSecondary)),
+                        );
+                      },
+                    );
+                  }
+                }),
               ),
             ],
           ),
@@ -1021,14 +1035,45 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
               const SizedBox(height: 8),
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: report.imageUrl!.startsWith('data:image')
-                    ? Image.memory(
-                        base64Decode(report.imageUrl!.split(',').last),
+                child: Builder(builder: (context) {
+                  if (report.imageUrl!.startsWith('data:image')) {
+                    try {
+                      String base64Str = report.imageUrl!.split(',').last.replaceAll(RegExp(r'\s+'), '');
+                      int padding = base64Str.length % 4;
+                      if (padding > 0) base64Str += '=' * (4 - padding);
+                      if (base64Str.isEmpty) throw const FormatException('Empty base64');
+                      return Image.memory(
+                        base64Decode(base64Str),
                         fit: BoxFit.cover,
                         width: double.infinity,
                         height: 200,
-                      )
-                    : Image.network(
+                      );
+                    } catch (e) {
+                      return Container(
+                        height: 100,
+                        color: Colors.grey[100],
+                        alignment: Alignment.center,
+                        child: Text('Gagal memuatkan gambar bukti.', style: GoogleFonts.inter(color: AppColors.textSecondary)),
+                      );
+                    }
+                  } else {
+                    return Image.network(
+                      report.imageUrl!,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: 200,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          height: 100,
+                          color: Colors.grey[100],
+                          alignment: Alignment.center,
+                          child: Text('Gagal memuatkan gambar bukti.', style: GoogleFonts.inter(color: AppColors.textSecondary)),
+                        );
+                      },
+                    );
+                  }
+                }),
+              ),
                         report.imageUrl!,
                         fit: BoxFit.cover,
                         width: double.infinity,
