@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_routes.dart';
@@ -1289,11 +1290,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                 return const Center(child: CircularProgressIndicator(color: AppColors.volunteerAccent));
               }
 
-              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                return _buildEmptyTaskBoard();
-              }
-
-              final docs = snapshot.data!.docs;
+              final docs = snapshot.hasData ? snapshot.data!.docs : [];
               final reports = docs.map((doc) => SosReportModel.fromDocument(doc)).toList();
 
               // Sort by Urgency first, then distance
@@ -1311,11 +1308,70 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                 return 0;
               });
 
-              return ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                itemCount: reports.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (context, index) => _buildSOSCard(reports[index]),
+              // Prepare Map Markers
+              final Set<Marker> markers = {};
+              if (_currentPosition != null) {
+                markers.add(
+                  Marker(
+                    markerId: const MarkerId('my_loc'),
+                    position: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                    icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet),
+                    infoWindow: const InfoWindow(title: 'Lokasi Anda'),
+                  ),
+                );
+              }
+
+              for (var report in reports) {
+                markers.add(
+                  Marker(
+                    markerId: MarkerId(report.id),
+                    position: LatLng(report.latitude, report.longitude),
+                    icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+                    infoWindow: InfoWindow(
+                      title: report.type,
+                      snippet: 'Kecemasan: ${report.urgency}',
+                      onTap: () => context.push('/volunteer/sos-response', extra: report.id),
+                    ),
+                  ),
+                );
+              }
+
+              return Column(
+                children: [
+                  Container(
+                    height: 220,
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.divider),
+                    ),
+                    clipBehavior: Clip.hardEdge,
+                    child: GoogleMap(
+                      initialCameraPosition: CameraPosition(
+                        target: _currentPosition != null
+                            ? LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
+                            : (reports.isNotEmpty ? LatLng(reports.first.latitude, reports.first.longitude) : const LatLng(3.1390, 101.6869)),
+                        zoom: 11,
+                      ),
+                      markers: markers,
+                      myLocationEnabled: true,
+                      myLocationButtonEnabled: true,
+                      onMapCreated: (_) {},
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  if (reports.isEmpty)
+                    Expanded(child: _buildEmptyTaskBoard())
+                  else
+                    Expanded(
+                      child: ListView.separated(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        itemCount: reports.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) => _buildSOSCard(reports[index]),
+                      ),
+                    ),
+                ],
               );
             },
           ),
