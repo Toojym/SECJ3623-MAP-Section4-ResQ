@@ -1702,19 +1702,27 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Icon(Icons.group_rounded,
-                      color: AppColors.volunteerAccent, size: 20),
-                  const SizedBox(width: 8),
-                  Text(name,
-                      style: GoogleFonts.inter(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14,
-                          color: AppColors.textPrimary)),
-                ],
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(Icons.group_rounded,
+                        color: AppColors.volunteerAccent, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                              color: AppColors.textPrimary)),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
