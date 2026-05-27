@@ -947,6 +947,8 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
                         }
                       },
                 style: OutlinedButton.styleFrom(
+                  minimumSize: Size.zero,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   foregroundColor: report.needBackup ? AppColors.danger : AppColors.primary,
                   side: BorderSide(
                     color: report.needBackup ? AppColors.danger : AppColors.primary,
