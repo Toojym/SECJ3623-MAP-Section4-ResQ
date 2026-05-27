@@ -40,11 +40,19 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
   // Disaster Zone State
   bool _isSelectingDisasterZone = false;
   LatLng? _selectedDisasterEpicenter;
-  final double _disasterRadius = 5000.0; // meters
+  double _disasterRadius = 5000.0; // meters
+  String _disasterType = 'Banjir';
+  final TextEditingController _disasterNameController = TextEditingController();
   final List<Circle> _disasterZones = [];
 
   // Live SOS reports from Firestore (replaces _mockIncidents)
   List<SosReportModel> _activeReports = [];
+
+  @override
+  void dispose() {
+    _disasterNameController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -334,20 +342,67 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                       ? Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                  color: AppColors.warning.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: AppColors.warning)),
-                              child: Text(
-                                  'Sila tap pada peta untuk memilih pusat zon darurat.',
+                            if (_selectedDisasterEpicenter == null)
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                    color: AppColors.warning.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: AppColors.warning)),
+                                child: Text(
+                                    'Sila tap pada peta untuk memilih pusat zon darurat.',
+                                    style: GoogleFonts.inter(
+                                        color: AppColors.warning,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 13)),
+                              )
+                            else ...[
+                              Text('Radius Zon: ${_disasterRadius / 1000} km',
                                   style: GoogleFonts.inter(
-                                      color: AppColors.warning,
                                       fontWeight: FontWeight.w600,
-                                      fontSize: 13)),
-                            ),
-                            const SizedBox(height: 8),
+                                      fontSize: 13,
+                                      color: AppColors.textPrimary)),
+                              Slider(
+                                value: _disasterRadius,
+                                min: 1000,
+                                max: 20000,
+                                divisions: 19,
+                                activeColor: AppColors.danger,
+                                label: '${_disasterRadius / 1000} km',
+                                onChanged: (val) {
+                                  setState(() {
+                                    _disasterRadius = val;
+                                  });
+                                },
+                              ),
+                              const SizedBox(height: 8),
+                              DropdownButtonFormField<String>(
+                                value: _disasterType,
+                                decoration: InputDecoration(
+                                    border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8)),
+                                    labelText: 'Jenis Bencana',
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+                                items: ['Banjir', 'Tanah Runtuh', 'Kebakaran', 'Lain-lain']
+                                    .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                                    .toList(),
+                                onChanged: (val) {
+                                  if (val != null) setState(() => _disasterType = val);
+                                },
+                              ),
+                              const SizedBox(height: 12),
+                              TextField(
+                                controller: _disasterNameController,
+                                decoration: InputDecoration(
+                                    labelText: 'Nama / Butiran Zon',
+                                    hintText: 'Contoh: Banjir Kilat Seksyen 7',
+                                    border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8)),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12)),
+                                maxLines: 1,
+                              ),
+                            ],
+                            const SizedBox(height: 12),
                             Row(
                               children: [
                                 Expanded(
@@ -356,6 +411,8 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                                       setState(() {
                                         _isSelectingDisasterZone = false;
                                         _selectedDisasterEpicenter = null;
+                                        _disasterRadius = 5000.0;
+                                        _disasterNameController.clear();
                                       });
                                     },
                                     child: const Text('Batal'),
@@ -364,12 +421,12 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: ElevatedButton(
-                                    onPressed: _selectedDisasterEpicenter == null
+                                    onPressed: _selectedDisasterEpicenter == null || _disasterNameController.text.trim().isEmpty
                                         ? null
                                         : _confirmDisasterZone,
                                     style: ElevatedButton.styleFrom(
                                         backgroundColor: AppColors.danger),
-                                    child: const Text('Sahkan Zon',
+                                    child: const Text('Teruskan',
                                         style: TextStyle(color: Colors.white)),
                                   ),
                                 ),
@@ -796,24 +853,29 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
             onPressed: () {
               final epicenter = _selectedDisasterEpicenter!;
               Navigator.pop(ctx);
-              int affectedCount =
-                  _calculateAffectedUsers(epicenter, _disasterRadius);
-              setState(() {
-                _disasterZones.add(
-                  Circle(
-                    circleId: CircleId(
-                        'zone_${DateTime.now().millisecondsSinceEpoch}'),
-                    center: epicenter,
-                    radius: _disasterRadius,
-                    fillColor: AppColors.danger.withValues(alpha: 0.2),
-                    strokeColor: AppColors.danger,
-                    strokeWidth: 2,
-                  ),
-                );
-                _isSelectingDisasterZone = false;
-                _selectedDisasterEpicenter = null;
+              
+              _firestoreService.createDisasterZone({
+                'epicenterLat': epicenter.latitude,
+                'epicenterLng': epicenter.longitude,
+                'radius': _disasterRadius,
+                'type': _disasterType,
+                'name': _disasterNameController.text.trim(),
+              }).then((_) {
+                int affectedCount = _calculateAffectedUsers(epicenter, _disasterRadius);
+                if (mounted) {
+                  setState(() {
+                    _isSelectingDisasterZone = false;
+                    _selectedDisasterEpicenter = null;
+                    _disasterRadius = 5000.0;
+                    _disasterNameController.clear();
+                  });
+                  _showGeofenceSuccessDialog(affectedCount);
+                }
+              }).catchError((e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ralat menyimpan zon: $e'), backgroundColor: AppColors.danger));
+                }
               });
-              _showGeofenceSuccessDialog(affectedCount);
             },
             child: Text('Sah & Hantar',
                 style: GoogleFonts.inter(
