@@ -241,7 +241,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
           _buildEmergencyAlerts(),
           const SizedBox(height: 32),
           _buildOfflineToolkit(),
-          const SizedBox(height: 80), // padding for FAB
+          const SizedBox(height: 80), 
         ],
       ),
     );
@@ -308,7 +308,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
           children: [
             _navItem(Icons.home_rounded, 'Utama', 0),
             _navItem(Icons.map_rounded, 'Peta', 1),
-            const SizedBox(width: 48), // Space for FAB
+            const SizedBox(width: 48), 
             _navItem(Icons.smart_toy_rounded, 'AWANIS', 2),
             _navItem(Icons.receipt_long_rounded, 'Tuntutan', 3),
           ],
@@ -809,7 +809,6 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                   ),
                   const SizedBox(height: 16),
                   
-                  // Live map view showing locations
                   Container(
                     height: 220,
                     decoration: BoxDecoration(
@@ -844,7 +843,6 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                   ),
                   const SizedBox(height: 20),
                   
-                  // Status & ETA Card
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
