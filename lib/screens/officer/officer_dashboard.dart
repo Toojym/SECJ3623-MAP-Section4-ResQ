@@ -752,6 +752,30 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
     for (int i = 0; i < _disasterZones.length; i++) {
       circles.add(_disasterZones[i]);
     }
+
+    // Add glowing halos for active SOS reports matching urgency levels
+    for (final report in _getFilteredReports()) {
+      Color markerColor = AppColors.danger;
+      if (report.urgency == SosReportModel.urgencyTinggi) {
+        markerColor = AppColors.warning;
+      } else if (report.urgency == SosReportModel.urgencySedang) {
+        markerColor = const Color(0xFFFBBF24);
+      } else if (report.urgency == SosReportModel.urgencyRendah) {
+        markerColor = AppColors.safe;
+      }
+
+      circles.add(
+        Circle(
+          circleId: CircleId('glow_sos_${report.id}'),
+          center: LatLng(report.latitude, report.longitude),
+          radius: 300,
+          fillColor: markerColor.withValues(alpha: 0.18),
+          strokeColor: markerColor.withValues(alpha: 0.5),
+          strokeWidth: 1,
+        ),
+      );
+    }
+
     if (_isSelectingDisasterZone && _selectedDisasterEpicenter != null) {
       circles.add(
         Circle(

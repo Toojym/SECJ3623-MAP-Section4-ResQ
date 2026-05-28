@@ -404,30 +404,36 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
           StreamBuilder<DocumentSnapshot>(
             stream: FirebaseFirestore.instance.collection('citizen_profiles').doc(uid).snapshots(),
             builder: (context, snapshot) {
-              String status = 'Selamat';
+              String rawStatus = 'Selamat';
+              String status = 'Selamat (Safe 🟢)';
               String statusDesc = 'Selamat di lokasi berdaftar';
               Color statusColor = AppColors.safe;
               IconData statusIcon = Icons.check_circle_rounded;
 
               if (snapshot.hasData && snapshot.data!.exists) {
                 final profileData = snapshot.data!.data() as Map<String, dynamic>;
-                final savedStatus = profileData['safetyStatus'] as String? ?? 'Selamat';
+                rawStatus = profileData['safetyStatus'] as String? ?? 'Selamat';
                 
-                if (savedStatus == 'Berpindah') {
-                  status = 'Berpindah';
+                if (rawStatus == 'Berpindah') {
+                  status = 'Berpindah (Evacuated 🟡)';
                   statusDesc = 'Telah dipindahkan ke pusat pemindahan';
                   statusColor = AppColors.warning;
                   statusIcon = Icons.home_work_rounded;
-                } else if (savedStatus == 'Perlu Bantuan') {
-                  status = 'Perlu Bantuan';
+                } else if (rawStatus == 'Perlu Bantuan') {
+                  status = 'Perlu Bantuan (Need Help 🔴)';
                   statusDesc = 'Memerlukan bantuan penyelamat segera!';
                   statusColor = AppColors.danger;
                   statusIcon = Icons.error_rounded;
+                } else {
+                  status = 'Selamat (Safe 🟢)';
+                  statusDesc = 'Selamat di lokasi berdaftar';
+                  statusColor = AppColors.safe;
+                  statusIcon = Icons.check_circle_rounded;
                 }
               }
 
               return InkWell(
-                onTap: () => _showSafetyStatusDialog(uid, status),
+                onTap: () => _showSafetyStatusDialog(uid, rawStatus),
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
                   padding: const EdgeInsets.all(16),
@@ -442,6 +448,13 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                         decoration: BoxDecoration(
                           color: statusColor,
                           shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: statusColor.withValues(alpha: 0.6),
+                              blurRadius: 12,
+                              spreadRadius: 2,
+                            ),
+                          ],
                         ),
                         child: Icon(statusIcon, color: Colors.white, size: 20),
                       ),
@@ -530,6 +543,13 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
           color: isSelected ? color.withValues(alpha: 0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: isSelected ? color : AppColors.divider, width: isSelected ? 2 : 1),
+          boxShadow: isSelected ? [
+            BoxShadow(
+              color: color.withValues(alpha: 0.15),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ] : null,
         ),
         child: Row(
           children: [
@@ -539,6 +559,13 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
               decoration: BoxDecoration(
                 color: color,
                 shape: BoxShape.circle,
+                boxShadow: isSelected ? [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.6),
+                    blurRadius: 8,
+                    spreadRadius: 2,
+                  ),
+                ] : null,
               ),
             ),
             const SizedBox(width: 12),
@@ -2005,6 +2032,52 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
               ),
             };
 
+            final Set<Circle> mapCircles = Set<Circle>.from(circles);
+
+            // Add halos for Shelters (Green)
+            mapCircles.add(
+              Circle(
+                circleId: const CircleId('glow_shelter_1'),
+                center: const LatLng(3.1550, 101.7100),
+                radius: 350,
+                fillColor: Colors.green.withValues(alpha: 0.15),
+                strokeColor: Colors.green.withValues(alpha: 0.4),
+                strokeWidth: 1,
+              ),
+            );
+            mapCircles.add(
+              Circle(
+                circleId: const CircleId('glow_shelter_2'),
+                center: const LatLng(3.2000, 101.6800),
+                radius: 350,
+                fillColor: Colors.green.withValues(alpha: 0.15),
+                strokeColor: Colors.green.withValues(alpha: 0.4),
+                strokeWidth: 1,
+              ),
+            );
+
+            // Add halos for Relief Trucks (Blue)
+            mapCircles.add(
+              Circle(
+                circleId: const CircleId('glow_truck_1'),
+                center: const LatLng(3.1450, 101.6950),
+                radius: 250,
+                fillColor: Colors.blue.withValues(alpha: 0.15),
+                strokeColor: Colors.blue.withValues(alpha: 0.4),
+                strokeWidth: 1,
+              ),
+            );
+            mapCircles.add(
+              Circle(
+                circleId: const CircleId('glow_truck_2'),
+                center: const LatLng(3.1800, 101.6700),
+                radius: 250,
+                fillColor: Colors.blue.withValues(alpha: 0.15),
+                strokeColor: Colors.blue.withValues(alpha: 0.4),
+                strokeWidth: 1,
+              ),
+            );
+
             if (sosSnapshot.hasData) {
               for (final doc in sosSnapshot.data!.docs) {
                 final report = SosReportModel.fromDocument(doc);
@@ -2017,6 +2090,17 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                       snippet: report.description.isNotEmpty ? report.description : report.address,
                     ),
                     icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+                  ),
+                );
+                // Glowing halo for active SOS report
+                mapCircles.add(
+                  Circle(
+                    circleId: CircleId('glow_sos_${report.id}'),
+                    center: LatLng(report.latitude, report.longitude),
+                    radius: 300,
+                    fillColor: Colors.red.withValues(alpha: 0.18),
+                    strokeColor: Colors.red.withValues(alpha: 0.5),
+                    strokeWidth: 1,
                   ),
                 );
               }
@@ -2045,7 +2129,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                         myLocationEnabled: true,
                         myLocationButtonEnabled: true,
                         markers: markers,
-                        circles: circles,
+                        circles: mapCircles,
                         onMapCreated: (_) {},
                       ),
                       Positioned(
@@ -2228,13 +2312,27 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                   final status = m['status'] as String? ?? 'Selamat';
                   final location = m['lastKnownLocation'] as String? ?? 'Belum dikemaskini';
                   
-                  final isSafe = status.toLowerCase() == 'selamat';
-                  final color = isSafe ? AppColors.safe : AppColors.warning;
-                  final icon = isSafe ? Icons.check_circle_rounded : Icons.help_rounded;
+                  Color color = AppColors.safe;
+                  IconData icon = Icons.check_circle_rounded;
+                  String displayStatus = 'Safe 🟢';
+
+                  if (status == 'Berpindah') {
+                    color = AppColors.warning;
+                    icon = Icons.home_work_rounded;
+                    displayStatus = 'Evacuated 🟡';
+                  } else if (status == 'Perlu Bantuan') {
+                    color = AppColors.danger;
+                    icon = Icons.error_rounded;
+                    displayStatus = 'Need Help 🔴';
+                  } else {
+                    color = AppColors.safe;
+                    icon = Icons.check_circle_rounded;
+                    displayStatus = 'Safe 🟢';
+                  }
 
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 16),
-                    child: _familyMemberRow('$name ($relation)', status, 'Lokasi: $location', color, icon),
+                    child: _familyMemberRow('$name ($relation)', displayStatus, 'Lokasi: $location', color, icon),
                   );
                 }).toList(),
               ),
@@ -2248,7 +2346,11 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
   Widget _familyMemberRow(String name, String status, String detail, Color color, IconData icon) {
     return Row(
       children: [
-        CircleAvatar(radius: 24, backgroundColor: color.withValues(alpha: 0.1), child: Icon(Icons.person_rounded, color: color, size: 24)),
+        CircleAvatar(
+          radius: 24,
+          backgroundColor: color.withValues(alpha: 0.1),
+          child: Icon(Icons.person_rounded, color: color, size: 24),
+        ),
         const SizedBox(width: 16),
         Expanded(
           child: Column(
@@ -2262,7 +2364,18 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
         ),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: color.withValues(alpha: 0.3), width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.05),
+                blurRadius: 4,
+                spreadRadius: 1,
+              ),
+            ],
+          ),
           child: Row(
             children: [
               Icon(icon, color: color, size: 14),
