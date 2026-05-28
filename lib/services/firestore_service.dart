@@ -112,6 +112,14 @@ class FirestoreService {
   /// Create a new SOS report and return the document ID.
   Future<String> createSOSReport(Map<String, dynamic> data) async {
     final docRef = await _db.collection('sos_reports').add(data);
+    
+    final reporterId = data['reporterId'] as String?;
+    if (reporterId != null) {
+      await _db.collection('citizen_profiles').doc(reporterId).set({
+        'safetyStatus': 'Perlu Bantuan',
+      }, SetOptions(merge: true));
+    }
+    
     return docRef.id;
   }
 
@@ -144,12 +152,21 @@ class FirestoreService {
 
   /// Cancel an SOS report (citizen side — false alarm).
   Future<void> cancelSOSReport(String docId, String reason) async {
+    final reportDoc = await _db.collection('sos_reports').doc(docId).get();
+    final reporterId = reportDoc.data()?['reporterId'] as String?;
+
     await _db.collection('sos_reports').doc(docId).update({
       'status': 'cancelled',
       'cancelReason': reason,
       'cancelledAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
+
+    if (reporterId != null) {
+      await _db.collection('citizen_profiles').doc(reporterId).set({
+        'safetyStatus': 'Selamat',
+      }, SetOptions(merge: true));
+    }
   }
 
   /// Volunteer accepts / responds to an SOS report.
@@ -197,11 +214,20 @@ class FirestoreService {
   /// the volunteer task board (which only streams 'active' status) and from the
   /// officer's active monitoring list.
   Future<void> resolveSOSReportByOfficer(String docId) async {
+    final reportDoc = await _db.collection('sos_reports').doc(docId).get();
+    final reporterId = reportDoc.data()?['reporterId'] as String?;
+
     await _db.collection('sos_reports').doc(docId).update({
       'status': 'resolved',
       'resolvedAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
+
+    if (reporterId != null) {
+      await _db.collection('citizen_profiles').doc(reporterId).set({
+        'safetyStatus': 'Berpindah',
+      }, SetOptions(merge: true));
+    }
   }
 
   // ── Disaster Zones ────────────────────────────────────────────────────────
@@ -239,10 +265,19 @@ class FirestoreService {
 
   /// Volunteer resolves a citizen SOS report.
   Future<void> resolveSOSReportByVolunteer(String docId) async {
+    final reportDoc = await _db.collection('sos_reports').doc(docId).get();
+    final reporterId = reportDoc.data()?['reporterId'] as String?;
+
     await _db.collection('sos_reports').doc(docId).update({
       'status': 'resolved',
       'resolvedAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
+
+    if (reporterId != null) {
+      await _db.collection('citizen_profiles').doc(reporterId).set({
+        'safetyStatus': 'Berpindah',
+      }, SetOptions(merge: true));
+    }
   }
 }

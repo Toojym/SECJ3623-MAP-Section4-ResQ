@@ -1020,8 +1020,9 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
             children: [
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () =>
-                      context.push('/volunteer/sos-response', extra: report.id),
+                  onPressed: _isActive
+                      ? () => context.push('/volunteer/sos-response', extra: report.id)
+                      : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: severityColor,
                     foregroundColor: Colors.white,

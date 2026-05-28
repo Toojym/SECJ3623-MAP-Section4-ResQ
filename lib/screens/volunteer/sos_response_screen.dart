@@ -32,6 +32,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
   Position? _volunteerPosition;
   bool _isTogglingBackup = false;
   bool _isCompleting = false;
+  bool _isActive = false; // Track volunteer availability
 
   StreamSubscription<Position>? _positionStreamSub;
 
@@ -39,6 +40,21 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
   void initState() {
     super.initState();
     _initVolunteerLocation();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is! AuthAuthenticated) return;
+    
+    if (authState.role != 'volunteer') return;
+
+    final data = await _firestoreService.getVolunteerProfile(authState.uid);
+    if (data != null && mounted) {
+      setState(() {
+        _isActive = data['isActive'] as bool? ?? false;
+      });
+    }
   }
 
   Future<void> _initVolunteerLocation() async {
@@ -488,7 +504,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
               flex: 2,
               child: ElevatedButton(
                 onPressed:
-                    _isResponding ? null : () => _confirmAccept(report),
+                    (_isResponding || !_isActive) ? null : () => _confirmAccept(report),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.volunteerAccent,
                   foregroundColor: Colors.white,

@@ -60,7 +60,7 @@ class SosReportModel {
 
   static const String urgencyKritikal = 'KRITIKAL';
   static const String urgencyTinggi = 'TINGGI';
-  static const String urgencySedang = 'SEDANG';
+  static const String urgencySedang = 'SEDERHANA';
   static const String urgencyRendah = 'RENDAH';
 
   /// Returns numeric priority for sorting (lower = more urgent)
