@@ -15,6 +15,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_routes.dart';
 import '../../core/constants/app_strings.dart';
 import '../../models/sos_report_model.dart';
+import '../../models/claim_model.dart';
 import '../../services/firestore_service.dart';
 import '../../services/location_service.dart';
 import '../../widgets/common/sigap_app_bar.dart';
@@ -2474,42 +2475,164 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
   }
 
   Widget _buildReliefClaimTracker() {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is! AuthAuthenticated) return const SizedBox();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader('Tuntutan Bantuan', actionLabel: 'Mohon Baru', onAction: () {}),
+        _buildSectionHeader('Tuntutan Bantuan', actionLabel: 'Mohon Baru', onAction: _showSubmitClaimDialog),
         const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: _cardDecoration(),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Bantuan Banjir RM1000', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-                  Text('Disemak', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.warning)),
-                ],
-              ),
-              const SizedBox(height: 16),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: LinearProgressIndicator(value: 0.5, minHeight: 10, backgroundColor: AppColors.divider, color: AppColors.warning),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.textSecondary),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text('Menunggu pengesahan dokumen sokongan', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
-                  )
-                ],
-              )
-            ],
-          ),
+        StreamBuilder<QuerySnapshot>(
+          stream: _firestoreService.streamClaimsForCitizen(authState.uid),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: _cardDecoration(),
+                child: Center(
+                  child: Text('Tiada tuntutan setakat ini.',
+                      style: GoogleFonts.inter(color: AppColors.textSecondary)),
+                ),
+              );
+            }
+
+            return Column(
+              children: snapshot.data!.docs.map((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+                final claim = ClaimModel.fromMap(doc.id, data);
+                
+                Color statusColor = AppColors.warning;
+                String statusText = 'Disemak';
+                double progress = 0.5;
+                String subText = 'Menunggu pengesahan';
+                
+                if (claim.status == 'approved') {
+                  statusColor = AppColors.safe;
+                  statusText = 'Lulus';
+                  progress = 1.0;
+                  subText = 'Tuntutan telah diluluskan';
+                } else if (claim.status == 'rejected') {
+                  statusColor = AppColors.danger;
+                  statusText = 'Ditolak';
+                  progress = 1.0;
+                  subText = claim.rejectReason ?? 'Tuntutan ditolak';
+                } else if (claim.status == 'info_requested') {
+                  statusColor = Colors.orange;
+                  statusText = 'Info Lanjut';
+                  progress = 0.5;
+                  subText = 'Sila kemas kini info tuntutan';
+                }
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(20),
+                  decoration: _cardDecoration(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(claim.type, 
+                              style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Text(statusText, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: statusColor)),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: LinearProgressIndicator(value: progress, minHeight: 10, backgroundColor: AppColors.divider, color: statusColor),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Icon(
+                            claim.status == 'rejected' ? Icons.error_outline_rounded : Icons.info_outline_rounded,
+                            size: 16, 
+                            color: statusColor
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(subText, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+                          )
+                        ],
+                      )
+                    ],
+                  ),
+                );
+              }).toList(),
+            );
+          },
         ),
       ],
+    );
+  }
+
+  void _showSubmitClaimDialog() {
+    final typeCtrl = TextEditingController();
+    final locationCtrl = TextEditingController(text: 'Ampang'); // Defaulting for testing
+    final evidenceCtrl = TextEditingController(text: '1 Dokumen dilampirkan');
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Mohon Tuntutan Baru', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: typeCtrl,
+              decoration: const InputDecoration(labelText: 'Jenis Bantuan (Cth: Kerosakan Rumah, Bantuan Makanan)'),
+            ),
+            TextField(
+              controller: locationCtrl,
+              decoration: const InputDecoration(labelText: 'Lokasi / Zon Bencana'),
+            ),
+            TextField(
+              controller: evidenceCtrl,
+              decoration: const InputDecoration(labelText: 'Ringkasan Bukti'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (typeCtrl.text.isEmpty) return;
+              final authState = context.read<AuthBloc>().state;
+              if (authState is AuthAuthenticated) {
+                final claim = ClaimModel(
+                  id: '',
+                  citizenId: authState.uid,
+                  citizenName: authState.displayName.isNotEmpty ? authState.displayName : 'Awam',
+                  type: typeCtrl.text,
+                  evidence: evidenceCtrl.text,
+                  location: locationCtrl.text,
+                  status: 'pending',
+                );
+                await _firestoreService.submitClaim(claim.toMap());
+                if (mounted) Navigator.pop(ctx);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tuntutan berjaya dihantar.')));
+                }
+              }
+            },
+            child: const Text('Hantar'),
+          ),
+        ],
+      ),
     );
   }
 

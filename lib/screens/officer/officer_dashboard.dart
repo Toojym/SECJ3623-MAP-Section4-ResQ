@@ -9,7 +9,9 @@ import '../../blocs/auth/auth_bloc.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_routes.dart';
 import '../../core/constants/app_strings.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/sos_report_model.dart';
+import '../../models/claim_model.dart';
 import '../../services/firestore_service.dart';
 import '../../widgets/common/sigap_app_bar.dart';
 
@@ -1964,49 +1966,76 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
 
   // ─── TUNTUTAN (CLAIMS) TAB ────────────────────────────────────────
   Widget _buildClaimsTab() {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text('Tuntutan Bantuan',
-            style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary)),
-        const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: _bulkApproveClaims,
-            icon: const Icon(Icons.done_all_rounded, size: 18),
-            label: const Text(
-                'Lulus Pukal (Kelulusan Automatik Keseluruhan)'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
+    return StreamBuilder<QuerySnapshot>(
+      stream: _firestoreService.streamPendingClaims(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final claims = snapshot.hasData ? snapshot.data!.docs : <DocumentSnapshot>[];
+        
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Text('Tuntutan Bantuan',
+                style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary)),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => _bulkApproveClaims(claims),
+                icon: const Icon(Icons.done_all_rounded, size: 18),
+                label: const Text(
+                    'Lulus Pukal (Zon Bencana Aktif Sahaja)'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
             ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Text('Zon Bencana Aktif: Ampang',
-            style: GoogleFonts.inter(
-                fontSize: 13,
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w600)),
-        const SizedBox(height: 16),
-        _claimCard('Ahmad bin Daud', 'Kerosakan Rumah (Banjir)',
-            'Bukti dilampirkan: 3 Gambar', 'Ampang', AppColors.warning),
-        const SizedBox(height: 12),
-        _claimCard('Siti Nurhaliza', 'Bantuan Makanan',
-            'Bukti dilampirkan: 1 Dokumen', 'Ampang', AppColors.warning),
-        const SizedBox(height: 80),
-      ],
+            const SizedBox(height: 12),
+            Text('Zon Bencana Aktif: Ampang', // In a real app this would be fetched dynamically
+                style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w600)),
+            const SizedBox(height: 16),
+            if (claims.isEmpty)
+              Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Center(
+                  child: Text('Tiada tuntutan baru buat masa ini.',
+                      style: GoogleFonts.inter(color: AppColors.textSecondary)),
+                ),
+              )
+            else
+              ...claims.map((doc) {
+                final claim = ClaimModel.fromMap(doc.id, doc.data() as Map<String, dynamic>);
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _claimCard(claim),
+                );
+              }),
+            const SizedBox(height: 80),
+          ],
+        );
+      },
     );
   }
 
-  void _bulkApproveClaims() {
+  void _bulkApproveClaims(List<DocumentSnapshot> pendingClaims) {
+    if (pendingClaims.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tiada tuntutan untuk diluluskan.')));
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -2037,11 +2066,20 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary),
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                  content: Text(
-                      'Semua tuntutan dalam zon bencana telah diluluskan!')));
+              try {
+                await _firestoreService.bulkApproveClaimsByZone('Ampang');
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text('Semua tuntutan dalam zon bencana Ampang telah diluluskan!'), backgroundColor: AppColors.safe));
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text('Gagal meluluskan tuntutan: $e'), backgroundColor: AppColors.danger));
+                }
+              }
             },
             child: Text('Sah',
                 style: GoogleFonts.inter(
@@ -2052,12 +2090,26 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
     );
   }
 
-  void _reviewClaim(String name, bool isReject) {
-    if (!isReject) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Tuntutan $name diluluskan.')));
+  void _reviewClaim(ClaimModel claim, String actionType) {
+    if (actionType == 'approve') {
+      _firestoreService.updateClaimStatus(claim.id, 'approved').then((_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Tuntutan ${claim.citizenName} diluluskan.'), backgroundColor: AppColors.safe));
+        }
+      });
+      return;
+    } else if (actionType == 'info') {
+      _firestoreService.updateClaimStatus(claim.id, 'info_requested').then((_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Permintaan info lanjut dihantar.'), backgroundColor: Colors.orange));
+        }
+      });
       return;
     }
+
+    // Reject flow
     final ctrl = TextEditingController();
     showDialog(
       context: context,
@@ -2090,10 +2142,14 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
             style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.danger),
             onPressed: () {
+              if (ctrl.text.isEmpty) return;
               Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text(
-                      'Tuntutan $name ditolak atas sebab: ${ctrl.text}')));
+              _firestoreService.updateClaimStatus(claim.id, 'rejected', reason: ctrl.text).then((_) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text('Tuntutan ${claim.citizenName} ditolak atas sebab: ${ctrl.text}'), backgroundColor: AppColors.danger));
+                }
+              });
             },
             child: Text('Tolak',
                 style: GoogleFonts.inter(
@@ -2104,8 +2160,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
     );
   }
 
-  Widget _claimCard(String name, String type, String evidence,
-      String location, Color color) {
+  Widget _claimCard(ClaimModel claim) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -2118,7 +2173,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(name,
+              Text(claim.citizenName,
                   style: GoogleFonts.inter(
                       fontWeight: FontWeight.w700,
                       fontSize: 14,
@@ -2127,13 +2182,13 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.1),
+                    color: AppColors.warning.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(99)),
                 child: Text('Menunggu',
                     style: GoogleFonts.inter(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: color)),
+                        color: AppColors.warning)),
               ),
             ],
           ),
@@ -2143,7 +2198,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
               const Icon(Icons.receipt_rounded,
                   size: 14, color: AppColors.textSecondary),
               const SizedBox(width: 6),
-              Text(type,
+              Text(claim.type,
                   style: GoogleFonts.inter(
                       fontSize: 12, color: AppColors.textSecondary)),
             ],
@@ -2154,7 +2209,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
               const Icon(Icons.location_on_rounded,
                   size: 14, color: AppColors.textSecondary),
               const SizedBox(width: 6),
-              Text(location,
+              Text(claim.location,
                   style: GoogleFonts.inter(
                       fontSize: 12, color: AppColors.textSecondary)),
             ],
@@ -2171,7 +2226,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     size: 16, color: AppColors.primary),
                 const SizedBox(width: 8),
                 Expanded(
-                    child: Text(evidence,
+                    child: Text(claim.evidence,
                         style: GoogleFonts.inter(
                             fontSize: 12,
                             color: AppColors.textPrimary))),
@@ -2193,7 +2248,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () => _reviewClaim(name, true),
+                  onPressed: () => _reviewClaim(claim, 'reject'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.danger,
                     side: const BorderSide(color: AppColors.danger),
@@ -2207,11 +2262,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
               const SizedBox(width: 6),
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                        content: Text(
-                            'Permintaan info lanjut dihantar.')));
-                  },
+                  onPressed: () => _reviewClaim(claim, 'info'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.warning,
                     side: const BorderSide(color: AppColors.warning),
@@ -2225,7 +2276,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
               const SizedBox(width: 6),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () => _reviewClaim(name, false),
+                  onPressed: () => _reviewClaim(claim, 'approve'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.safe,
                     foregroundColor: Colors.white,

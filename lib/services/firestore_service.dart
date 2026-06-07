@@ -280,4 +280,54 @@ class FirestoreService {
       }, SetOptions(merge: true));
     }
   }
+
+  // ── Claims (Tuntutan) ──────────────────────────────────────────────────────
+
+  Future<void> submitClaim(Map<String, dynamic> data) async {
+    await _db.collection('claims').add({
+      ...data,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Stream<QuerySnapshot> streamClaimsForCitizen(String citizenId) {
+    return _db
+        .collection('claims')
+        .where('citizenId', isEqualTo: citizenId)
+        .orderBy('createdAt', descending: true)
+        .snapshots();
+  }
+
+  Stream<QuerySnapshot> streamPendingClaims() {
+    return _db
+        .collection('claims')
+        .where('status', isEqualTo: 'pending')
+        .orderBy('createdAt', descending: true)
+        .snapshots();
+  }
+
+  Future<void> updateClaimStatus(String claimId, String status, {String? reason}) async {
+    await _db.collection('claims').doc(claimId).update({
+      'status': status,
+      if (reason != null) 'rejectReason': reason,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> bulkApproveClaimsByZone(String location) async {
+    final pendingClaims = await _db
+        .collection('claims')
+        .where('status', isEqualTo: 'pending')
+        .where('location', isEqualTo: location)
+        .get();
+
+    final batch = _db.batch();
+    for (final doc in pendingClaims.docs) {
+      batch.update(doc.reference, {
+        'status': 'approved',
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    }
+    await batch.commit();
+  }
 }
