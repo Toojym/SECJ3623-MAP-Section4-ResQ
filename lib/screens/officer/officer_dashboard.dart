@@ -2384,13 +2384,41 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     size: 16, color: AppColors.primary),
                 const SizedBox(width: 8),
                 Expanded(
-                    child: Text(claim.photoEvidence,
+                    child: Text(
+                        claim.photoEvidence.startsWith('data:image') 
+                          ? 'Gambar dimuat naik' 
+                          : claim.photoEvidence,
                         style: GoogleFonts.inter(
                             fontSize: 12,
                             color: AppColors.textPrimary))),
                 TextButton(
                   onPressed: () async {
-                    if (claim.photoEvidence.startsWith('http')) {
+                    if (claim.photoEvidence.startsWith('data:image')) {
+                      showDialog(
+                        context: context,
+                        builder: (ctx) {
+                          try {
+                            final base64String = claim.photoEvidence.split(',').last;
+                            return AlertDialog(
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              title: Text('Bukti Bergambar', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16)),
+                              content: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.memory(base64Decode(base64String), fit: BoxFit.contain),
+                              ),
+                              actions: [
+                                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Tutup'))
+                              ],
+                            );
+                          } catch (e) {
+                            return AlertDialog(
+                              content: const Text('Ralat memaparkan gambar.'),
+                              actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Tutup'))]
+                            );
+                          }
+                        }
+                      );
+                    } else if (claim.photoEvidence.startsWith('http')) {
                       final url = Uri.parse(claim.photoEvidence);
                       if (await canLaunchUrl(url)) {
                         await launchUrl(url);
