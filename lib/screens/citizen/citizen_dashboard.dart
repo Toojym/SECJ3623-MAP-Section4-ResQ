@@ -3086,12 +3086,12 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
           if (claim.photoEvidence.startsWith('data:image')) {
             try {
               final base64String = claim.photoEvidence.split(',').last;
-              imageWidget = Image.memory(base64Decode(base64String), height: 150, width: double.infinity, fit: BoxFit.cover);
+              imageWidget = Image.memory(base64Decode(base64String), height: 150, fit: BoxFit.cover);
             } catch (e) {
               imageWidget = Container(height: 150, color: Colors.grey.shade200, child: const Center(child: Icon(Icons.broken_image, color: Colors.grey)));
             }
           } else {
-            imageWidget = Image.network(claim.photoEvidence, height: 150, width: double.infinity, fit: BoxFit.cover, errorBuilder: (_,__,___) => Container(height: 150, color: Colors.grey.shade200, child: const Center(child: Icon(Icons.broken_image, color: Colors.grey))));
+            imageWidget = Image.network(claim.photoEvidence, height: 150, fit: BoxFit.cover, errorBuilder: (_,__,___) => Container(height: 150, color: Colors.grey.shade200, child: const Center(child: Icon(Icons.broken_image, color: Colors.grey))));
           }
         }
 
