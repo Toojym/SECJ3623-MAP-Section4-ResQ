@@ -1,7 +1,12 @@
+import 'dart:io';
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
 
   // ── Users collection ──────────────────────────────────────────────────────
 
@@ -300,7 +305,7 @@ class FirestoreService {
   Stream<QuerySnapshot> streamPendingClaims() {
     return _db
         .collection('claims')
-        .where('status', isEqualTo: 'pending')
+        .where('status', isEqualTo: 'submitted')
         .snapshots();
   }
 
@@ -315,7 +320,7 @@ class FirestoreService {
   Future<void> bulkApproveClaimsByZone(String location) async {
     final pendingClaims = await _db
         .collection('claims')
-        .where('status', isEqualTo: 'pending')
+        .where('status', isEqualTo: 'submitted')
         .where('location', isEqualTo: location)
         .get();
 
@@ -329,6 +334,34 @@ class FirestoreService {
     await batch.commit();
   }
 
+  Future<void> deleteClaim(String claimId) async {
+    await _db.collection('claims').doc(claimId).delete();
+  }
+
+  Future<String> uploadClaimEvidence(File imageFile, String citizenId) async {
+    try {
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}_$citizenId.jpg';
+      final ref = _storage.ref().child('claims_evidence/$fileName');
+      
+      final bytes = await imageFile.readAsBytes();
+      final uploadTask = ref.putData(
+        bytes, 
+        SettableMetadata(contentType: 'image/jpeg'),
+      );
+      
+      final snapshot = await uploadTask;
+      if (snapshot.state == TaskState.success) {
+        return await snapshot.ref.getDownloadURL();
+      } else {
+        throw Exception('Upload did not succeed. State: ${snapshot.state}');
+      }
+    } catch (e) {
+      debugPrint('Firebase Storage upload failed: $e. Falling back to Base64.');
+      final bytes = await imageFile.readAsBytes();
+      return 'data:image/jpeg;base64,${base64Encode(bytes)}';
+    }
+  }
+
   // ── Donation Campaigns ─────────────────────────────────────────────────────
 
   Future<void> createCampaign(Map<String, dynamic> data) async {
@@ -340,6 +373,35 @@ class FirestoreService {
 
   Stream<QuerySnapshot> streamActiveCampaigns() {
     return _db.collection('campaigns').snapshots();
+  }
+
+  // ── Donations ──────────────────────────────────────────────────────────────
+  
+  Stream<QuerySnapshot> streamUserDonations(String citizenId) {
+    return _db.collection('donations').where('citizenId', isEqualTo: citizenId).snapshots();
+  }
+
+  Future<void> submitDonation(String campaignId, Map<String, dynamic> donationData, double amount) async {
+    final campaignRef = _db.collection('campaigns').doc(campaignId);
+    final newDonationRef = _db.collection('donations').doc();
+
+    await _db.runTransaction((transaction) async {
+      final snapshot = await transaction.get(campaignRef);
+      if (!snapshot.exists) {
+        throw Exception("Campaign does not exist!");
+      }
+
+      // Read current amount
+      final currentAmount = (snapshot.data()!['currentAmount'] as num?)?.toDouble() ?? 0.0;
+      
+      // Update campaign
+      transaction.update(campaignRef, {
+        'currentAmount': currentAmount + amount,
+      });
+
+      // Insert donation record
+      transaction.set(newDonationRef, donationData);
+    });
   }
 
   // ── Volunteer Tasks ────────────────────────────────────────────────────────
