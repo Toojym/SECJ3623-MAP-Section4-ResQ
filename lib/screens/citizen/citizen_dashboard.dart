@@ -17,6 +17,7 @@ import '../../core/constants/app_strings.dart';
 import '../../models/sos_report_model.dart';
 import '../../models/claim_model.dart';
 import '../../models/campaign_model.dart';
+import '../../models/donation_model.dart';
 import '../../services/firestore_service.dart';
 import '../../services/location_service.dart';
 import '../../widgets/common/sigap_app_bar.dart';
@@ -157,6 +158,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
   bool _isSubmittingSOS = false;
   bool _isSirenActive = false;
   bool _showAllClaims = false;
+  String _selectedClaimFilter = 'Semua';
 
   String _greeting() {
     final hour = DateTime.now().hour;
@@ -266,7 +268,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
       children: [
         _buildReliefClaimTracker(),
         const SizedBox(height: 32),
-        _buildDonationTransparency(),
+        const DonationTransparencyWidget(),
         const SizedBox(height: 80),
       ],
     );
@@ -2503,8 +2505,8 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
               );
             }
 
-            final docs = snapshot.data!.docs.toList();
-            docs.sort((a, b) {
+            final allDocs = snapshot.data!.docs.toList();
+            allDocs.sort((a, b) {
               final aData = a.data() as Map<String, dynamic>;
               final bData = b.data() as Map<String, dynamic>;
               final aTime = aData['createdAt'] as Timestamp?;
@@ -2513,75 +2515,150 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
               return bTime.compareTo(aTime); // descending
             });
 
+            final docs = allDocs.where((doc) {
+              if (_selectedClaimFilter == 'Semua') return true;
+              final status = (doc.data() as Map<String, dynamic>)['status'] as String? ?? '';
+              if (_selectedClaimFilter == 'Dihantar' && status == 'submitted') return true;
+              if (_selectedClaimFilter == 'Sedang Disemak' && status == 'under_review') return true;
+              if (_selectedClaimFilter == 'Diluluskan' && status == 'approved') return true;
+              if (_selectedClaimFilter == 'Telah Disalurkan' && status == 'disbursed') return true;
+              if (_selectedClaimFilter == 'Ditolak' && status == 'rejected') return true;
+              return false;
+            }).toList();
+
             final displayDocs = _showAllClaims ? docs : docs.take(3).toList();
 
             return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ...displayDocs.map((doc) {
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      'Semua', 'Dihantar', 'Sedang Disemak', 'Diluluskan', 'Telah Disalurkan', 'Ditolak'
+                    ].map((filter) {
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: FilterChip(
+                          label: Text(filter, style: GoogleFonts.inter(fontSize: 12)),
+                          selected: _selectedClaimFilter == filter,
+                          onSelected: (selected) {
+                            if (selected) {
+                              setState(() => _selectedClaimFilter = filter);
+                            }
+                          },
+                          selectedColor: AppColors.primary.withValues(alpha: 0.2),
+                          checkmarkColor: AppColors.primary,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                if (docs.isEmpty)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: _cardDecoration(),
+                    child: Center(
+                      child: Text('Tiada tuntutan untuk status ini.',
+                          style: GoogleFonts.inter(color: AppColors.textSecondary)),
+                    ),
+                  )
+                else
+                  ...displayDocs.map((doc) {
                   final data = doc.data() as Map<String, dynamic>;
                   final claim = ClaimModel.fromMap(doc.id, data);
                   
                   Color statusColor = AppColors.warning;
-                  String statusText = 'Disemak';
-                  double progress = 0.5;
-                  String subText = 'Menunggu pengesahan';
+                  String statusText = 'Dihantar';
+                  double progress = 0.25;
+                  String subText = 'Menunggu semakan pegawai';
                   
-                  if (claim.status == 'approved') {
+                  if (claim.status == 'under_review') {
+                    statusColor = Colors.purple;
+                    statusText = 'Sedang Disemak';
+                    progress = 0.5;
+                    subText = 'Tuntutan sedang disemak oleh pegawai';
+                  } else if (claim.status == 'approved') {
                     statusColor = AppColors.safe;
-                    statusText = 'Lulus';
+                    statusText = 'Diluluskan';
+                    progress = 0.75;
+                    subText = 'Menunggu penyaluran bantuan';
+                  } else if (claim.status == 'disbursed') {
+                    statusColor = Colors.blue;
+                    statusText = 'Telah Disalurkan';
                     progress = 1.0;
-                    subText = 'Tuntutan telah diluluskan';
+                    subText = 'Bantuan telah berjaya disalurkan';
                   } else if (claim.status == 'rejected') {
                     statusColor = AppColors.danger;
                     statusText = 'Ditolak';
                     progress = 1.0;
                     subText = claim.rejectReason ?? 'Tuntutan ditolak';
-                  } else if (claim.status == 'info_requested') {
-                    statusColor = Colors.orange;
-                    statusText = 'Info Lanjut';
-                    progress = 0.5;
-                    subText = 'Sila kemas kini info tuntutan';
                   }
 
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(20),
-                    decoration: _cardDecoration(),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(claim.type, 
-                                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                                overflow: TextOverflow.ellipsis,
+                  return GestureDetector(
+                    onTap: () => _showClaimDetailsDialog(claim),
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(20),
+                      decoration: _cardDecoration(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(claim.type, 
+                                  style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Text(statusText, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: statusColor)),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: LinearProgressIndicator(value: progress, minHeight: 10, backgroundColor: AppColors.divider, color: statusColor),
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Icon(
+                                claim.status == 'rejected' ? Icons.error_outline_rounded : Icons.info_outline_rounded,
+                                size: 16, 
+                                color: statusColor
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(subText, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+                              )
+                            ],
+                          ),
+                          if (claim.status == 'submitted') ...[
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                onPressed: () async {
+                                  await _firestoreService.deleteClaim(claim.id);
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tuntutan dibatalkan.')));
+                                  }
+                                },
+                                icon: const Icon(Icons.cancel_outlined, size: 16),
+                                label: const Text('Batal Tuntutan'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.danger,
+                                  side: const BorderSide(color: AppColors.danger),
+                                ),
                               ),
                             ),
-                            Text(statusText, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: statusColor)),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: LinearProgressIndicator(value: progress, minHeight: 10, backgroundColor: AppColors.divider, color: statusColor),
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Icon(
-                              claim.status == 'rejected' ? Icons.error_outline_rounded : Icons.info_outline_rounded,
-                              size: 16, 
-                              color: statusColor
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(subText, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
-                            )
-                          ],
-                        )
-                      ],
+                          ]
+                        ],
+                      ),
                     ),
                   );
                 }),
@@ -2603,169 +2680,199 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
   }
 
   void _showSubmitClaimDialog() {
+    final _formKey = GlobalKey<FormState>();
     final typeCtrl = TextEditingController();
-    final locationCtrl = TextEditingController(text: 'Ampang'); // Defaulting for testing
-    final evidenceCtrl = TextEditingController(text: '1 Dokumen dilampirkan');
+    final locationCtrl = TextEditingController();
+    final icCtrl = TextEditingController();
+    final householdCtrl = TextEditingController(text: '1');
+    final damageCtrl = TextEditingController();
+    
+    File? selectedImage;
+    bool isUploading = false;
+    
+    final List<String> mockLocations = [
+      'Taman Mutiara Rini, Johor Bahru, Johor',
+      'Ampang, Selangor',
+      'Hulu Langat, Selangor',
+      'Gombak, Selangor',
+      'Baling, Kedah',
+      'Kuantan, Pahang',
+      'Kota Bharu, Kelantan'
+    ];
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Mohon Tuntutan Baru', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: typeCtrl,
-              decoration: const InputDecoration(labelText: 'Jenis Bantuan (Cth: Kerosakan Rumah, Bantuan Makanan)'),
+      barrierDismissible: !isUploading,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Text('Mohon Tuntutan Baru', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+            content: SingleChildScrollView(
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: icCtrl,
+                      decoration: const InputDecoration(labelText: 'No. Kad Pengenalan (IC)', hintText: 'xxxxxx-xx-xxxx'),
+                      keyboardType: TextInputType.number,
+                      validator: (value) => value == null || value.isEmpty ? 'Sila isi ruangan ini' : null,
+                      onChanged: (value) {
+                        // Auto format IC xxxxxx-xx-xxxx
+                        String newValue = value.replaceAll('-', '');
+                        if (newValue.length > 6) {
+                          newValue = '${newValue.substring(0, 6)}-${newValue.substring(6)}';
+                        }
+                        if (newValue.length > 9) {
+                          newValue = '${newValue.substring(0, 9)}-${newValue.substring(9)}';
+                        }
+                        if (newValue.length > 14) {
+                          newValue = newValue.substring(0, 14);
+                        }
+                        if (icCtrl.text != newValue) {
+                          icCtrl.value = TextEditingValue(
+                            text: newValue,
+                            selection: TextSelection.collapsed(offset: newValue.length),
+                          );
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: householdCtrl,
+                      decoration: const InputDecoration(labelText: 'Saiz Isi Rumah (Bilangan)'),
+                      keyboardType: TextInputType.number,
+                      validator: (value) => value == null || value.isEmpty ? 'Sila isi ruangan ini' : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: typeCtrl,
+                      decoration: const InputDecoration(labelText: 'Jenis Bantuan (Cth: Makanan, Membaiki Rumah)'),
+                      validator: (value) => value == null || value.isEmpty ? 'Sila isi ruangan ini' : null,
+                    ),
+                    const SizedBox(height: 12),
+                    Autocomplete<String>(
+                      optionsBuilder: (TextEditingValue textEditingValue) {
+                        if (textEditingValue.text.isEmpty) {
+                          return const Iterable<String>.empty();
+                        }
+                        return mockLocations.where((String option) {
+                          return option.toLowerCase().contains(textEditingValue.text.toLowerCase());
+                        });
+                      },
+                      onSelected: (String selection) {
+                        locationCtrl.text = selection;
+                      },
+                      fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
+                        // Sync internal autocomplete controller with our locationCtrl if needed,
+                        // but actually we can just assign the listener.
+                        locationCtrl.text = textEditingController.text;
+                        textEditingController.addListener(() {
+                          locationCtrl.text = textEditingController.text;
+                        });
+                        return TextFormField(
+                          controller: textEditingController,
+                          focusNode: focusNode,
+                          decoration: const InputDecoration(labelText: 'Lokasi / Zon Bencana', hintText: 'Mula menaip untuk carian...'),
+                          validator: (value) => value == null || value.isEmpty ? 'Sila isi ruangan ini' : null,
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: damageCtrl,
+                      decoration: const InputDecoration(labelText: 'Keterangan Kerosakan'),
+                      maxLines: 3,
+                      validator: (value) => value == null || value.isEmpty ? 'Sila isi ruangan ini' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: isUploading ? null : () async {
+                          final ImagePicker picker = ImagePicker();
+                          final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+                          if (image != null) {
+                            setState(() => selectedImage = File(image.path));
+                          }
+                        },
+                        icon: Icon(selectedImage != null ? Icons.check_circle_rounded : Icons.upload_rounded, 
+                          color: selectedImage != null ? AppColors.safe : AppColors.primary),
+                        label: Text(selectedImage != null ? 'Gambar Dipilih (Tukar)' : 'Muat Naik Gambar Bukti'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: selectedImage != null ? AppColors.safe : AppColors.primary,
+                          side: BorderSide(color: selectedImage != null ? AppColors.safe : AppColors.primary),
+                        ),
+                      ),
+                    ),
+                    if (selectedImage == null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Text('Sila muat naik gambar bukti kerosakan.', style: GoogleFonts.inter(fontSize: 12, color: AppColors.danger)),
+                      ),
+                  ],
+                ),
+              ),
             ),
-            TextField(
-              controller: locationCtrl,
-              decoration: const InputDecoration(labelText: 'Lokasi / Zon Bencana'),
-            ),
-            TextField(
-              controller: evidenceCtrl,
-              decoration: const InputDecoration(labelText: 'Ringkasan Bukti'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (typeCtrl.text.isEmpty) return;
-              final authState = context.read<AuthBloc>().state;
-              if (authState is AuthAuthenticated) {
-                final claim = ClaimModel(
-                  id: '',
-                  citizenId: authState.uid,
-                  citizenName: authState.displayName.isNotEmpty ? authState.displayName : 'Awam',
-                  type: typeCtrl.text,
-                  evidence: evidenceCtrl.text,
-                  location: locationCtrl.text,
-                  status: 'pending',
-                );
-                await _firestoreService.submitClaim(claim.toMap());
-                if (mounted) Navigator.pop(ctx);
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tuntutan berjaya dihantar.')));
-                }
-              }
-            },
-            child: const Text('Hantar'),
-          ),
-        ],
+            actions: [
+              TextButton(
+                onPressed: isUploading ? null : () => Navigator.pop(ctx),
+                child: const Text('Batal'),
+              ),
+              ElevatedButton(
+                onPressed: isUploading ? null : () async {
+                  if (!_formKey.currentState!.validate()) return;
+                  if (selectedImage == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sila muat naik gambar bukti.')));
+                    return;
+                  }
+                  
+                  setState(() => isUploading = true);
+                  
+                  try {
+                    final authState = context.read<AuthBloc>().state;
+                    if (authState is AuthAuthenticated) {
+                      String imageUrl = await _firestoreService.uploadClaimEvidence(selectedImage!, authState.uid);
+                      
+                      final claim = ClaimModel(
+                        id: '',
+                        citizenId: authState.uid,
+                        citizenName: authState.displayName.isNotEmpty ? authState.displayName : 'Awam',
+                        icNumber: icCtrl.text,
+                        householdSize: int.tryParse(householdCtrl.text) ?? 1,
+                        damageDescription: damageCtrl.text,
+                        type: typeCtrl.text,
+                        photoEvidence: imageUrl,
+                        location: locationCtrl.text,
+                        status: 'submitted',
+                      );
+                      await _firestoreService.submitClaim(claim.toMap());
+                      if (mounted) Navigator.pop(ctx);
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tuntutan berjaya dihantar.')));
+                      }
+                    }
+                  } catch (e) {
+                    setState(() => isUploading = false);
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ralat: $e')));
+                    }
+                  }
+                },
+                child: isUploading 
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
+                  : const Text('Hantar Tuntutan'),
+              ),
+            ],
+          );
+        }
       ),
     );
   }
 
-  Widget _buildDonationTransparency() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionHeader('Telus Tabung Bantuan', actionLabel: 'Derma', onAction: () {}),
-        const SizedBox(height: 16),
-        StreamBuilder<QuerySnapshot>(
-          stream: _firestoreService.streamActiveCampaigns(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const SizedBox(
-                height: 200,
-                child: Center(child: CircularProgressIndicator()),
-              );
-            }
-            final docs = snapshot.hasData ? snapshot.data!.docs.toList() : [];
-            if (docs.isEmpty) {
-              return Container(
-                height: 100,
-                alignment: Alignment.center,
-                decoration: _cardDecoration(),
-                child: Text('Tiada tabung aktif', style: GoogleFonts.inter(color: AppColors.textSecondary)),
-              );
-            }
-            docs.sort((a, b) {
-              final aTime = (a.data() as Map<String, dynamic>)['createdAt'] as Timestamp?;
-              final bTime = (b.data() as Map<String, dynamic>)['createdAt'] as Timestamp?;
-              if (aTime == null || bTime == null) return 0;
-              return bTime.compareTo(aTime);
-            });
 
-            return SizedBox(
-              height: 250,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: docs.length,
-                itemBuilder: (context, index) {
-                  final data = docs[index].data() as Map<String, dynamic>;
-                  final campaign = CampaignModel.fromMap(docs[index].id, data);
-                  
-                  double progress = campaign.targetAmount > 0 ? campaign.currentAmount / campaign.targetAmount : 0.0;
-                  if (progress > 1.0) progress = 1.0;
-
-                  final colors = [Colors.orange, Colors.blue, Colors.red, Colors.green, Colors.teal, Colors.brown, Colors.purple, Colors.pink];
-                  int c = 0;
-                  
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 16.0),
-                    child: Container(
-                      width: 320,
-                      padding: const EdgeInsets.all(20),
-                      decoration: _cardDecoration(),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(campaign.name, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary), maxLines: 1, overflow: TextOverflow.ellipsis),
-                          const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('RM ${campaign.currentAmount.toStringAsFixed(0)} terkumpul', style: GoogleFonts.inter(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w700)),
-                              Text('Sasaran RM ${campaign.targetAmount.toStringAsFixed(0)}', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(6),
-                            child: LinearProgressIndicator(value: progress, minHeight: 10, backgroundColor: AppColors.divider, color: AppColors.primary),
-                          ),
-                          const SizedBox(height: 24),
-                          Text('Pengagihan Dana:', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
-                          const SizedBox(height: 16),
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: campaign.allocations.entries.map((e) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(right: 16.0),
-                                  child: _fundDist('${e.value}%', e.key, colors[c++ % colors.length]),
-                                );
-                              }).toList(),
-                            ),
-                          )
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _fundDist(String percent, String label, Color color) {
-    return Column(
-      children: [
-        Text(percent, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700, color: color)),
-        const SizedBox(height: 4),
-        Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.textSecondary), textAlign: TextAlign.center),
-      ],
-    );
-  }
 
   Widget _buildEmergencyAlerts() {
     return Column(
@@ -2970,6 +3077,70 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
       ),
     );
   }
+  void _showClaimDetailsDialog(ClaimModel claim) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        Widget imageWidget = const SizedBox();
+        if (claim.photoEvidence.isNotEmpty) {
+          if (claim.photoEvidence.startsWith('data:image')) {
+            try {
+              final base64String = claim.photoEvidence.split(',').last;
+              imageWidget = Image.memory(base64Decode(base64String), height: 150, width: double.infinity, fit: BoxFit.cover);
+            } catch (e) {
+              imageWidget = Container(height: 150, color: Colors.grey.shade200, child: const Center(child: Icon(Icons.broken_image, color: Colors.grey)));
+            }
+          } else {
+            imageWidget = Image.network(claim.photoEvidence, height: 150, width: double.infinity, fit: BoxFit.cover, errorBuilder: (_,__,___) => Container(height: 150, color: Colors.grey.shade200, child: const Center(child: Icon(Icons.broken_image, color: Colors.grey))));
+          }
+        }
+
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text('Butiran Tuntutan', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16)),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (claim.photoEvidence.isNotEmpty) ...[
+                  ClipRRect(borderRadius: BorderRadius.circular(8), child: imageWidget),
+                  const SizedBox(height: 16),
+                ],
+                _detailRow('Jenis', claim.type),
+                _detailRow('Lokasi', claim.location),
+                _detailRow('Keterangan Kerosakan', claim.damageDescription),
+                _detailRow('Saiz Isi Rumah', claim.householdSize.toString()),
+                _detailRow('Status', claim.status.toUpperCase()),
+                if (claim.rejectReason != null && claim.rejectReason!.isNotEmpty)
+                  _detailRow('Sebab Ditolak', claim.rejectReason!),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Tutup'),
+            ),
+          ],
+        );
+      }
+    );
+  }
+
+  Widget _detailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+          Text(value, style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary)),
+        ],
+      ),
+    );
+  }
+
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -3162,3 +3333,431 @@ class _CallSimulationScreenState extends State<_CallSimulationScreen>
   }
 }
 
+class DonationTransparencyWidget extends StatefulWidget {
+  const DonationTransparencyWidget({super.key});
+
+  @override
+  State<DonationTransparencyWidget> createState() => _DonationTransparencyWidgetState();
+}
+
+class _DonationTransparencyWidgetState extends State<DonationTransparencyWidget> {
+  final FirestoreService _firestoreService = FirestoreService();
+  String? _selectedCampaignId;
+  CampaignModel? _selectedCampaign;
+  
+  late final Stream<QuerySnapshot> _campaignsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _campaignsStream = _firestoreService.streamActiveCampaigns();
+  }
+
+  Widget _buildSectionHeader(String title, {String? actionLabel, VoidCallback? onAction}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(title, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+        if (actionLabel != null && onAction != null)
+          TextButton(
+            onPressed: onAction,
+            style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 0), tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+            child: Text(actionLabel, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary)),
+          ),
+      ],
+    );
+  }
+
+  BoxDecoration _cardDecoration() {
+    return BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      boxShadow: [
+        BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, 10)),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final authState = context.read<AuthBloc>().state;
+    final uid = authState is AuthAuthenticated ? authState.uid : '';
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: _firestoreService.streamUserDonations(uid),
+      builder: (context, donationSnapshot) {
+        // Map campaignId -> list of DonationModels
+        Map<String, List<DonationModel>> userDonationsMap = {};
+        if (donationSnapshot.hasData) {
+          for (var doc in donationSnapshot.data!.docs) {
+            final data = doc.data() as Map<String, dynamic>;
+            final campaignId = data['campaignId'] as String? ?? '';
+            final donation = DonationModel.fromMap(doc.id, data);
+            if (!userDonationsMap.containsKey(campaignId)) {
+              userDonationsMap[campaignId] = [];
+            }
+            userDonationsMap[campaignId]!.add(donation);
+          }
+          // Sort donations by date descending
+          for (var list in userDonationsMap.values) {
+            list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          }
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSectionHeader(
+              'Telus Tabung Bantuan',
+              actionLabel: 'Derma',
+              onAction: () {
+                if (_selectedCampaign == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sila pilih kempen terlebih dahulu.')));
+                } else {
+                  _showDonationDialog(_selectedCampaign!);
+                }
+              },
+            ),
+            const SizedBox(height: 16),
+            StreamBuilder<QuerySnapshot>(
+              stream: _campaignsStream,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SizedBox(
+                    height: 200,
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                final docs = snapshot.hasData ? snapshot.data!.docs.toList() : [];
+                if (docs.isEmpty) {
+                  return Container(
+                    height: 100,
+                    alignment: Alignment.center,
+                    decoration: _cardDecoration(),
+                    child: Text('Tiada tabung aktif', style: GoogleFonts.inter(color: AppColors.textSecondary)),
+                  );
+                }
+                docs.sort((a, b) {
+                  final aTime = (a.data() as Map<String, dynamic>)['createdAt'] as Timestamp?;
+                  final bTime = (b.data() as Map<String, dynamic>)['createdAt'] as Timestamp?;
+                  if (aTime == null || bTime == null) return 0;
+                  return bTime.compareTo(aTime);
+                });
+
+                return Column(
+                  children: [
+                    SizedBox(
+                      height: 250,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: docs.length,
+                        itemBuilder: (context, index) {
+                          final data = docs[index].data() as Map<String, dynamic>;
+                          final campaign = CampaignModel.fromMap(docs[index].id, data);
+                          final isSelected = _selectedCampaignId == campaign.id;
+                          final donationsList = userDonationsMap[campaign.id] ?? [];
+                          final donatedAmount = donationsList.fold(0.0, (sum, item) => sum + item.amount);
+                          
+                          double progress = campaign.targetAmount > 0 ? campaign.currentAmount / campaign.targetAmount : 0.0;
+                          if (progress > 1.0) progress = 1.0;
+
+                          final colors = [Colors.orange, Colors.blue, Colors.red, Colors.green, Colors.teal, Colors.brown, Colors.purple, Colors.pink];
+                          int c = 0;
+                          
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 16.0),
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedCampaignId = campaign.id;
+                                  _selectedCampaign = campaign;
+                                });
+                              },
+                              child: Stack(
+                                children: [
+                                  Container(
+                                    width: 320,
+                                    padding: const EdgeInsets.all(20),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(color: isSelected ? AppColors.primary : Colors.black.withValues(alpha: 0.05), width: isSelected ? 2 : 1),
+                                      boxShadow: [
+                                        BoxShadow(color: AppColors.primary.withValues(alpha: isSelected ? 0.2 : 0.05), blurRadius: 20, offset: const Offset(0, 10))
+                                      ],
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(campaign.name, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                        const SizedBox(height: 12),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text('RM ${campaign.currentAmount.toStringAsFixed(0)} terkumpul', style: GoogleFonts.inter(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w700)),
+                                            Text('Sasaran RM ${campaign.targetAmount.toStringAsFixed(0)}', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 12),
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(6),
+                                          child: LinearProgressIndicator(value: progress, minHeight: 10, backgroundColor: AppColors.divider, color: AppColors.primary),
+                                        ),
+                                        const SizedBox(height: 24),
+                                        Text('Pengagihan Dana:', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                                        const SizedBox(height: 16),
+                                        SingleChildScrollView(
+                                          scrollDirection: Axis.horizontal,
+                                          child: Row(
+                                            children: campaign.allocations.entries.map((e) {
+                                              return Padding(
+                                                padding: const EdgeInsets.only(right: 16.0),
+                                                child: _fundDist('${e.value}%', e.key, colors[c++ % colors.length]),
+                                              );
+                                            }).toList(),
+                                          ),
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                  if (donatedAmount > 0)
+                                    Positioned(
+                                      top: 16,
+                                      right: 16,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.amber.withValues(alpha: 0.2),
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(color: Colors.amber),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(Icons.verified_rounded, size: 12, color: Colors.amber),
+                                            const SizedBox(width: 4),
+                                            Text('Penderma', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.amber.shade800)),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    if (_selectedCampaignId != null)
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(top: 16),
+                        decoration: _cardDecoration(),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Theme(
+                            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                            child: ExpansionTile(
+                              title: Text('Rekod Sumbangan Anda', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                              subtitle: (userDonationsMap[_selectedCampaignId] != null && userDonationsMap[_selectedCampaignId]!.isNotEmpty)
+                                  ? Text('Jumlah: RM ${userDonationsMap[_selectedCampaignId]!.fold(0.0, (sum, d) => sum + d.amount).toStringAsFixed(2)}', style: GoogleFonts.inter(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w600))
+                                  : null,
+                              leading: Icon((userDonationsMap[_selectedCampaignId] != null && userDonationsMap[_selectedCampaignId]!.isNotEmpty) ? Icons.favorite_rounded : Icons.history_rounded, color: (userDonationsMap[_selectedCampaignId] != null && userDonationsMap[_selectedCampaignId]!.isNotEmpty) ? Colors.pink : AppColors.textSecondary),
+                              children: [
+                                if (userDonationsMap[_selectedCampaignId] == null || userDonationsMap[_selectedCampaignId]!.isEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Text('Tiada Rekod Bantuan', style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary)),
+                                  )
+                                else
+                                  ...userDonationsMap[_selectedCampaignId]!.map((d) => ListTile(
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+                                        title: Text('RM ${d.amount.toStringAsFixed(2)}', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                                        subtitle: Text('${d.paymentMethod} • ${d.createdAt.toString().substring(0, 16)}', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+                                        trailing: const Icon(Icons.receipt_long_rounded, color: AppColors.textSecondary, size: 20),
+                                        onTap: () => _showReceiptDialog(d),
+                                      )),
+                                const SizedBox(height: 8),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ],
+        );
+      }
+    );
+  }
+
+  void _showDonationDialog(CampaignModel campaign) {
+    final amountCtrl = TextEditingController();
+    String selectedMethod = 'FPX';
+    bool isProcessing = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Text('Derma: ${campaign.name}', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16)),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: amountCtrl,
+                    decoration: const InputDecoration(labelText: 'Jumlah Derma (RM)', prefixText: 'RM '),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                  const SizedBox(height: 16),
+                  Text('Kaedah Pembayaran', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    value: selectedMethod,
+                    items: ['FPX', 'Kad Kredit / Debit'].map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+                    onChanged: (val) {
+                      if (val != null) setState(() => selectedMethod = val);
+                    },
+                    decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+                  ),
+                  const SizedBox(height: 12),
+                  if (selectedMethod == 'FPX')
+                    DropdownButtonFormField<String>(
+                      items: ['Maybank2U', 'CIMB Clicks', 'RHB Now', 'Bank Islam', 'Public Bank'].map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
+                      onChanged: (val) {},
+                      decoration: const InputDecoration(labelText: 'Pilih Bank', contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+                    )
+                  else
+                    Column(
+                      children: [
+                        const TextField(decoration: InputDecoration(labelText: 'Nombor Kad', hintText: '0000 0000 0000 0000')),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: const [
+                            Expanded(child: TextField(decoration: InputDecoration(labelText: 'Luput (MM/YY)'))),
+                            SizedBox(width: 8),
+                            Expanded(child: TextField(decoration: InputDecoration(labelText: 'CVV'))),
+                          ],
+                        )
+                      ],
+                    ),
+                ],
+              ),
+            ),
+            actions: [
+              if (!isProcessing)
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Batal'),
+                ),
+              ElevatedButton(
+                onPressed: isProcessing ? null : () async {
+                  final amount = double.tryParse(amountCtrl.text) ?? 0.0;
+                  if (amount <= 0) return;
+
+                  setState(() => isProcessing = true);
+                  
+                  // Mock processing delay
+                  await Future.delayed(const Duration(seconds: 2));
+
+                  if (!mounted) return;
+                  final authState = context.read<AuthBloc>().state;
+                  if (authState is AuthAuthenticated) {
+                    final receiptNo = 'RESQ-${DateTime.now().millisecondsSinceEpoch}';
+                    final donation = DonationModel(
+                      id: '',
+                      campaignId: campaign.id,
+                      campaignName: campaign.name,
+                      citizenId: authState.uid,
+                      amount: amount,
+                      paymentMethod: selectedMethod,
+                      receiptNo: receiptNo,
+                      createdAt: DateTime.now(),
+                    );
+
+                    await _firestoreService.submitDonation(campaign.id, donation.toMap(), amount);
+
+                    if (mounted) {
+                      Navigator.pop(ctx);
+                      _showReceiptDialog(donation);
+                    }
+                  }
+                },
+                child: isProcessing 
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Text('Bayar Sekarang'),
+              ),
+            ],
+          );
+        }
+      ),
+    );
+  }
+
+  void _showReceiptDialog(DonationModel donation) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Center(
+          child: Column(
+            children: [
+              const Icon(Icons.check_circle_rounded, color: AppColors.safe, size: 48),
+              const SizedBox(height: 8),
+              Text('Terima Kasih!', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: AppColors.safe)),
+            ],
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Sumbangan anda sebanyak RM ${donation.amount.toStringAsFixed(2)} untuk ${donation.campaignName} telah berjaya diterima.', textAlign: TextAlign.center, style: GoogleFonts.inter()),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+              child: Column(
+                children: [
+                  Text('Resit Cukai Digital', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                  const Divider(),
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('No. Resit:'), Text(donation.receiptNo, style: const TextStyle(fontWeight: FontWeight.bold))]),
+                  const SizedBox(height: 4),
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Kaedah:'), Text(donation.paymentMethod)]),
+                  const SizedBox(height: 4),
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Tarikh:'), Text(donation.createdAt.toString().substring(0, 16))]),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text('*Sumbangan ini layak mendapat pengecualian cukai di bawah Subseksyen 44(6) Akta Cukai Pendapatan 1967.', textAlign: TextAlign.center, style: GoogleFonts.inter(fontSize: 10, color: AppColors.textSecondary, fontStyle: FontStyle.italic)),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx),
+            style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(40)),
+            child: const Text('Tutup'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _fundDist(String percent, String label, Color color) {
+    return Column(
+      children: [
+        Text(percent, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700, color: color)),
+        const SizedBox(height: 4),
+        Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.textSecondary), textAlign: TextAlign.center),
+      ],
+    );
+  }
+
+}

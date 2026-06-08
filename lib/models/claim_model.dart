@@ -4,10 +4,13 @@ class ClaimModel {
   final String id;
   final String citizenId;
   final String citizenName;
+  final String icNumber;
+  final int householdSize;
+  final String damageDescription;
   final String type;
-  final String evidence;
+  final String photoEvidence;
   final String location;
-  final String status; // 'pending', 'approved', 'info_requested', 'rejected'
+  final String status; // 'submitted', 'under_review', 'approved', 'disbursed', 'rejected'
   final String? rejectReason;
   final DateTime? createdAt;
 
@@ -15,8 +18,11 @@ class ClaimModel {
     required this.id,
     required this.citizenId,
     required this.citizenName,
+    required this.icNumber,
+    required this.householdSize,
+    required this.damageDescription,
     required this.type,
-    required this.evidence,
+    required this.photoEvidence,
     required this.location,
     required this.status,
     this.rejectReason,
@@ -28,10 +34,13 @@ class ClaimModel {
       id: id,
       citizenId: data['citizenId'] ?? '',
       citizenName: data['citizenName'] ?? 'Awam',
+      icNumber: data['icNumber'] ?? '-',
+      householdSize: data['householdSize'] ?? 1,
+      damageDescription: data['damageDescription'] ?? '-',
       type: data['type'] ?? 'Tuntutan Bantuan',
-      evidence: data['evidence'] ?? 'Tiada bukti',
+      photoEvidence: data['photoEvidence'] ?? data['evidence'] ?? 'Tiada bukti', // Fallback to 'evidence' for old data
       location: data['location'] ?? 'Tidak diketahui',
-      status: data['status'] ?? 'pending',
+      status: data['status'] ?? 'submitted',
       rejectReason: data['rejectReason'],
       createdAt: data['createdAt'] != null ? (data['createdAt'] as Timestamp).toDate() : null,
     );
@@ -41,8 +50,11 @@ class ClaimModel {
     return {
       'citizenId': citizenId,
       'citizenName': citizenName,
+      'icNumber': icNumber,
+      'householdSize': householdSize,
+      'damageDescription': damageDescription,
       'type': type,
-      'evidence': evidence,
+      'photoEvidence': photoEvidence,
       'location': location,
       'status': status,
       'rejectReason': rejectReason,

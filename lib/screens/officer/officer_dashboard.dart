@@ -16,6 +16,7 @@ import '../../models/campaign_model.dart';
 import '../../models/volunteer_task_model.dart';
 import '../../services/firestore_service.dart';
 import '../../widgets/common/sigap_app_bar.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class OfficerDashboard extends StatefulWidget {
   const OfficerDashboard({super.key});
@@ -1729,56 +1730,58 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: AppColors.volunteerAccent)),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                DropdownButtonFormField<String>(
-                  decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                      labelText: 'Pilih Skuad'),
-                  value: selectedSquad,
-                  items: const [
-                    DropdownMenuItem(
-                        value: 'Skuad Bravo (Pembersihan)', child: Text('Skuad Bravo (Pembersihan)')),
-                    DropdownMenuItem(
-                        value: 'Skuad Echo (Dapur Jalanan)', child: Text('Skuad Echo (Dapur Jalanan)')),
-                    DropdownMenuItem(
-                        value: 'Skuad Delta (Perubatan)', child: Text('Skuad Delta (Perubatan)')),
-                  ],
-                  onChanged: (v) {
-                    if (v != null) setState(() => selectedSquad = v);
-                  },
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                      labelText: 'Lokasi Tugasan'),
-                  value: selectedZone,
-                  items: const [
-                    DropdownMenuItem(
-                        value: 'Zon Banjir Ampang', child: Text('Zon Banjir Ampang')),
-                    DropdownMenuItem(
-                        value: 'PPS Hulu Langat', child: Text('PPS Hulu Langat')),
-                    DropdownMenuItem(
-                        value: 'Zon Tanah Runtuh Gombak', child: Text('Zon Tanah Runtuh Gombak')),
-                  ],
-                  onChanged: (v) {
-                    if (v != null) setState(() => selectedZone = v);
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: taskCtrl,
-                  decoration: InputDecoration(
-                      labelText: 'Tugasan Khusus',
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8))),
-                  maxLines: 2,
-                ),
-              ],
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DropdownButtonFormField<String>(
+                    decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                        labelText: 'Pilih Skuad'),
+                    value: selectedSquad,
+                    items: const [
+                      DropdownMenuItem(
+                          value: 'Skuad Bravo (Pembersihan)', child: Text('Skuad Bravo (Pembersihan)')),
+                      DropdownMenuItem(
+                          value: 'Skuad Echo (Dapur Jalanan)', child: Text('Skuad Echo (Dapur Jalanan)')),
+                      DropdownMenuItem(
+                          value: 'Skuad Delta (Perubatan)', child: Text('Skuad Delta (Perubatan)')),
+                    ],
+                    onChanged: (v) {
+                      if (v != null) setState(() => selectedSquad = v);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                        labelText: 'Lokasi Tugasan'),
+                    value: selectedZone,
+                    items: const [
+                      DropdownMenuItem(
+                          value: 'Zon Banjir Ampang', child: Text('Zon Banjir Ampang')),
+                      DropdownMenuItem(
+                          value: 'PPS Hulu Langat', child: Text('PPS Hulu Langat')),
+                      DropdownMenuItem(
+                          value: 'Zon Tanah Runtuh Gombak', child: Text('Zon Tanah Runtuh Gombak')),
+                    ],
+                    onChanged: (v) {
+                      if (v != null) setState(() => selectedZone = v);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: taskCtrl,
+                    decoration: InputDecoration(
+                        labelText: 'Tugasan Khusus',
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8))),
+                    maxLines: 2,
+                  ),
+                ],
+              ),
             ),
             actions: [
               TextButton(
@@ -1832,31 +1835,33 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: AppColors.danger)),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('Arahkan semula ${task.squadName} ke zon baharu?',
-                    style: GoogleFonts.inter(fontSize: 14)),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                      labelText: 'Lokasi Baharu'),
-                  value: newZone,
-                  items: const [
-                    DropdownMenuItem(
-                        value: 'Kecemasan: Runtuhan Gombak',
-                        child: Text('Kecemasan: Runtuhan Gombak')),
-                    DropdownMenuItem(
-                        value: 'Bantuan: PPS Sri Petaling',
-                        child: Text('Bantuan: PPS Sri Petaling')),
-                  ],
-                  onChanged: (v) {
-                    if (v != null) setState(() => newZone = v);
-                  },
-                ),
-              ],
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Arahkan semula ${task.squadName} ke zon baharu?',
+                      style: GoogleFonts.inter(fontSize: 14)),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                        labelText: 'Lokasi Baharu'),
+                    value: newZone,
+                    items: const [
+                      DropdownMenuItem(
+                          value: 'Kecemasan: Runtuhan Gombak',
+                          child: Text('Kecemasan: Runtuhan Gombak')),
+                      DropdownMenuItem(
+                          value: 'Bantuan: PPS Sri Petaling',
+                          child: Text('Bantuan: PPS Sri Petaling')),
+                    ],
+                    onChanged: (v) {
+                      if (v != null) setState(() => newZone = v);
+                    },
+                  ),
+                ],
+              ),
             ),
             actions: [
               TextButton(
@@ -2232,10 +2237,10 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
       });
       return;
     } else if (actionType == 'info') {
-      _firestoreService.updateClaimStatus(claim.id, 'info_requested').then((_) {
+      _firestoreService.updateClaimStatus(claim.id, 'under_review').then((_) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Permintaan info lanjut dihantar.'), backgroundColor: Colors.orange));
+              const SnackBar(content: Text('Tuntutan ditandakan sebagai Sedang Disemak.'), backgroundColor: Colors.purple));
         }
       });
       return;
@@ -2347,6 +2352,27 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
             ],
           ),
           const SizedBox(height: 12),
+          Row(
+            children: [
+              const Icon(Icons.badge_rounded, size: 14, color: AppColors.textSecondary),
+              const SizedBox(width: 6),
+              Text('IC: ${claim.icNumber}', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textPrimary)),
+              const SizedBox(width: 16),
+              const Icon(Icons.family_restroom_rounded, size: 14, color: AppColors.textSecondary),
+              const SizedBox(width: 6),
+              Text('Isi Rumah: ${claim.householdSize}', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textPrimary)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.warning_amber_rounded, size: 14, color: AppColors.danger),
+              const SizedBox(width: 6),
+              Expanded(child: Text('Kerosakan: ${claim.damageDescription}', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textPrimary))),
+            ],
+          ),
+          const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
@@ -2354,16 +2380,25 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                 borderRadius: BorderRadius.circular(8)),
             child: Row(
               children: [
-                const Icon(Icons.attach_file_rounded,
+                const Icon(Icons.photo_library_rounded,
                     size: 16, color: AppColors.primary),
                 const SizedBox(width: 8),
                 Expanded(
-                    child: Text(claim.evidence,
+                    child: Text(claim.photoEvidence,
                         style: GoogleFonts.inter(
                             fontSize: 12,
                             color: AppColors.textPrimary))),
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () async {
+                    if (claim.photoEvidence.startsWith('http')) {
+                      final url = Uri.parse(claim.photoEvidence);
+                      if (await canLaunchUrl(url)) {
+                        await launchUrl(url);
+                      }
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tiada pautan gambar disediakan.')));
+                    }
+                  },
                   style: TextButton.styleFrom(
                       minimumSize: Size.zero, padding: EdgeInsets.zero),
                   child: Text('Lihat',
