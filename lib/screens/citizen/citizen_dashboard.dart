@@ -16,6 +16,7 @@ import '../../core/constants/app_routes.dart';
 import '../../core/constants/app_strings.dart';
 import '../../models/sos_report_model.dart';
 import '../../models/claim_model.dart';
+import '../../models/campaign_model.dart';
 import '../../services/firestore_service.dart';
 import '../../services/location_service.dart';
 import '../../widgets/common/sigap_app_bar.dart';
@@ -155,6 +156,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
   int _currentIndex = 0;
   bool _isSubmittingSOS = false;
   bool _isSirenActive = false;
+  bool _showAllClaims = false;
 
   String _greeting() {
     final hour = DateTime.now().hour;
@@ -2501,75 +2503,98 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
               );
             }
 
-            return Column(
-              children: snapshot.data!.docs.map((doc) {
-                final data = doc.data() as Map<String, dynamic>;
-                final claim = ClaimModel.fromMap(doc.id, data);
-                
-                Color statusColor = AppColors.warning;
-                String statusText = 'Disemak';
-                double progress = 0.5;
-                String subText = 'Menunggu pengesahan';
-                
-                if (claim.status == 'approved') {
-                  statusColor = AppColors.safe;
-                  statusText = 'Lulus';
-                  progress = 1.0;
-                  subText = 'Tuntutan telah diluluskan';
-                } else if (claim.status == 'rejected') {
-                  statusColor = AppColors.danger;
-                  statusText = 'Ditolak';
-                  progress = 1.0;
-                  subText = claim.rejectReason ?? 'Tuntutan ditolak';
-                } else if (claim.status == 'info_requested') {
-                  statusColor = Colors.orange;
-                  statusText = 'Info Lanjut';
-                  progress = 0.5;
-                  subText = 'Sila kemas kini info tuntutan';
-                }
+            final docs = snapshot.data!.docs.toList();
+            docs.sort((a, b) {
+              final aData = a.data() as Map<String, dynamic>;
+              final bData = b.data() as Map<String, dynamic>;
+              final aTime = aData['createdAt'] as Timestamp?;
+              final bTime = bData['createdAt'] as Timestamp?;
+              if (aTime == null || bTime == null) return 0;
+              return bTime.compareTo(aTime); // descending
+            });
 
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(20),
-                  decoration: _cardDecoration(),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(claim.type, 
-                              style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                              overflow: TextOverflow.ellipsis,
+            final displayDocs = _showAllClaims ? docs : docs.take(3).toList();
+
+            return Column(
+              children: [
+                ...displayDocs.map((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final claim = ClaimModel.fromMap(doc.id, data);
+                  
+                  Color statusColor = AppColors.warning;
+                  String statusText = 'Disemak';
+                  double progress = 0.5;
+                  String subText = 'Menunggu pengesahan';
+                  
+                  if (claim.status == 'approved') {
+                    statusColor = AppColors.safe;
+                    statusText = 'Lulus';
+                    progress = 1.0;
+                    subText = 'Tuntutan telah diluluskan';
+                  } else if (claim.status == 'rejected') {
+                    statusColor = AppColors.danger;
+                    statusText = 'Ditolak';
+                    progress = 1.0;
+                    subText = claim.rejectReason ?? 'Tuntutan ditolak';
+                  } else if (claim.status == 'info_requested') {
+                    statusColor = Colors.orange;
+                    statusText = 'Info Lanjut';
+                    progress = 0.5;
+                    subText = 'Sila kemas kini info tuntutan';
+                  }
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(20),
+                    decoration: _cardDecoration(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(claim.type, 
+                                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                          ),
-                          Text(statusText, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: statusColor)),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
-                        child: LinearProgressIndicator(value: progress, minHeight: 10, backgroundColor: AppColors.divider, color: statusColor),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Icon(
-                            claim.status == 'rejected' ? Icons.error_outline_rounded : Icons.info_outline_rounded,
-                            size: 16, 
-                            color: statusColor
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(subText, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
-                          )
-                        ],
-                      )
-                    ],
+                            Text(statusText, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: statusColor)),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: LinearProgressIndicator(value: progress, minHeight: 10, backgroundColor: AppColors.divider, color: statusColor),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Icon(
+                              claim.status == 'rejected' ? Icons.error_outline_rounded : Icons.info_outline_rounded,
+                              size: 16, 
+                              color: statusColor
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(subText, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+                            )
+                          ],
+                        )
+                      ],
+                    ),
+                  );
+                }),
+                if (docs.length > 3)
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _showAllClaims = !_showAllClaims;
+                      });
+                    },
+                    child: Text(_showAllClaims ? 'Tutup' : 'Lihat Semua (${docs.length})', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                   ),
-                );
-              }).toList(),
+              ],
             );
           },
         ),
@@ -2642,39 +2667,91 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
       children: [
         _buildSectionHeader('Telus Tabung Bantuan', actionLabel: 'Derma', onAction: () {}),
         const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: _cardDecoration(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Tabung Kilat Mangsa Banjir', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('RM 45,000 terkumpul', style: GoogleFonts.inter(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w700)),
-                  Text('Sasaran RM 100k', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
-                ],
+        StreamBuilder<QuerySnapshot>(
+          stream: _firestoreService.streamActiveCampaigns(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const SizedBox(
+                height: 200,
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+            final docs = snapshot.hasData ? snapshot.data!.docs.toList() : [];
+            if (docs.isEmpty) {
+              return Container(
+                height: 100,
+                alignment: Alignment.center,
+                decoration: _cardDecoration(),
+                child: Text('Tiada tabung aktif', style: GoogleFonts.inter(color: AppColors.textSecondary)),
+              );
+            }
+            docs.sort((a, b) {
+              final aTime = (a.data() as Map<String, dynamic>)['createdAt'] as Timestamp?;
+              final bTime = (b.data() as Map<String, dynamic>)['createdAt'] as Timestamp?;
+              if (aTime == null || bTime == null) return 0;
+              return bTime.compareTo(aTime);
+            });
+
+            return SizedBox(
+              height: 250,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: docs.length,
+                itemBuilder: (context, index) {
+                  final data = docs[index].data() as Map<String, dynamic>;
+                  final campaign = CampaignModel.fromMap(docs[index].id, data);
+                  
+                  double progress = campaign.targetAmount > 0 ? campaign.currentAmount / campaign.targetAmount : 0.0;
+                  if (progress > 1.0) progress = 1.0;
+
+                  final colors = [Colors.orange, Colors.blue, Colors.red, Colors.green, Colors.teal, Colors.brown, Colors.purple, Colors.pink];
+                  int c = 0;
+                  
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 16.0),
+                    child: Container(
+                      width: 320,
+                      padding: const EdgeInsets.all(20),
+                      decoration: _cardDecoration(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(campaign.name, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('RM ${campaign.currentAmount.toStringAsFixed(0)} terkumpul', style: GoogleFonts.inter(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w700)),
+                              Text('Sasaran RM ${campaign.targetAmount.toStringAsFixed(0)}', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: LinearProgressIndicator(value: progress, minHeight: 10, backgroundColor: AppColors.divider, color: AppColors.primary),
+                          ),
+                          const SizedBox(height: 24),
+                          Text('Pengagihan Dana:', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                          const SizedBox(height: 16),
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: campaign.allocations.entries.map((e) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 16.0),
+                                  child: _fundDist('${e.value}%', e.key, colors[c++ % colors.length]),
+                                );
+                              }).toList(),
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
-              const SizedBox(height: 12),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: LinearProgressIndicator(value: 0.45, minHeight: 10, backgroundColor: AppColors.divider, color: AppColors.primary),
-              ),
-              const SizedBox(height: 24),
-              Text('Pengagihan Dana:', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(child: _fundDist('40%', 'Makanan', Colors.orange)),
-                  Expanded(child: _fundDist('25%', 'Khemah', Colors.blue)),
-                  Expanded(child: _fundDist('20%', 'Ubat', Colors.red)),
-                  Expanded(child: _fundDist('15%', 'Bot', Colors.green)),
-                ],
-              )
-            ],
-          ),
+            );
+          },
         ),
       ],
     );

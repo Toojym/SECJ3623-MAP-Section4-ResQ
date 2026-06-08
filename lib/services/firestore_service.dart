@@ -294,7 +294,6 @@ class FirestoreService {
     return _db
         .collection('claims')
         .where('citizenId', isEqualTo: citizenId)
-        .orderBy('createdAt', descending: true)
         .snapshots();
   }
 
@@ -302,7 +301,6 @@ class FirestoreService {
     return _db
         .collection('claims')
         .where('status', isEqualTo: 'pending')
-        .orderBy('createdAt', descending: true)
         .snapshots();
   }
 
@@ -329,5 +327,38 @@ class FirestoreService {
       });
     }
     await batch.commit();
+  }
+
+  // ── Donation Campaigns ─────────────────────────────────────────────────────
+
+  Future<void> createCampaign(Map<String, dynamic> data) async {
+    await _db.collection('campaigns').add({
+      ...data,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Stream<QuerySnapshot> streamActiveCampaigns() {
+    return _db.collection('campaigns').snapshots();
+  }
+
+  // ── Volunteer Tasks ────────────────────────────────────────────────────────
+  
+  Future<void> createVolunteerTask(Map<String, dynamic> data) async {
+    await _db.collection('volunteer_tasks').add({
+      ...data,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Stream<QuerySnapshot> streamVolunteerTasks() {
+    return _db.collection('volunteer_tasks').snapshots();
+  }
+
+  Future<void> updateVolunteerTask(String taskId, Map<String, dynamic> data) async {
+    await _db.collection('volunteer_tasks').doc(taskId).update({
+      ...data,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
   }
 }
