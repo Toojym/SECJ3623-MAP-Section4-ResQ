@@ -235,7 +235,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
             });
 
             return SizedBox(
-              height: 300,
+              height: 250,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: docs.length,
@@ -3003,7 +3003,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
     if (progress > 1.0) progress = 1.0;
 
     return Container(
-      width: 320,
+      width: 340,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -3099,7 +3099,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           
           Wrap(
             spacing: 12,
-            runSpacing: 8,
+            // runSpacing: 8,
             children: allocation.map((item) {
               return Row(
                 mainAxisSize: MainAxisSize.min,
