@@ -63,7 +63,8 @@ class FirestoreService {
 
   // ── Role profiles ──────────────────────────────────────────────────────────
 
-  Future<void> createCitizenProfile(String uid, Map<String, dynamic> data) async {
+  Future<void> createCitizenProfile(
+      String uid, Map<String, dynamic> data) async {
     await _db.collection('citizen_profiles').doc(uid).set({
       ...data,
       'uid': uid,
@@ -72,7 +73,8 @@ class FirestoreService {
     await updateUserDocument(uid, {'profileComplete': true});
   }
 
-  Future<void> createVolunteerProfile(String uid, Map<String, dynamic> data) async {
+  Future<void> createVolunteerProfile(
+      String uid, Map<String, dynamic> data) async {
     await _db.collection('volunteer_profiles').doc(uid).set({
       ...data,
       'uid': uid,
@@ -82,7 +84,8 @@ class FirestoreService {
     await updateUserDocument(uid, {'profileComplete': true});
   }
 
-  Future<void> createOfficerProfile(String uid, Map<String, dynamic> data) async {
+  Future<void> createOfficerProfile(
+      String uid, Map<String, dynamic> data) async {
     await _db.collection('officer_profiles').doc(uid).set({
       ...data,
       'uid': uid,
@@ -117,14 +120,14 @@ class FirestoreService {
   /// Create a new SOS report and return the document ID.
   Future<String> createSOSReport(Map<String, dynamic> data) async {
     final docRef = await _db.collection('sos_reports').add(data);
-    
+
     final reporterId = data['reporterId'] as String?;
     if (reporterId != null) {
       await _db.collection('citizen_profiles').doc(reporterId).set({
         'safetyStatus': 'Perlu Bantuan',
       }, SetOptions(merge: true));
     }
-    
+
     return docRef.id;
   }
 
@@ -201,10 +204,10 @@ class FirestoreService {
   /// Ordered by creation time newest-first. Requires a Firestore composite index on
   /// (status, createdAt desc) — or fall back to client-side sorting without orderBy.
   Stream<QuerySnapshot> streamAllActiveSOSReportsForOfficer() {
-    return _db
-        .collection('sos_reports')
-        .where('status', whereIn: ['active', 'responded'])
-        .snapshots(); // Sorted client-side to avoid composite index requirement
+    return _db.collection('sos_reports').where('status', whereIn: [
+      'active',
+      'responded'
+    ]).snapshots(); // Sorted client-side to avoid composite index requirement
   }
 
   /// Officer: stream SOS reports that have been resolved (for history view).
@@ -256,12 +259,12 @@ class FirestoreService {
     return _db
         .collection('sos_reports')
         .where('reporterId', isEqualTo: uid)
-        .where('status', whereIn: ['active', 'responded'])
-        .snapshots();
+        .where('status', whereIn: ['active', 'responded']).snapshots();
   }
 
   /// Request backup/reinforcements for a specific SOS report.
-  Future<void> updateSOSReportBackupRequest(String docId, bool needBackup) async {
+  Future<void> updateSOSReportBackupRequest(
+      String docId, bool needBackup) async {
     await _db.collection('sos_reports').doc(docId).update({
       'needBackup': needBackup,
       'updatedAt': FieldValue.serverTimestamp(),
@@ -309,29 +312,58 @@ class FirestoreService {
         .snapshots();
   }
 
-  Future<void> updateClaimStatus(String claimId, String status, {String? reason}) async {
+  Stream<QuerySnapshot> streamClaimsForOfficerReview() {
+    return _db
+        .collection('claims')
+        .where('status', whereIn: ['submitted', 'under_review']).snapshots();
+  }
+
+  Future<void> updateClaimStatus(
+    String claimId,
+    String status, {
+    String? reason,
+    String? officerId,
+  }) async {
     await _db.collection('claims').doc(claimId).update({
       'status': status,
-      if (reason != null) 'rejectReason': reason,
+      if (status == 'rejected' && reason != null) 'rejectReason': reason,
+      if (status == 'under_review' && reason != null)
+        'infoRequestReason': reason,
+      if (officerId != null) 'reviewedBy': officerId,
+      'reviewedAt': FieldValue.serverTimestamp(),
+      if (status == 'approved') ...{
+        'rejectReason': FieldValue.delete(),
+        'infoRequestReason': FieldValue.delete(),
+      },
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
 
-  Future<void> bulkApproveClaimsByZone(String location) async {
+  Future<int> bulkApproveClaimsByZone(String location,
+      {String? officerId}) async {
     final pendingClaims = await _db
         .collection('claims')
         .where('status', isEqualTo: 'submitted')
         .where('location', isEqualTo: location)
         .get();
 
+    if (pendingClaims.docs.isEmpty) return 0;
+
     final batch = _db.batch();
     for (final doc in pendingClaims.docs) {
       batch.update(doc.reference, {
         'status': 'approved',
+        'rejectReason': FieldValue.delete(),
+        'infoRequestReason': FieldValue.delete(),
+        if (officerId != null) 'reviewedBy': officerId,
+        'reviewedAt': FieldValue.serverTimestamp(),
+        'bulkApproved': true,
+        'bulkApprovedZone': location,
         'updatedAt': FieldValue.serverTimestamp(),
       });
     }
     await batch.commit();
+    return pendingClaims.docs.length;
   }
 
   Future<void> deleteClaim(String claimId) async {
@@ -340,15 +372,16 @@ class FirestoreService {
 
   Future<String> uploadClaimEvidence(File imageFile, String citizenId) async {
     try {
-      final fileName = '${DateTime.now().millisecondsSinceEpoch}_$citizenId.jpg';
+      final fileName =
+          '${DateTime.now().millisecondsSinceEpoch}_$citizenId.jpg';
       final ref = _storage.ref().child('claims_evidence/$fileName');
-      
+
       final bytes = await imageFile.readAsBytes();
       final uploadTask = ref.putData(
-        bytes, 
+        bytes,
         SettableMetadata(contentType: 'image/jpeg'),
       );
-      
+
       final snapshot = await uploadTask;
       if (snapshot.state == TaskState.success) {
         return await snapshot.ref.getDownloadURL();
@@ -376,12 +409,16 @@ class FirestoreService {
   }
 
   // ── Donations ──────────────────────────────────────────────────────────────
-  
+
   Stream<QuerySnapshot> streamUserDonations(String citizenId) {
-    return _db.collection('donations').where('citizenId', isEqualTo: citizenId).snapshots();
+    return _db
+        .collection('donations')
+        .where('citizenId', isEqualTo: citizenId)
+        .snapshots();
   }
 
-  Future<void> submitDonation(String campaignId, Map<String, dynamic> donationData, double amount) async {
+  Future<void> submitDonation(String campaignId,
+      Map<String, dynamic> donationData, double amount) async {
     final campaignRef = _db.collection('campaigns').doc(campaignId);
     final newDonationRef = _db.collection('donations').doc();
 
@@ -392,8 +429,9 @@ class FirestoreService {
       }
 
       // Read current amount
-      final currentAmount = (snapshot.data()!['currentAmount'] as num?)?.toDouble() ?? 0.0;
-      
+      final currentAmount =
+          (snapshot.data()!['currentAmount'] as num?)?.toDouble() ?? 0.0;
+
       // Update campaign
       transaction.update(campaignRef, {
         'currentAmount': currentAmount + amount,
@@ -405,7 +443,7 @@ class FirestoreService {
   }
 
   // ── Volunteer Tasks ────────────────────────────────────────────────────────
-  
+
   Future<void> createVolunteerTask(Map<String, dynamic> data) async {
     await _db.collection('volunteer_tasks').add({
       ...data,
@@ -417,7 +455,16 @@ class FirestoreService {
     return _db.collection('volunteer_tasks').snapshots();
   }
 
-  Future<void> updateVolunteerTask(String taskId, Map<String, dynamic> data) async {
+  Stream<QuerySnapshot> streamActiveVolunteerTasks() {
+    return _db.collection('volunteer_tasks').where('status', whereIn: [
+      'Menuju ke Lokasi',
+      'Sedang Bertugas',
+      'Perlu Arahan',
+    ]).snapshots();
+  }
+
+  Future<void> updateVolunteerTask(
+      String taskId, Map<String, dynamic> data) async {
     await _db.collection('volunteer_tasks').doc(taskId).update({
       ...data,
       'updatedAt': FieldValue.serverTimestamp(),

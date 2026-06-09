@@ -10,8 +10,12 @@ class ClaimModel {
   final String type;
   final String photoEvidence;
   final String location;
-  final String status; // 'submitted', 'under_review', 'approved', 'disbursed', 'rejected'
+  final String
+      status; // 'submitted', 'under_review', 'approved', 'disbursed', 'rejected'
   final String? rejectReason;
+  final String? infoRequestReason;
+  final String? reviewedBy;
+  final DateTime? reviewedAt;
   final DateTime? createdAt;
 
   ClaimModel({
@@ -26,6 +30,9 @@ class ClaimModel {
     required this.location,
     required this.status,
     this.rejectReason,
+    this.infoRequestReason,
+    this.reviewedBy,
+    this.reviewedAt,
     this.createdAt,
   });
 
@@ -38,11 +45,20 @@ class ClaimModel {
       householdSize: data['householdSize'] ?? 1,
       damageDescription: data['damageDescription'] ?? '-',
       type: data['type'] ?? 'Tuntutan Bantuan',
-      photoEvidence: data['photoEvidence'] ?? data['evidence'] ?? 'Tiada bukti', // Fallback to 'evidence' for old data
+      photoEvidence: data['photoEvidence'] ??
+          data['evidence'] ??
+          'Tiada bukti', // Fallback to 'evidence' for old data
       location: data['location'] ?? 'Tidak diketahui',
       status: data['status'] ?? 'submitted',
       rejectReason: data['rejectReason'],
-      createdAt: data['createdAt'] != null ? (data['createdAt'] as Timestamp).toDate() : null,
+      infoRequestReason: data['infoRequestReason'] ?? data['officerFeedback'],
+      reviewedBy: data['reviewedBy'],
+      reviewedAt: data['reviewedAt'] != null
+          ? (data['reviewedAt'] as Timestamp).toDate()
+          : null,
+      createdAt: data['createdAt'] != null
+          ? (data['createdAt'] as Timestamp).toDate()
+          : null,
     );
   }
 
@@ -58,7 +74,12 @@ class ClaimModel {
       'location': location,
       'status': status,
       'rejectReason': rejectReason,
-      'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
+      'infoRequestReason': infoRequestReason,
+      'reviewedBy': reviewedBy,
+      'reviewedAt': reviewedAt != null ? Timestamp.fromDate(reviewedAt!) : null,
+      'createdAt': createdAt != null
+          ? Timestamp.fromDate(createdAt!)
+          : FieldValue.serverTimestamp(),
     };
   }
 }
