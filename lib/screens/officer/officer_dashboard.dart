@@ -235,7 +235,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
             });
 
             return SizedBox(
-              height: 240,
+              height: 300,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: docs.length,
@@ -3003,87 +3003,120 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
     if (progress > 1.0) progress = 1.0;
 
     return Container(
+      width: 320,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.divider)),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.divider),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Campaign Name
           Text(campaign.name,
-              style: GoogleFonts.inter(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
-                  color: AppColors.textPrimary)),
+            style: GoogleFonts.inter(
+              fontWeight: FontWeight.w700,
+              fontSize: 15,
+              color: AppColors.textPrimary
+            ),
+          ),
           const SizedBox(height: 4),
+          
+          // Purpose
           Text('Tujuan: ${campaign.purpose}',
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.inter(
-                  fontSize: 12, color: AppColors.textSecondary)),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.inter(
+              fontSize: 12, 
+              color: AppColors.textSecondary
+            ),
+          ),
           const SizedBox(height: 16),
+          
+          // Progress Row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('Terkumpul: RM ${campaign.currentAmount.toStringAsFixed(0)}',
-                  style: GoogleFonts.inter(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                      color: AppColors.primary)),
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  color: AppColors.primary
+                ),
+              ),
               Text('Sasaran: RM ${campaign.targetAmount.toStringAsFixed(0)}',
-                  style: GoogleFonts.inter(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                      color: AppColors.textSecondary)),
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                  color: AppColors.textSecondary
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 8),
+          
+          // Progress Bar
           LinearProgressIndicator(
-              value: progress,
-              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-              color: AppColors.primary,
-              minHeight: 8,
-              borderRadius: BorderRadius.circular(4)),
+            value: progress,
+            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+            color: AppColors.primary,
+            minHeight: 8,
+            borderRadius: BorderRadius.circular(4),
+          ),
           const SizedBox(height: 16),
+          
+          // Allocation Header
           Text('Pecahan Alokasi Dana:',
-              style: GoogleFonts.inter(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
-                  color: AppColors.textPrimary)),
-          const SizedBox(height: 8),
+            style: GoogleFonts.inter(
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+              color: AppColors.textPrimary
+            ),
+          ),
+          const SizedBox(height: 12),
+          
           Row(
             children: allocation.map((item) {
               return Expanded(
                 flex: (item['value'] as num).toInt(),
                 child: Container(
                   height: 12,
-                  margin: const EdgeInsets.only(right: 2),
                   decoration: BoxDecoration(
-                      color: item['color'] as Color,
-                      borderRadius: BorderRadius.circular(2)),
+                    color: item['color'] as Color,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(allocation.first == item ? 4 : 0),
+                      bottomLeft: Radius.circular(allocation.first == item ? 4 : 0),
+                      topRight: Radius.circular(allocation.last == item ? 4 : 0),
+                      bottomRight: Radius.circular(allocation.last == item ? 4 : 0),
+                    ),
+                  ),
                 ),
               );
             }).toList(),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
+          
           Wrap(
             spacing: 12,
-            runSpacing: 4,
+            runSpacing: 8,
             children: allocation.map((item) {
               return Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                          color: item['color'] as Color,
-                          shape: BoxShape.circle)),
+                    width: 10,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: item['color'] as Color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
                   const SizedBox(width: 4),
                   Text('${item['label']} (${item['value']}%)',
                       style: GoogleFonts.inter(
-                          fontSize: 11, color: AppColors.textSecondary)),
+                          fontSize: 11,
+                          color: AppColors.textSecondary)),
                 ],
               );
             }).toList(),

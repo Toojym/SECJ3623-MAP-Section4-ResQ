@@ -22,6 +22,7 @@ import '../../services/firestore_service.dart';
 import '../../services/location_service.dart';
 import '../../widgets/common/sigap_app_bar.dart';
 import '../../widgets/common/sigap_button.dart';
+import '../../services/receipt_service.dart';
 
 class SirenOverlay extends StatefulWidget {
   final VoidCallback onClose;
@@ -3491,6 +3492,17 @@ class _DonationTransparencyWidgetState extends State<DonationTransparencyWidget>
                                       children: [
                                         Text(campaign.name, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary), maxLines: 1, overflow: TextOverflow.ellipsis),
                                         const SizedBox(height: 12),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Tujuan: ${campaign.purpose}',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 11, 
+                                            color: AppColors.textSecondary,
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        const SizedBox(height: 12),
                                         Row(
                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
@@ -3594,9 +3606,17 @@ class _DonationTransparencyWidgetState extends State<DonationTransparencyWidget>
   }
 
   void _showDonationDialog(CampaignModel campaign) {
-    final amountCtrl = TextEditingController();
     String selectedMethod = 'FPX';
     bool isProcessing = false;
+    
+    final amountCtrl = TextEditingController();
+    final nameCtrl = TextEditingController();
+
+    // Pre-fill name from logged-in user
+    final authState = context.read<AuthBloc>().state;
+    if (authState is AuthAuthenticated && authState.displayName.isNotEmpty) {
+      nameCtrl.text = authState.displayName;
+    }
 
     showDialog(
       context: context,
@@ -3612,12 +3632,23 @@ class _DonationTransparencyWidgetState extends State<DonationTransparencyWidget>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   TextField(
+                    controller: nameCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Nama Penderma',
+                      hintText: 'Masukkan nama anda',
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
                     controller: amountCtrl,
-                    decoration: const InputDecoration(labelText: 'Jumlah Derma (RM)', prefixText: 'RM '),
+                    decoration: const InputDecoration(
+                      labelText: 'Jumlah Derma (RM)',
+                      prefixText: 'RM ',
+                    ),
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   ),
                   const SizedBox(height: 16),
-                  Text('Kaedah Pembayaran', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                  Text('Kaedah Pembayaran', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
                     value: selectedMethod,
@@ -3632,7 +3663,7 @@ class _DonationTransparencyWidgetState extends State<DonationTransparencyWidget>
                     DropdownButtonFormField<String>(
                       items: ['Maybank2U', 'CIMB Clicks', 'RHB Now', 'Bank Islam', 'Public Bank'].map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
                       onChanged: (val) {},
-                      decoration: const InputDecoration(labelText: 'Pilih Bank', contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+                      decoration: const InputDecoration(labelText: 'Pilih Bank'),
                     )
                   else
                     Column(
@@ -3647,7 +3678,7 @@ class _DonationTransparencyWidgetState extends State<DonationTransparencyWidget>
                           ],
                         )
                       ],
-                    ),
+                  ),
                 ],
               ),
             ),
@@ -3660,17 +3691,25 @@ class _DonationTransparencyWidgetState extends State<DonationTransparencyWidget>
               ElevatedButton(
                 onPressed: isProcessing ? null : () async {
                   final amount = double.tryParse(amountCtrl.text) ?? 0.0;
-                  if (amount <= 0) return;
+                  final donorName = nameCtrl.text.trim();
+                  
+                  if (amount <= 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sila masukkan jumlah derma yang sah')));
+                    return;
+                  }
+                  if (donorName.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sila masukkan nama penderma')));
+                    return;
+                  }
 
                   setState(() => isProcessing = true);
                   
-                  // Mock processing delay
                   await Future.delayed(const Duration(seconds: 2));
 
                   if (!mounted) return;
                   final authState = context.read<AuthBloc>().state;
                   if (authState is AuthAuthenticated) {
-                    final receiptNo = 'RESQ-${DateTime.now().millisecondsSinceEpoch}';
+                    final receiptNo = 'SIGAP-${DateTime.now().millisecondsSinceEpoch}';
                     final donation = DonationModel(
                       id: '',
                       campaignId: campaign.id,
@@ -3680,6 +3719,7 @@ class _DonationTransparencyWidgetState extends State<DonationTransparencyWidget>
                       paymentMethod: selectedMethod,
                       receiptNo: receiptNo,
                       createdAt: DateTime.now(),
+                      donorName: donorName,
                     );
 
                     await _firestoreService.submitDonation(campaign.id, donation.toMap(), amount);
@@ -3696,55 +3736,124 @@ class _DonationTransparencyWidgetState extends State<DonationTransparencyWidget>
               ),
             ],
           );
-        }
+        },
       ),
     );
   }
 
-  void _showReceiptDialog(DonationModel donation) {
+  void _showReceiptDialog(DonationModel donation) async {
+    // Show loading
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Center(
-          child: Column(
-            children: [
-              const Icon(Icons.check_circle_rounded, color: AppColors.safe, size: 48),
-              const SizedBox(height: 8),
-              Text('Terima Kasih!', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: AppColors.safe)),
-            ],
-          ),
-        ),
+      barrierDismissible: false,
+      builder: (ctx) => const AlertDialog(
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Sumbangan anda sebanyak RM ${donation.amount.toStringAsFixed(2)} untuk ${donation.campaignName} telah berjaya diterima.', textAlign: TextAlign.center, style: GoogleFonts.inter()),
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
-              child: Column(
-                children: [
-                  Text('Resit Cukai Digital', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-                  const Divider(),
-                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('No. Resit:'), Text(donation.receiptNo, style: const TextStyle(fontWeight: FontWeight.bold))]),
-                  const SizedBox(height: 4),
-                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Kaedah:'), Text(donation.paymentMethod)]),
-                  const SizedBox(height: 4),
-                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Tarikh:'), Text(donation.createdAt.toString().substring(0, 16))]),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text('*Sumbangan ini layak mendapat pengecualian cukai di bawah Subseksyen 44(6) Akta Cukai Pendapatan 1967.', textAlign: TextAlign.center, style: GoogleFonts.inter(fontSize: 10, color: AppColors.textSecondary, fontStyle: FontStyle.italic)),
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Menjana resit PDF...'),
           ],
         ),
-        actions: [
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx),
-            style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(40)),
-            child: const Text('Tutup'),
+      ),
+    );
+
+    try {
+      final pdfFile = await ReceiptService.generateReceiptPdf(
+        donorName: donation.donorName.isNotEmpty ? donation.donorName : 'Penderma',
+        amount: donation.amount,
+        campaignName: donation.campaignName,
+        transactionId: donation.receiptNo,
+        date: donation.createdAt,
+        paymentMethod: donation.paymentMethod,
+      );
+
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading
+
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Center(
+            child: Column(
+              children: [
+                Icon(Icons.receipt_long_rounded, size: 48, color: AppColors.primary),
+                SizedBox(height: 8),
+                Text('Resit Cukai Digital', style: TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
           ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'RM ${donation.amount.toStringAsFixed(2)}',
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.primary),
+              ),
+              const SizedBox(height: 8),
+              Text(donation.campaignName, textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  children: [
+                    _receiptRow('No. Resit:', donation.receiptNo),
+                    _receiptRow('Tarikh:', '${donation.createdAt.day}/${donation.createdAt.month}/${donation.createdAt.year}'),
+                    _receiptRow('Kaedah:', donation.paymentMethod),
+                    _receiptRow('Penderma:', donation.donorName.isNotEmpty ? donation.donorName : 'N/A'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                '*Sumbangan ini layak mendapat pengecualian cukai di bawah Subseksyen 44(6) Akta Cukai Pendapatan 1967.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+              ),
+            ],
+          ),
+          actionsOverflowButtonSpacing: 12,
+          actions: [
+            OutlinedButton.icon(
+              onPressed: () async {
+                await ReceiptService.shareReceipt(pdfFile, donation.receiptNo);
+              },
+              icon: const Icon(Icons.share_rounded),
+              label: const Text('Kongsi PDF'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Tutup'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close loading
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal menjana resit: $e'),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _receiptRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+          Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
         ],
       ),
     );

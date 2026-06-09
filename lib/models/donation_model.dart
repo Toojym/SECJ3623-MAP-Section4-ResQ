@@ -9,6 +9,7 @@ class DonationModel {
   final String paymentMethod;
   final String receiptNo;
   final DateTime createdAt;
+  final String donorName;
 
   DonationModel({
     required this.id,
@@ -19,6 +20,7 @@ class DonationModel {
     required this.paymentMethod,
     required this.receiptNo,
     required this.createdAt,
+    required this.donorName, 
   });
 
   Map<String, dynamic> toMap() {
@@ -30,6 +32,7 @@ class DonationModel {
       'paymentMethod': paymentMethod,
       'receiptNo': receiptNo,
       'createdAt': FieldValue.serverTimestamp(),
+      'donorName': donorName,
     };
   }
 
@@ -43,6 +46,7 @@ class DonationModel {
       paymentMethod: map['paymentMethod'] as String? ?? '',
       receiptNo: map['receiptNo'] as String? ?? '',
       createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      donorName: map['donorName'] as String? ?? '',
     );
   }
 }
