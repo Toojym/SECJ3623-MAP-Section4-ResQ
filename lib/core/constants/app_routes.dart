@@ -15,6 +15,9 @@ class AppRoutes {
   // Profile screens
   static const String citizenProfile = '/citizen/profile';
   static const String volunteerProfile = '/volunteer/profile';
+  static const String volunteerNotifications = '/volunteer/notifications';
   static const String sosResponse = '/volunteer/sos-response';
+  static const String missionChecklist = '/volunteer/mission-checklist';
+  static const String missionCompletion = '/volunteer/mission-completion';
   static const String officerProfile = '/officer/profile';
 }

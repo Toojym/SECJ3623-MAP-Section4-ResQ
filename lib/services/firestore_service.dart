@@ -192,6 +192,22 @@ class FirestoreService {
     });
   }
 
+  /// Volunteer declines an SOS report so it won't appear on their task board.
+  Future<void> declineSOSReport(String docId, String volunteerId) async {
+    await _db.collection('sos_reports').doc(docId).update({
+      'declinedBy': FieldValue.arrayUnion([volunteerId]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Update volunteer mission checklist progress
+  Future<void> updateSOSChecklist(String docId, Map<String, dynamic> checklist) async {
+    await _db.collection('sos_reports').doc(docId).update({
+      'volunteerChecklist': checklist,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   /// Get a single SOS report by ID.
   Future<Map<String, dynamic>?> getSOSReport(String docId) async {
     final doc = await _db.collection('sos_reports').doc(docId).get();
@@ -271,8 +287,8 @@ class FirestoreService {
     });
   }
 
-  /// Volunteer resolves a citizen SOS report.
-  Future<void> resolveSOSReportByVolunteer(String docId) async {
+  /// Volunteer resolves a citizen SOS report with completion details.
+  Future<void> resolveSOSReportByVolunteer(String docId, {Map<String, dynamic>? completionDetails}) async {
     final reportDoc = await _db.collection('sos_reports').doc(docId).get();
     final reporterId = reportDoc.data()?['reporterId'] as String?;
 
@@ -280,6 +296,7 @@ class FirestoreService {
       'status': 'resolved',
       'resolvedAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
+      if (completionDetails != null) 'completionDetails': completionDetails,
     });
 
     if (reporterId != null) {

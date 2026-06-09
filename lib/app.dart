@@ -17,6 +17,9 @@ import 'screens/officer/officer_profile_screen.dart';
 import 'screens/volunteer/volunteer_dashboard.dart';
 import 'screens/volunteer/volunteer_profile_screen.dart';
 import 'screens/volunteer/sos_response_screen.dart';
+import 'screens/volunteer/volunteer_notifications_screen.dart';
+import 'screens/volunteer/mission_checklist_screen.dart';
+import 'screens/volunteer/mission_completion_screen.dart';
 import 'services/auth_service.dart';
 import 'services/firestore_service.dart';
 
@@ -150,6 +153,24 @@ class _SigapAppState extends State<SigapApp> {
           builder: (context, state) {
             final sosDocId = state.extra as String? ?? '';
             return SosResponseScreen(sosDocId: sosDocId);
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.volunteerNotifications,
+          builder: (_, __) => const VolunteerNotificationsScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.missionChecklist,
+          builder: (context, state) {
+            final sosDocId = state.extra as String? ?? '';
+            return MissionChecklistScreen(sosDocId: sosDocId);
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.missionCompletion,
+          builder: (context, state) {
+            final sosDocId = state.extra as String? ?? '';
+            return MissionCompletionScreen(sosDocId: sosDocId);
           },
         ),
         GoRoute(

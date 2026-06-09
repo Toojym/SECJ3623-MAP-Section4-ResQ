@@ -113,7 +113,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
               IconButton(
                 icon: const Icon(Icons.notifications_outlined),
                 color: AppColors.textSecondary,
-                onPressed: () {},
+                onPressed: () => context.push(AppRoutes.volunteerNotifications),
               ),
               IconButton(
                 icon: const Icon(Icons.person_outline_rounded),
@@ -622,8 +622,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
           'Senarai Semak Misi',
           'Tandai tugas yang diselesaikan',
           Color(0xFF10B981),
-          () => _showComingSoonDialog('Senarai Semak Misi',
-              'Tandai: bekalan, mangsa dibantu, foto lokasi'),
+          () => context.push(AppRoutes.missionChecklist),
         ),
         const SizedBox(height: 10),
         _actionCard(
@@ -880,9 +879,13 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
           );
         }
 
-        // Parse and sort by urgency then distance
+        // Parse, filter and sort by urgency then distance
+        final authState = context.read<AuthBloc>().state;
+        final uid = authState is AuthAuthenticated ? authState.uid : '';
+
         var reports = snapshot.data!.docs
             .map((doc) => SosReportModel.fromDocument(doc))
+            .where((r) => !r.declinedBy.contains(uid))
             .toList();
 
         reports.sort((a, b) {
@@ -1292,7 +1295,13 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
               }
 
               final docs = snapshot.hasData ? snapshot.data!.docs : [];
-              final reports = docs.map((doc) => SosReportModel.fromDocument(doc)).toList();
+              final authState = context.read<AuthBloc>().state;
+              final uid = authState is AuthAuthenticated ? authState.uid : '';
+
+              final reports = docs
+                  .map((doc) => SosReportModel.fromDocument(doc))
+                  .where((r) => !r.declinedBy.contains(uid))
+                  .toList();
 
               // Sort by Urgency first, then distance
               reports.sort((a, b) {

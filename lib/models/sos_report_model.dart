@@ -23,6 +23,9 @@ class SosReportModel {
   final String? imageUrl;
   final bool needBackup;
   final Map<String, dynamic>? specificDetails;
+  final List<String> declinedBy;
+  final Map<String, dynamic>? volunteerChecklist;
+  final Map<String, dynamic>? completionDetails;
 
   const SosReportModel({
     required this.id,
@@ -47,6 +50,9 @@ class SosReportModel {
     this.imageUrl,
     this.needBackup = false,
     this.specificDetails = const {},
+    this.declinedBy = const [],
+    this.volunteerChecklist,
+    this.completionDetails,
   });
 
   // ── Status Constants ─────────────────────────────────────────────────────
@@ -188,6 +194,9 @@ class SosReportModel {
       imageUrl: data['imageUrl'] as String?,
       needBackup: data['needBackup'] as bool? ?? false,
       specificDetails: data['specificDetails'] as Map<String, dynamic>? ?? const {},
+      declinedBy: List<String>.from(data['declinedBy'] ?? []),
+      volunteerChecklist: data['volunteerChecklist'] as Map<String, dynamic>?,
+      completionDetails: data['completionDetails'] as Map<String, dynamic>?,
     );
   }
 
@@ -206,6 +215,9 @@ class SosReportModel {
         'imageUrl': imageUrl,
         'needBackup': needBackup,
         'specificDetails': specificDetails ?? const {},
+        'declinedBy': declinedBy,
+        'volunteerChecklist': volunteerChecklist,
+        'completionDetails': completionDetails,
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       };
@@ -233,6 +245,9 @@ class SosReportModel {
     String? imageUrl,
     bool? needBackup,
     Map<String, dynamic>? specificDetails,
+    List<String>? declinedBy,
+    Map<String, dynamic>? volunteerChecklist,
+    Map<String, dynamic>? completionDetails,
   }) {
     return SosReportModel(
       id: id ?? this.id,
@@ -257,6 +272,9 @@ class SosReportModel {
       imageUrl: imageUrl ?? this.imageUrl,
       needBackup: needBackup ?? this.needBackup,
       specificDetails: specificDetails ?? this.specificDetails,
+      declinedBy: declinedBy ?? this.declinedBy,
+      volunteerChecklist: volunteerChecklist ?? this.volunteerChecklist,
+      completionDetails: completionDetails ?? this.completionDetails,
     );
   }
 }

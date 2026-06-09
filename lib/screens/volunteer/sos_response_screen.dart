@@ -12,6 +12,9 @@ import '../../blocs/auth/auth_bloc.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/sos_report_model.dart';
 import '../../services/firestore_service.dart';
+import '../../services/location_service.dart';
+import 'package:go_router/go_router.dart';
+import '../../core/constants/app_routes.dart';
 
 
 /// Full-screen detail view for a volunteer to review and respond to an SOS.
@@ -484,7 +487,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
           children: [
             Expanded(
               child: OutlinedButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: _isResponding ? null : () => _declineMission(report),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   side: BorderSide(color: AppColors.divider, width: 1.5),
@@ -711,6 +714,36 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
             content: Text('Gagal menerima misi: $e'),
             backgroundColor: AppColors.danger,
           ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isResponding = false);
+    }
+  }
+
+  Future<void> _declineMission(SosReportModel report) async {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is! AuthAuthenticated) {
+      Navigator.pop(context);
+      return;
+    }
+
+    setState(() => _isResponding = true);
+    try {
+      await _firestoreService.declineSOSReport(report.id, authState.uid);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Misi ditolak.'),
+            backgroundColor: AppColors.textSecondary,
+          ),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal menolak misi: $e'), backgroundColor: AppColors.danger),
         );
       }
     } finally {
@@ -1142,59 +1175,48 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
             ),
           ],
         ),
+        const SizedBox(height: 12),
+        // Checklist Summary Card
+        _detailCard(
+          icon: Icons.checklist_rounded,
+          iconColor: Colors.purple,
+          title: 'Senarai Semak Misi',
+          children: [
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${(report.volunteerChecklist?.values.where((v) => v == true).length ?? 0)} / 5 Selesai',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () => context.push(AppRoutes.missionChecklist, extra: report.id),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.purple.withValues(alpha: 0.1),
+                    foregroundColor: Colors.purple,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  child: Text('Buka Semak', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+          ],
+        ),
         const SizedBox(height: 32),
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
             onPressed: _isCompleting
                 ? null
-                : () async {
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        title: Text('Selesaikan Misi?', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                        content: Text('Adakah semua tindakan menyelamat telah diambil dan kes ini boleh ditutup?',
-                            style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx, false),
-                            child: Text('Batal', style: TextStyle(color: AppColors.textSecondary)),
-                          ),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.safe,
-                            ),
-                            onPressed: () => Navigator.pop(ctx, true),
-                            child: Text('Ya, Selesai', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
-                          ),
-                        ],
-                      ),
-                    );
-
-                    if (confirm == true && mounted) {
-                      setState(() => _isCompleting = true);
-                      try {
-                        await _firestoreService.resolveSOSReportByVolunteer(report.id);
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Misi diselesaikan dengan jaya!'),
-                              backgroundColor: AppColors.safe,
-                            ),
-                          );
-                          Navigator.pop(context);
-                        }
-                      } catch (e) {
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Ralat: $e'), backgroundColor: AppColors.danger),
-                          );
-                        }
-                      } finally {
-                        if (mounted) setState(() => _isCompleting = false);
-                      }
-                    }
+                : () {
+                    context.push(AppRoutes.missionCompletion, extra: report.id);
                   },
             icon: const Icon(Icons.check_circle_rounded, color: Colors.white),
             label: const Text('SELESAIKAN MISI'),
