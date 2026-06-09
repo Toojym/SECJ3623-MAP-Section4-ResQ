@@ -1364,8 +1364,9 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
     String timeAgo = 'Baru sahaja';
     if (report.createdAt != null) {
       final diff = DateTime.now().difference(report.createdAt!);
-      if (diff.inMinutes < 60) timeAgo = '${diff.inMinutes} min lalu';
-      else if (diff.inHours < 24) timeAgo = '${diff.inHours} jam lalu';
+      if (diff.inMinutes < 60) {
+        timeAgo = '${diff.inMinutes} min lalu';
+      } else if (diff.inHours < 24) timeAgo = '${diff.inHours} jam lalu';
       else timeAgo = '${diff.inDays} hari lalu';
     }
 

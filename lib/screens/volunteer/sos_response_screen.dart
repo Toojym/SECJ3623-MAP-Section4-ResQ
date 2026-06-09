@@ -7,7 +7,6 @@ import '../../blocs/auth/auth_bloc.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/sos_report_model.dart';
 import '../../services/firestore_service.dart';
-import '../../services/location_service.dart';
 
 /// Full-screen detail view for a volunteer to review and respond to an SOS.
 class SosResponseScreen extends StatefulWidget {

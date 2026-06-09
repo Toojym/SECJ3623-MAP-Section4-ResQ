@@ -295,6 +295,15 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
         title: AppStrings.myProfile,
         showLogout: false,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.language_rounded, color: AppColors.primary),
+            tooltip: 'Tukar Bahasa / Language',
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Switched to English (WIP)')),
+              );
+            },
+          ),
           if (!_isEditing)
             IconButton(
               icon: const Icon(Icons.edit_note_rounded, color: AppColors.primary),
