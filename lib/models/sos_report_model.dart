@@ -20,6 +20,9 @@ class SosReportModel {
   final DateTime? respondedAt;
   final DateTime? cancelledAt;
   final String? cancelReason;
+  final String? imageUrl;
+  final bool needBackup;
+  final Map<String, dynamic>? specificDetails;
 
   const SosReportModel({
     required this.id,
@@ -41,6 +44,9 @@ class SosReportModel {
     this.respondedAt,
     this.cancelledAt,
     this.cancelReason,
+    this.imageUrl,
+    this.needBackup = false,
+    this.specificDetails = const {},
   });
 
   // ── Status Constants ─────────────────────────────────────────────────────
@@ -54,7 +60,7 @@ class SosReportModel {
 
   static const String urgencyKritikal = 'KRITIKAL';
   static const String urgencyTinggi = 'TINGGI';
-  static const String urgencySedang = 'SEDANG';
+  static const String urgencySedang = 'SEDERHANA';
   static const String urgencyRendah = 'RENDAH';
 
   /// Returns numeric priority for sorting (lower = more urgent)
@@ -109,6 +115,52 @@ class SosReportModel {
     }
   }
 
+  // ── Specific Details Formatted Getter ────────────────────────────────────
+
+  Map<String, String> get formattedSpecificDetails {
+    if (specificDetails == null || specificDetails!.isEmpty) return {};
+    final map = <String, String>{};
+    specificDetails!.forEach((key, value) {
+      if (value == null || value.toString().trim().isEmpty) return;
+      
+      String friendlyKey = key;
+      String friendlyValue = value.toString();
+      
+      if (key == 'waterLevel') {
+        friendlyKey = 'Paras Air';
+      } else if (key == 'trappedPeople') {
+        friendlyKey = 'Mangsa Terperangkap';
+      } else if (key == 'needBoat') {
+        friendlyKey = 'Perlu Bot Pemindahan';
+        friendlyValue = value == true ? 'Ya (Diperlukan Segera)' : 'Tidak';
+      } else if (key == 'fireType') {
+        friendlyKey = 'Jenis Kebakaran';
+      } else if (key == 'hasTrapped') {
+        friendlyKey = 'Ada Mangsa Terperangkap';
+        friendlyValue = value.toString();
+      } else if (key == 'accessBlocked') {
+        friendlyKey = 'Laluan Terhalang';
+        friendlyValue = value == true ? 'Ya (Jalan Terputus)' : 'Tidak';
+      } else if (key == 'stillActive') {
+        friendlyKey = 'Pergerakan Tanah Aktif';
+        friendlyValue = value == true ? 'Ya (Masih Bergerak)' : 'Tidak';
+      } else if (key == 'victimCondition') {
+        friendlyKey = 'Keadaan Mangsa';
+      } else if (key == 'ageGroup') {
+        friendlyKey = 'Kumpulan Umur';
+      } else if (key == 'missingName') {
+        friendlyKey = 'Nama Orang Hilang';
+      } else if (key == 'lastSeenClothes') {
+        friendlyKey = 'Pakaian Terakhir';
+      } else if (key == 'missingAge') {
+        friendlyKey = 'Umur Anggaran';
+      }
+      
+      map[friendlyKey] = friendlyValue;
+    });
+    return map;
+  }
+
   // ── Serialization ────────────────────────────────────────────────────────
 
   factory SosReportModel.fromDocument(DocumentSnapshot doc) {
@@ -133,6 +185,9 @@ class SosReportModel {
       respondedAt: (data['respondedAt'] as Timestamp?)?.toDate(),
       cancelledAt: (data['cancelledAt'] as Timestamp?)?.toDate(),
       cancelReason: data['cancelReason'] as String?,
+      imageUrl: data['imageUrl'] as String?,
+      needBackup: data['needBackup'] as bool? ?? false,
+      specificDetails: data['specificDetails'] as Map<String, dynamic>? ?? const {},
     );
   }
 
@@ -148,6 +203,9 @@ class SosReportModel {
         'longitude': longitude,
         'address': address,
         'requiredSkills': requiredSkills,
+        'imageUrl': imageUrl,
+        'needBackup': needBackup,
+        'specificDetails': specificDetails ?? const {},
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       };
@@ -172,6 +230,9 @@ class SosReportModel {
     DateTime? respondedAt,
     DateTime? cancelledAt,
     String? cancelReason,
+    String? imageUrl,
+    bool? needBackup,
+    Map<String, dynamic>? specificDetails,
   }) {
     return SosReportModel(
       id: id ?? this.id,
@@ -193,6 +254,9 @@ class SosReportModel {
       respondedAt: respondedAt ?? this.respondedAt,
       cancelledAt: cancelledAt ?? this.cancelledAt,
       cancelReason: cancelReason ?? this.cancelReason,
+      imageUrl: imageUrl ?? this.imageUrl,
+      needBackup: needBackup ?? this.needBackup,
+      specificDetails: specificDetails ?? this.specificDetails,
     );
   }
 }

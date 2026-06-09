@@ -143,8 +143,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
       if (currentUser != null &&
           _emailCtrl.text.isNotEmpty &&
           _emailCtrl.text != currentUser.email) {
-        await currentUser.verifyBeforeUpdateEmail(_emailCtrl.text).catchError(
-            (_) => currentUser.updateEmail(_emailCtrl.text));
+        await currentUser.verifyBeforeUpdateEmail(_emailCtrl.text);
       }
 
       final customSkillsList = _customSkillsCtrl.text
@@ -268,6 +267,12 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
               Navigator.pop(ctx);
 
               try {
+                final state = context.read<AuthBloc>().state;
+                if (state is! AuthAuthenticated) {
+                  throw 'Pengguna tidak disahkan.';
+                }
+                final uid = state.uid;
+
                 final user = FirebaseAuth.instance.currentUser;
                 if (user == null || user.email == null) {
                   throw 'Pengguna tidak dijumpai.';
@@ -278,13 +283,10 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                 await user.updatePassword(newPassCtrl.text);
                 setState(() => _passwordCtrl.text = newPassCtrl.text);
 
-                final state = context.read<AuthBloc>().state;
-                if (state is AuthAuthenticated) {
-                  await FirestoreService()
-                      .createVolunteerProfile(state.uid, {
-                    'password': newPassCtrl.text,
-                  });
-                }
+                await FirestoreService()
+                    .createVolunteerProfile(uid, {
+                  'password': newPassCtrl.text,
+                });
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                       content: Text('Kata Laluan berjaya ditukar!'),
@@ -453,10 +455,10 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                                 borderRadius: BorderRadius.circular(12),
                                 side: BorderSide(
                                     color:
-                                        AppColors.danger.withOpacity(0.3)),
+                                        AppColors.danger.withValues(alpha: 0.3)),
                               ),
                               backgroundColor:
-                                  AppColors.danger.withOpacity(0.05),
+                                  AppColors.danger.withValues(alpha: 0.05),
                             ),
                           ),
                         ),
@@ -518,7 +520,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
           // No GestureDetector / onTap — photo editing not allowed yet
           CircleAvatar(
             radius: 40,
-            backgroundColor: AppColors.volunteerAccent.withOpacity(0.12),
+            backgroundColor: AppColors.volunteerAccent.withValues(alpha: 0.12),
             child: Text(
               _fullNameCtrl.text.isNotEmpty
                   ? _fullNameCtrl.text[0].toUpperCase()
@@ -544,7 +546,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
             padding:
                 const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
             decoration: BoxDecoration(
-                color: AppColors.volunteerAccent.withOpacity(0.1),
+                color: AppColors.volunteerAccent.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(99)),
             child: Text('Sukarelawan',
                 style: GoogleFonts.inter(
@@ -613,7 +615,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
           style: TextButton.styleFrom(
             padding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            backgroundColor: AppColors.primary.withOpacity(0.1),
+            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8)),
           ),

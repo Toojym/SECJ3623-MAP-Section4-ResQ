@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:intl/intl.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_routes.dart';
@@ -32,10 +32,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
   String _skills = '';
   Position? _currentPosition;
 
-  // Future features: Tracking for upcoming modules
-  final int _openIncidentsCount = 0;
-  final int _pendingMissionsCount = 0;
-  final int _redeemedCertificatesCount = 0;
+  // Note: future tracking fields removed — stats are derived from Firestore streams directly
 
   @override
   void initState() {
@@ -197,7 +194,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppColors.volunteerAccent.withOpacity(0.35),
+            color: AppColors.volunteerAccent.withValues(alpha: 0.35),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -212,7 +209,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white, width: 2),
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
             ),
             child: _profileImageUrl != null && _profileImageUrl!.isNotEmpty
                 ? ClipOval(
@@ -223,7 +220,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                         return Container(
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.white.withOpacity(0.3),
+                            color: Colors.white.withValues(alpha: 0.3),
                           ),
                           child: const Icon(
                             Icons.person_rounded,
@@ -237,7 +234,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                 : Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                     ),
                     child: const Icon(
                       Icons.person_rounded,
@@ -276,7 +273,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
@@ -414,71 +411,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
     );
   }
 
-  // ── Stats Row ─────────────────────────────────────────────────────────────
 
-  Widget _buildStatsRow() {
-    return Row(
-      children: [
-        Expanded(
-          child: _statCard(
-            Icons.assignment_turned_in_rounded,
-            'Misi\nSelesai',
-            '0',
-            AppColors.volunteerAccent,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _statCard(
-            Icons.stars_rounded,
-            'SIGAP\nMata',
-            '$_sigapMataPoints',
-            Colors.amber,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _statCard(
-            Icons.timer_rounded,
-            'Jam\nBerkhidmat',
-            '0',
-            AppColors.primary,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _statCard(IconData icon, String label, String value, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-      decoration: _cardDecoration(),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: GoogleFonts.poppins(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildModuleGrid() {
     return GridView.count(
@@ -553,7 +486,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: AppColors.warning.withOpacity(0.1),
+                color: AppColors.warning.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -596,9 +529,9 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
+          color: color.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.2), width: 1),
+          border: Border.all(color: color.withValues(alpha: 0.2), width: 1),
         ),
         child: Stack(
           children: [
@@ -610,7 +543,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.15),
+                      color: color.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(icon, color: color, size: 28),
@@ -738,7 +671,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 22),
@@ -825,9 +758,9 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.volunteerAccent.withOpacity(0.1),
+                      color: AppColors.volunteerAccent.withValues(alpha: 0.1),
                       border: Border.all(
-                        color: AppColors.volunteerAccent.withOpacity(0.3),
+                        color: AppColors.volunteerAccent.withValues(alpha: 0.3),
                         width: 1,
                       ),
                       borderRadius: BorderRadius.circular(20),
@@ -913,47 +846,117 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
     );
   }
 
-  // ── Nearby Missions Section ───────────────────────────────────────────────
+  // ── Nearby Missions Section (Live from Firestore) ────────────────────────
 
   Widget _buildNearbyMissionsSection() {
-    return Column(
-      children: [
-        _missionCard(
-          'Banjir – Muar, Johor',
-          '0.3 km',
-          'KRITIKAL',
-          const Color(0xFFDC2626),
-          'Pemindahan warga minggu banjir di Kjri. Perlu Bunga, Memberikan bantu...',
-          () {},
-        ),
-        const SizedBox(height: 12),
-        _missionCard(
-          'Kebakaran – Kluang',
-          '5.2 km',
-          'SEDANG',
-          const Color(0xFFF97316),
-          'Sokongan rawatan awa untuk mangsa kebakaran. Memeriksa keparahan P...',
-          () {},
-        ),
-      ],
+    return StreamBuilder<QuerySnapshot>(
+      stream: _firestoreService.streamActiveSOSReports(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: CircularProgressIndicator(color: AppColors.volunteerAccent),
+            ),
+          );
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Container(
+            padding: const EdgeInsets.all(20),
+            decoration: _cardDecoration(),
+            child: Center(
+              child: Column(
+                children: [
+                  const Icon(Icons.check_circle_outline_rounded,
+                      size: 36, color: AppColors.safe),
+                  const SizedBox(height: 8),
+                  Text('Kawasan anda selamat buat masa ini.',
+                      style: GoogleFonts.inter(
+                          fontSize: 13, color: AppColors.textSecondary)),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // Parse and sort by urgency then distance
+        var reports = snapshot.data!.docs
+            .map((doc) => SosReportModel.fromDocument(doc))
+            .toList();
+
+        reports.sort((a, b) {
+          final urgencyComp = a.urgencyPriority.compareTo(b.urgencyPriority);
+          if (urgencyComp != 0) return urgencyComp;
+          if (_currentPosition != null) {
+            final distA = LocationService.calculateDistanceKm(
+                _currentPosition!.latitude, _currentPosition!.longitude,
+                a.latitude, a.longitude);
+            final distB = LocationService.calculateDistanceKm(
+                _currentPosition!.latitude, _currentPosition!.longitude,
+                b.latitude, b.longitude);
+            return distA.compareTo(distB);
+          }
+          return 0;
+        });
+
+        // Show top 3 only on home tab preview
+        final preview = reports.take(3).toList();
+
+        return Column(
+          children: [
+            ...preview.map((report) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _liveMissionCard(report),
+                )),
+            if (reports.length > 3)
+              TextButton.icon(
+                onPressed: () => setState(() => _currentIndex = 2),
+                icon: const Icon(Icons.list_rounded, size: 16),
+                label: Text(
+                  'Lihat ${reports.length - 3} misi lagi →',
+                  style: GoogleFonts.inter(
+                      fontSize: 13, fontWeight: FontWeight.w600),
+                ),
+                style: TextButton.styleFrom(
+                    foregroundColor: AppColors.volunteerAccent),
+              ),
+          ],
+        );
+      },
     );
   }
 
-  Widget _missionCard(
-    String title,
-    String distance,
-    String severity,
-    Color severityColor,
-    String description,
-    VoidCallback onTap,
-  ) {
+  Widget _liveMissionCard(SosReportModel report) {
+    // Urgency colour
+    Color severityColor;
+    switch (report.urgency) {
+      case SosReportModel.urgencyKritikal:
+        severityColor = const Color(0xFFDC2626);
+        break;
+      case SosReportModel.urgencyTinggi:
+        severityColor = const Color(0xFFF97316);
+        break;
+      case SosReportModel.urgencySedang:
+        severityColor = const Color(0xFFFBBF24);
+        break;
+      default:
+        severityColor = const Color(0xFF22C55E);
+    }
+
+    // Distance string
+    String distanceStr = '';
+    if (_currentPosition != null) {
+      final dist = LocationService.calculateDistanceKm(
+          _currentPosition!.latitude, _currentPosition!.longitude,
+          report.latitude, report.longitude);
+      distanceStr = LocationService.formatDistance(dist);
+    }
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        border: Border.all(
-          color: severityColor.withOpacity(0.3),
-          width: 2,
-        ),
+        border: Border.all(color: severityColor.withValues(alpha: 0.3), width: 2),
         borderRadius: BorderRadius.circular(16),
         color: Colors.white,
       ),
@@ -963,111 +966,98 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                Icons.location_on_rounded,
-                color: severityColor,
-                size: 18,
-              ),
+              Icon(Icons.location_on_rounded, color: severityColor, size: 18),
               const SizedBox(width: 8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title,
+                      '${report.type}${report.address.isNotEmpty ? " — ${report.address}" : ""}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      distance,
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
+                    if (distanceStr.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(distanceStr,
+                          style: GoogleFonts.inter(
+                              fontSize: 12,
+                              color: AppColors.textSecondary)),
+                    ],
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: severityColor,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  severity,
-                  style: GoogleFonts.inter(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
+                    color: severityColor,
+                    borderRadius: BorderRadius.circular(6)),
+                child: Text(report.urgency,
+                    style: GoogleFonts.inter(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white)),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            description,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              color: AppColors.textSecondary,
-              height: 1.5,
+          if (report.description.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              report.description,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(
+                  fontSize: 12, color: AppColors.textSecondary, height: 1.5),
             ),
-          ),
+          ],
           const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: _isActive
+                      ? () => context.push('/volunteer/sos-response', extra: report.id)
+                      : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: severityColor,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                        borderRadius: BorderRadius.circular(8)),
                     padding: const EdgeInsets.symmetric(vertical: 8),
                   ),
-                  child: Text(
-                    'Terima Misi',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  child: Text('Terima Misi',
+                      style: GoogleFonts.inter(
+                          fontSize: 12, fontWeight: FontWeight.w600)),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Misi ${report.type} ditolak.'),
+                        backgroundColor: AppColors.textSecondary,
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  },
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(
-                      color: AppColors.divider,
-                      width: 1,
-                    ),
+                    side: const BorderSide(color: AppColors.divider, width: 1),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                        borderRadius: BorderRadius.circular(8)),
                     padding: const EdgeInsets.symmetric(vertical: 8),
                   ),
-                  child: Text(
-                    'Tolak',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
+                  child: Text('Tolak',
+                      style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary)),
                 ),
               ),
             ],
@@ -1113,7 +1103,6 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
             stream: FirebaseFirestore.instance
                 .collection('sos_reports')
                 .where('responderId', isEqualTo: uid)
-                .orderBy('respondedAt', descending: true)
                 .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
@@ -1151,6 +1140,9 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
 
               final docs = snapshot.data!.docs;
               final reports = docs.map((doc) => SosReportModel.fromDocument(doc)).toList();
+              
+              // Sort locally to avoid composite index requirement
+              reports.sort((a, b) => (b.respondedAt ?? DateTime(0)).compareTo(a.respondedAt ?? DateTime(0)));
 
               return ListView.separated(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -1169,7 +1161,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: AppColors.divider),
                         boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
+                          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4)),
                         ],
                       ),
                       child: Row(
@@ -1177,7 +1169,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: isResolved ? AppColors.safe.withOpacity(0.1) : AppColors.volunteerAccent.withOpacity(0.1),
+                              color: isResolved ? AppColors.safe.withValues(alpha: 0.1) : AppColors.volunteerAccent.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Icon(
@@ -1299,11 +1291,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                 return const Center(child: CircularProgressIndicator(color: AppColors.volunteerAccent));
               }
 
-              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                return _buildEmptyTaskBoard();
-              }
-
-              final docs = snapshot.data!.docs;
+              final docs = snapshot.hasData ? snapshot.data!.docs : [];
               final reports = docs.map((doc) => SosReportModel.fromDocument(doc)).toList();
 
               // Sort by Urgency first, then distance
@@ -1321,11 +1309,70 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                 return 0;
               });
 
-              return ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                itemCount: reports.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (context, index) => _buildSOSCard(reports[index]),
+              // Prepare Map Markers
+              final Set<Marker> markers = {};
+              if (_currentPosition != null) {
+                markers.add(
+                  Marker(
+                    markerId: const MarkerId('my_loc'),
+                    position: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                    icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet),
+                    infoWindow: const InfoWindow(title: 'Lokasi Anda'),
+                  ),
+                );
+              }
+
+              for (var report in reports) {
+                markers.add(
+                  Marker(
+                    markerId: MarkerId(report.id),
+                    position: LatLng(report.latitude, report.longitude),
+                    icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+                    infoWindow: InfoWindow(
+                      title: report.type,
+                      snippet: 'Kecemasan: ${report.urgency}',
+                      onTap: () => context.push('/volunteer/sos-response', extra: report.id),
+                    ),
+                  ),
+                );
+              }
+
+              return Column(
+                children: [
+                  Container(
+                    height: 220,
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.divider),
+                    ),
+                    clipBehavior: Clip.hardEdge,
+                    child: GoogleMap(
+                      initialCameraPosition: CameraPosition(
+                        target: _currentPosition != null
+                            ? LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
+                            : (reports.isNotEmpty ? LatLng(reports.first.latitude, reports.first.longitude) : const LatLng(3.1390, 101.6869)),
+                        zoom: 11,
+                      ),
+                      markers: markers,
+                      myLocationEnabled: true,
+                      myLocationButtonEnabled: true,
+                      onMapCreated: (_) {},
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  if (reports.isEmpty)
+                    Expanded(child: _buildEmptyTaskBoard())
+                  else
+                    Expanded(
+                      child: ListView.separated(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        itemCount: reports.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) => _buildSOSCard(reports[index]),
+                      ),
+                    ),
+                ],
               );
             },
           ),
@@ -1366,8 +1413,11 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
       final diff = DateTime.now().difference(report.createdAt!);
       if (diff.inMinutes < 60) {
         timeAgo = '${diff.inMinutes} min lalu';
-      } else if (diff.inHours < 24) timeAgo = '${diff.inHours} jam lalu';
-      else timeAgo = '${diff.inDays} hari lalu';
+      } else if (diff.inHours < 24) {
+        timeAgo = '${diff.inHours} jam lalu';
+      } else {
+        timeAgo = '${diff.inDays} hari lalu';
+      }
     }
 
     return GestureDetector(
@@ -1378,7 +1428,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.divider),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
+            BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4)),
           ],
         ),
         child: Column(
@@ -1388,7 +1438,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: urgencyColor.withOpacity(0.08),
+                color: urgencyColor.withValues(alpha: 0.08),
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
               ),
               child: Row(
@@ -1413,7 +1463,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                     children: [
                       Container(
                         padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(color: AppColors.volunteerAccent.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                        decoration: BoxDecoration(color: AppColors.volunteerAccent.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
                         child: Icon(Icons.warning_rounded, color: AppColors.volunteerAccent, size: 24),
                       ),
                       const SizedBox(width: 16),
@@ -1443,7 +1493,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                           hasMatchingSkill ? Icons.check_circle_rounded : Icons.psychology_rounded,
                           report.requiredSkills.first + (report.requiredSkills.length > 1 ? ' +${report.requiredSkills.length - 1}' : ''),
                           hasMatchingSkill ? AppColors.safe : AppColors.textSecondary,
-                          hasMatchingSkill ? AppColors.safe.withOpacity(0.1) : Colors.grey[100]!,
+                          hasMatchingSkill ? AppColors.safe.withValues(alpha: 0.1) : Colors.grey[100]!,
                         ),
                     ],
                   ),
@@ -1598,9 +1648,9 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.safe.withOpacity(0.08),
+            color: AppColors.safe.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.safe.withOpacity(0.2)),
+            border: Border.all(color: AppColors.safe.withValues(alpha: 0.2)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1665,16 +1715,16 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
+          color: color.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.3), width: 1.5),
+          border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
+                color: color.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, color: color, size: 24),
@@ -1750,7 +1800,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
     return BottomAppBar(
       color: AppColors.surface,
       elevation: 20,
-      shadowColor: Colors.black.withOpacity(0.2),
+      shadowColor: Colors.black.withValues(alpha: 0.2),
       child: SizedBox(
         height: 65,
         child: Row(
@@ -1816,7 +1866,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
       borderRadius: BorderRadius.circular(20),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.04),
+          color: Colors.black.withValues(alpha: 0.04),
           blurRadius: 10,
           offset: const Offset(0, 4),
         ),

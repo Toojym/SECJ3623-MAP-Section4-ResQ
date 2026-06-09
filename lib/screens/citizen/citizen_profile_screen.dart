@@ -167,9 +167,7 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser != null) {
         if (_emailCtrl.text.isNotEmpty && _emailCtrl.text != currentUser.email) {
-          await currentUser.verifyBeforeUpdateEmail(_emailCtrl.text).catchError((_) {
-            return currentUser.updateEmail(_emailCtrl.text);
-          });
+          await currentUser.verifyBeforeUpdateEmail(_emailCtrl.text);
         }
       }
 
@@ -321,6 +319,10 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
               Navigator.pop(ctx);
 
               try {
+                final state = context.read<AuthBloc>().state;
+                if (state is! AuthAuthenticated) throw 'Pengguna tidak disahkan.';
+                final uid = state.uid;
+
                 final user = FirebaseAuth.instance.currentUser;
                 if (user == null || user.email == null) throw 'Pengguna tidak dijumpai.';
 
@@ -337,12 +339,9 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
                 setState(() => _passwordCtrl.text = newPassCtrl.text);
 
                 // Also persist new password to Firestore
-                final state = context.read<AuthBloc>().state;
-                if (state is AuthAuthenticated) {
-                  await FirestoreService().createCitizenProfile(state.uid, {
-                    'password': newPassCtrl.text,
-                  });
-                }
+                await FirestoreService().createCitizenProfile(uid, {
+                  'password': newPassCtrl.text,
+                });
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Kata Laluan berjaya ditukar!'), backgroundColor: AppColors.safe),
@@ -462,8 +461,8 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
                             label: Text('Log Keluar', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.danger)),
                             style: TextButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: AppColors.danger.withOpacity(0.3))),
-                              backgroundColor: AppColors.danger.withOpacity(0.05),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: AppColors.danger.withValues(alpha: 0.3))),
+                              backgroundColor: AppColors.danger.withValues(alpha: 0.05),
                             ),
                           ),
                         ),
@@ -589,7 +588,7 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
           label: Text('Tukar Kata Laluan', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary)),
           style: TextButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            backgroundColor: AppColors.primary.withOpacity(0.1),
+            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
         ),

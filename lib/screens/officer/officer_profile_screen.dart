@@ -135,10 +135,8 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
 
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser != null) {
-        if (_emailCtrl.text.isNotEmpty && _emailCtrl.text != currentUser.email) {
-          await currentUser.verifyBeforeUpdateEmail(_emailCtrl.text).catchError((_) {
-            return currentUser.updateEmail(_emailCtrl.text);
-          });
+         if (_emailCtrl.text.isNotEmpty && _emailCtrl.text != currentUser.email) {
+          await currentUser.verifyBeforeUpdateEmail(_emailCtrl.text);
         }
       }
 
@@ -237,6 +235,10 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
               Navigator.pop(ctx);
 
               try {
+                final state = context.read<AuthBloc>().state;
+                if (state is! AuthAuthenticated) throw 'Pengguna tidak disahkan.';
+                final uid = state.uid;
+
                 final user = FirebaseAuth.instance.currentUser;
                 if (user == null || user.email == null) throw 'Pengguna tidak dijumpai.';
 
@@ -249,12 +251,9 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
 
                 setState(() => _passwordCtrl.text = newPassCtrl.text);
 
-                final state = context.read<AuthBloc>().state;
-                if (state is AuthAuthenticated) {
-                  await FirestoreService().createOfficerProfile(state.uid, {
-                    'password': newPassCtrl.text,
-                  });
-                }
+                await FirestoreService().createOfficerProfile(uid, {
+                  'password': newPassCtrl.text,
+                });
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Kata Laluan berjaya ditukar!'), backgroundColor: AppColors.safe),
@@ -366,8 +365,8 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
                             label: Text('Log Keluar', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.danger)),
                             style: TextButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: AppColors.danger.withOpacity(0.3))),
-                              backgroundColor: AppColors.danger.withOpacity(0.05),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: AppColors.danger.withValues(alpha: 0.3))),
+                              backgroundColor: AppColors.danger.withValues(alpha: 0.05),
                             ),
                           ),
                         ),
@@ -414,7 +413,7 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
                   tag: 'officer_avatar',
                   child: CircleAvatar(
                     radius: 40,
-                    backgroundColor: AppColors.officerAccent.withOpacity(0.12),
+                    backgroundColor: AppColors.officerAccent.withValues(alpha: 0.12),
                     backgroundImage: _getAvatarProvider(),
                     child: (_selectedImageFile == null && (_profileImageUrl == null || _profileImageUrl!.isEmpty))
                         ? Text(
@@ -442,7 +441,7 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
           Container(
             margin: const EdgeInsets.only(top: 4),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-            decoration: BoxDecoration(color: AppColors.officerAccent.withOpacity(0.1), borderRadius: BorderRadius.circular(99)),
+            decoration: BoxDecoration(color: AppColors.officerAccent.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(99)),
             child: Text('Pegawai Kerajaan', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.officerAccent)),
           ),
           if (_isEditing)
@@ -500,7 +499,7 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
           label: Text('Tukar Kata Laluan', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary)),
           style: TextButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            backgroundColor: AppColors.primary.withOpacity(0.1),
+            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
         ),
