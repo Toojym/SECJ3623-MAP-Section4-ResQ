@@ -466,6 +466,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                               ),
                               const SizedBox(height: 8),
                               DropdownButtonFormField<String>(
+                                isExpanded: true,
                                 value: _disasterType,
                                 decoration: InputDecoration(
                                     border: OutlineInputBorder(
@@ -1356,6 +1357,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                           color: AppColors.textPrimary)),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
+                    isExpanded: true,
                     initialValue: selectedSquad,
                     decoration: InputDecoration(
                       isDense: true,
@@ -1941,6 +1943,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 DropdownButtonFormField<String>(
+                  isExpanded: true,
                   decoration: InputDecoration(
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8)),
@@ -2128,6 +2131,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     children: [
                       // ── Squad selector ──────────────────────────────────────
                       DropdownButtonFormField<String>(
+                        isExpanded: true,
                         decoration: InputDecoration(
                             border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8)),
@@ -2165,6 +2169,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                       const SizedBox(height: 12),
                       // ── Zone selector ───────────────────────────────────────
                       DropdownButtonFormField<String>(
+                        isExpanded: true,
                         decoration: InputDecoration(
                             border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8)),
@@ -2182,6 +2187,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                       const SizedBox(height: 12),
                       // ── Priority selector ───────────────────────────────────
                       DropdownButtonFormField<String>(
+                        isExpanded: true,
                         decoration: InputDecoration(
                             border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8)),
@@ -2203,14 +2209,19 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.groups_rounded, size: 15, color: AppColors.volunteerAccent),
-                              const SizedBox(width: 6),
-                              Text('Bilangan Sukarelawan Diperlukan',
-                                  style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.volunteerAccent)),
-                            ],
+                          Expanded(
+                            child: Row(
+                              children: [
+                                const Icon(Icons.groups_rounded, size: 15, color: AppColors.volunteerAccent),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text('Bilangan Sukarelawan Diperlukan',
+                                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.volunteerAccent)),
+                                ),
+                              ],
+                            ),
                           ),
+                          const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(color: AppColors.volunteerAccent, borderRadius: BorderRadius.circular(99)),
@@ -2411,6 +2422,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     style: GoogleFonts.inter(fontSize: 14)),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
+                  isExpanded: true,
                   decoration: InputDecoration(
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8)),
@@ -2960,6 +2972,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
               const SizedBox(height: 10),
               // Zone dropdown
               DropdownButtonFormField<String>(
+                isExpanded: true,
                 value: selectedZone,
                 decoration: InputDecoration(
                     labelText: 'Zon bencana',
