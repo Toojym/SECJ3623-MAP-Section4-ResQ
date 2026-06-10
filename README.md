@@ -1,173 +1,170 @@
-
 # ⚡ SIGAP — Sistem Integrasi Gerak Awam Pantas
 <div align="center">
   <img src="https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white" />
   <img src="https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black" />
   <img src="https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white" />
-  <img src="https://img.shields.io/badge/VS%20Code-007ACC?style=for-the-badge&logo=visualstudiocode&logoColor=white" />
   <img src="https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white" />
 </div>
 
 <br/>
 
-**SIGAP** is a Flutter-based emergency response platform connecting **Citizens**, **Volunteers**, and **Officers** into a unified crisis management system. Designed for Malaysia's flood-prone regions, it provides real-time flood alerts, family safety tracking, SOS dispatch, and role-based dashboards — all backed by Firebase.
+**SIGAP** (meaning *"alert"* or *"fast"* in Malay) is a Flutter-based mobile crisis response and emergency coordination platform designed for Malaysia's disaster management (e.g., floods, fires, landslides, medical crises). It bridges the gap between **Citizens**, **Volunteers**, and **Government Agencies (e.g., NADMA, Bomba, PDRM)**, ensuring instant help and coordinate efforts when every second counts.
 
 ---
 
-## ✨ Key Features
+## 🌟 Key Pillars & User Workflows
 
-### 🏠 Citizen
-- **Personalised Profile** — Full identity (name, IC, address), emergency contact, medical vulnerabilities, and household details
-- **Profile Picture** — Upload from gallery, saved directly to the database
-- **Amaran Banjir Popup** — Interactive active flood warning banner with alert details and a direct link to the crisis map
-- **Keselamatan Keluarga** — Real-time family member safety tracking linked to Firestore
-- **SOS Button** — Always-visible emergency dispatch button docked in the bottom navigation
+```mermaid
+graph TD
+    A[Authentication & Role Verification] -->|Citizen| B(Citizen Dashboard)
+    A -->|Volunteer| C(Volunteer Dashboard)
+    A -->|Officer| D(Officer Dashboard)
 
-### 🔐 Authentication
-- **Role-Based Access Control (RBAC)** — Citizen / Volunteer / Officer each get their own dashboard
-- **Secure Password Change** — Re-authentication required before updating passwords (Firebase security compliance)
-- **Spam Protection** — 150-second countdown lock on the Forgot Password feature
-- **8-Second Network Timeout** — Fails gracefully on poor connections
+    B -->|SOS Dispatch| E[Authority Routing Service]
+    B -->|Offline Safety Status| F[Hive Offline Cache]
+    B -->|Aid & Donations| G[Donation & Claims System]
 
-### 🛠️ Tech Stack
-| Layer | Technology |
-|---|---|
-| Framework | Flutter 3 (Dart) |
-| State Management | `flutter_bloc` |
-| Navigation | `go_router` |
-| Backend | Firebase Auth + Cloud Firestore |
-| Storage | Base64 encoding (profile images saved in Firestore) |
-| UI | Google Fonts, Material 3 |
-| Image Picker | `image_picker` |
+    C -->|Grab-style Mission Queue| H[SOS Dispatch Acceptance]
+    C -->|Field Ops checklist| I[Post-Mission Score system]
+
+    D -->|Real-time Control Center| J[Active Disasters Map]
+    D -->|Resource Tracking| K[Geofencing & Claims Approval]
+```
+
+### 🏠 1. The Citizen Workflow
+* **SOS One-Tap Dispatch**: Instant emergency broadcast using geocoding to retrieve the citizen's current location, allowing them to report incident types (Flood, Fire, Medical, Missing Person).
+* **Malaysian Authority Routing**: Powered by [AuthorityRoutingService](file:///c:/Users/User/Downloads/SIGAP/lib/services/authority_routing_service.dart), SOS broadcasts automatically route to the corresponding emergency agency:
+  * 🚒 **Bomba (994)**: Fire & structural rescue.
+  * 🚑 **Ambulance (999)**: Accidents & critical medical events.
+  * 👮 **PDRM (999)**: Crimes, missing persons, or public safety issues.
+  * 🌊 **NADMA (03-8064 2400)**: Flood & landslide disaster zones.
+* **Active Flood Warnings (Amaran Banjir)**: Real-time pop-up banner alerting citizens of active flood warnings in their proximity, linking to crisis centers and evac directions.
+* **Family Safety Tracker (Keselamatan Keluarga)**: Real-time tracking of family members' safety status (*Safe, Evacuated, In Danger*).
+* **Donations & Transparent Claims**: Citizens can browse active donation campaigns, donate directly, view transparency reports, and download generated PDF receipts.
+
+### 🤝 2. The Volunteer Workflow
+* **Active/Inactive Status Toggle**: Controls the volunteer's availability for incoming emergency assignments in their area.
+* **Grab-Style Dispatch Queue**: Real-time incident feed of pending SOS dispatches. Volunteers can review incident details, location coordinates, and accept the mission.
+* **Interactive Mission Checklists**: Step-by-step guides for active rescue missions, detailing supplies to deliver, victims to evacuate, and field reports.
+* **SIGAP Mata & Rewards**: Earn points for completing volunteer missions, redeemable for certificates endorsed by civil defense organizations.
+
+### 🏛️ 3. The Government Officer Workflow
+* **Command & Control Dashboard**: Centralized console showing live cluster distribution of SOS incidents and location mappings.
+* **Disaster Geofencing**: Define active disaster borders to restrict access or notify citizens in high-risk zones.
+* **Resource and Claim Operations**: Manage and approve relief aid claims submitted by affected citizens and track inventory distribution.
 
 ---
 
-## 📁 Project Structure
+## 🛠️ Technical Stack & Architecture
 
-> ⚠️ **Important:** The Flutter project lives inside the **`SIGAP/`** subfolder of this repository.
+### Frontend Architecture (MVVM + Bloc)
+* **Framework**: Flutter 3 (Dart `sdk: '>=3.0.0 <4.0.0'`)
+* **State Management**: `flutter_bloc` (v9.1.1) for decoupling business logic from UI elements.
+* **Routing**: `go_router` (v15.1.2) implementing declarative role-based routing.
+* **Localization**: `easy_localization` (v3.0.7) for complete, context-aware dual-language support (English & Bahasa Melayu).
+* **Offline Caching**: `hive_flutter` (v1.1.0) local storage cache for backup guides and safety checklists.
+
+### Cloud Integration (Firebase)
+* **Firebase Auth**: Role-Based Access Control (RBAC) securely restricting and onboarding Citizens, Volunteers, and Officers. Includes re-authentication workflows for password changes.
+* **Cloud Firestore**: Real-time synchronization of SOS signals, user profiles, volunteer statuses, and donation transactions.
+* **Firebase Messaging (FCM)**: Push notifications for immediate dispatch warnings.
+
+---
+
+## 📁 Repository Structure
 
 ```
-SECJ3623-MAP-Section4-ResQ/   ← Repository root (Open THIS in VS Code)
-├── lib/
-│   ├── blocs/            # State management (AuthBloc)
-│   ├── core/             # Theme, constants, routing, validators
-│   ├── models/           # Data models (Citizen, Officer, Volunteer)
-│   ├── screens/          # UI screens by role (auth, citizen, officer, volunteer)
-│   ├── services/         # Firebase service layer
-│   └── widgets/          # Reusable widgets (SigapTextField, SigapButton, SigapAppBar)
+SIGAP/
+├── assets/
+│   ├── sounds/              # Alert ringtones and dispatch notification sounds
+│   └── translations/        # Localization files
+│       ├── en.json          # English locale keys
+│       └── ms.json          # Bahasa Melayu locale keys
 ├── android/
-├── pubspec.yaml
-└── ...
+│   ├── app/
+│   │   └── build.gradle.kts # Kotlin DSL Gradle settings (Desugaring Enabled)
+│   └── build.gradle.kts
+├── lib/
+│   ├── blocs/               # BLoC State Management blocks (e.g. AuthBloc)
+│   ├── core/
+│   │   ├── constants/       # Global constants (Colors, Route Names)
+│   │   └── theme/           # Premium Material 3 Dark/Light styling
+│   ├── models/              # Strongly-typed data models (Citizen, Volunteer, Officer)
+│   ├── screens/             # Dedicated screens arranged by role and auth state
+│   │   ├── auth/            # Login, Registration, Password Reset, Onboarding
+│   │   ├── citizen/         # Dashboards, Profiles, Donation Campaigns
+│   │   ├── officer/         # Incident heatmaps, relief claim approvals
+│   │   └── volunteer/       # Mission checksheets, SOS Accept/Decline list
+│   ├── services/            # Service modules (Auth, Firestore, Location, Notification)
+│   └── widgets/             # Reusable custom styled Material 3 components
+├── pubspec.yaml             # Main project specifications
+└── README.md                # Project documentation
 ```
 
 ---
 
-## 🚀 Quick Start — Download ZIP & Run (VS Code)
+## ⚡ Android Build Configuration (Java 8 Desugaring)
 
-No Git required. Follow these steps exactly.
+> [!IMPORTANT]
+> The `flutter_local_notifications` package utilizes Java 8+ features (`java.time` APIs). To compile on Android targets, **Core Library Desugaring** is enabled in the Kotlin DSL configuration.
 
-### Step 1 — Prerequisites
+If you modify the build dependencies, verify that [android/app/build.gradle.kts](file:///c:/Users/User/Downloads/SIGAP/android/app/build.gradle.kts) includes:
 
-Make sure you have all of the following installed **before** opening the project:
+```kotlin
+android {
+    compileOptions {
+        isCoreLibraryDesugaringEnabled = true
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+}
 
-| Tool | Minimum Version | Download |
-|---|---|---|
-| Flutter SDK | 3.10+ | [flutter.dev](https://docs.flutter.dev/get-started/install) |
-| Dart SDK | Included with Flutter | — |
-| Android Studio | Latest | [developer.android.com](https://developer.android.com/studio) |
-| VS Code | Latest | [code.visualstudio.com](https://code.visualstudio.com/) |
-| Java JDK | 17+ | [adoptium.net](https://adoptium.net/) |
-
-**VS Code Extensions required** (install from `Ctrl+Shift+X`):**
-- `Dart` — by Dart Code
-- `Flutter` — by Dart Code
-
----
-
-### Step 2 — Download & Extract
-
-1. Click **`Code` → `Download ZIP`** on this GitHub page
-2. Extract the ZIP anywhere (e.g., `C:\Projects\`)
-3. You will get a folder like `SECJ3623-MAP-Section4-ResQ-main/`
-
----
-
-### Step 3 — Open the Folder in VS Code
-
-```
-VS Code → File → Open Folder → select the extracted folder
-```
-
-You should see `pubspec.yaml` immediately at the root of the VS Code Explorer.
-
----
-
-### Step 4 — Install Dependencies
-
-Open the VS Code terminal (**Ctrl + `**) and run:
-
-```bash
-flutter pub get
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+}
 ```
 
 ---
 
-### Step 5 — Connect a Device
+## 🚀 Getting Started
 
-**Option A — Physical Android Phone:**
-1. Go to phone **Settings → About Phone** → tap **Build Number** 7 times to unlock Developer Options
-2. Go to **Settings → Developer Options** → enable **USB Debugging**
-3. Connect phone via USB cable
-4. Run `flutter devices` in the terminal to confirm your device is detected
+### 📋 Prerequisites
+Confirm your machine meets these requirements:
+* **Flutter SDK**: `3.10.x` or higher
+* **Java JDK**: Version 17
+* **Android Studio**: Installed with SDK Tools and an active Virtual Device (API Level 30+) or a developer-unlocked physical Android device connected via USB.
 
-**Option B — Android Emulator (via Android Studio):**
-1. Open Android Studio → **Device Manager** → **Create Virtual Device**
-2. Pick any phone model (e.g., Pixel 6) with **API Level 30+**
-3. Start the emulator, then return to VS Code
+### 🔌 Running the Project
 
----
+1. **Clone & Open**: Open the `SIGAP` directory in your IDE of choice (VS Code recommended).
+2. **Retrieve Dependencies**: Open a terminal in the project root and run:
+   ```bash
+   flutter pub get
+   ```
+3. **Run Code Generation**: Generate Hive type adapters if required:
+   ```bash
+   flutter pub run build_runner build --delete-conflicting-outputs
+   ```
+4. **Launch Application**: Ensure your emulator or physical device is detected by executing `flutter devices`, then boot the app in debug mode:
+   ```bash
+   flutter run
+   ```
 
-### Step 6 — Run the App
-
-```bash
-flutter run
-```
-
-Or press **`F5`** in VS Code to use the built-in Flutter launcher.
-
----
-
-## 🔌 Shared Database — No Setup Required
-
-This repository is **pre-configured** with the shared SIGAP Firebase project.
-
-The files `google-services.json` and `firebase_options.dart` are already included in the repo. **You do not need to create your own Firebase project.**
-
-Download → `flutter pub get` → `flutter run` — and you are automatically connected to the shared live database. All team members share the same accounts, profiles, and real-time data.
+> [!NOTE]
+> This repository is pre-configured with a shared Firebase project containing correct Firebase configuration keys. You do not need to register a new Firebase project to get started.
 
 ---
 
-## 🧩 Reusable Widget Library
+## 🧩 Reusable Design Components
 
-All shared UI components live in `lib/widgets/common/`:
+All shared widgets are housed under `lib/widgets/` to ensure a consistent, premium user experience:
 
-| Widget | Description | Used In |
-|---|---|---|
-| `SigapTextField` | Styled input with label, validation, eye-icon toggle | Auth screens, Profile screens |
-| `SigapButton` | Primary / Outlined button with loading spinner | All screens |
-| `SigapAppBar` | Consistent top app bar with optional action buttons | All dashboards & profiles |
-| `LoadingOverlay` | Full-screen loading indicator | Available for use |
-
----
-
-## 👥 Team — SECJ3623 MAP Section 4
-
-| Module | Responsibility |
-|---|---|
-| Citizen | Profile, Dashboard, Family Safety Tracking, SOS |
-| Authentication | Login, Register, Role Routing, Password Reset |
-| Officer | Dashboard, Incident Management |
-| Volunteer | Dashboard, Assignment Tracking |
+| Component | Features | Purpose |
+| :--- | :--- | :--- |
+| `SigapTextField` | Built-in validators, custom border design, secure eye toggle | Data entry for login, register, profiles |
+| `SigapButton` | Loading indicator support, Primary / Outlined styles | Submit actions, accepts, declines |
+| `SigapAppBar` | Modern glassmorphism look, title routing, localization-ready | Core navigation bar across all roles |
+| `LoadingOverlay` | Full-screen blocking loader with subtle blur | Secure network and authentication barriers |
 
 ---
 
