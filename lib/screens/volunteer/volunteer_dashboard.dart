@@ -1282,91 +1282,152 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
 
   // Replace the _buildMyProgressTab method with this:
 
-  Widget _buildMyProgressTab(String uid) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // SOS Missions accepted (with detailed design like reference)
-          StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('sos_reports')
-                .where('responderId', isEqualTo: uid)
-                .snapshots(),
-            builder: (context, snapshot) {
-              final reports = snapshot.hasData
-                  ? snapshot.data!.docs
-                      .map((doc) => SosReportModel.fromDocument(doc))
-                      .where((r) => r.status != SosReportModel.statusResolved)
-                      .toList()
-                  : [];
+  // Replace your _buildMyProgressTab method with this debug version:
 
-              if (reports.isEmpty) return const SizedBox.shrink();
+Widget _buildMyProgressTab(String uid) {
+  return SingleChildScrollView(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // SOS Missions accepted
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('sos_reports')
+              .where('responderId', isEqualTo: uid)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const SizedBox.shrink();
+            }
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Misi SOS Dalam Progres',
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
+            final reports = snapshot.data!.docs
+                .map((doc) => SosReportModel.fromDocument(doc))
+                .where((r) => 
+                    r.status != 'cancelled' &&
+                    r.status != 'resolved' &&
+                    r.status != 'completed' &&
+                    r.responderId == uid)
+                .toList();
+
+            if (reports.isEmpty) return const SizedBox.shrink();
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Misi SOS Dalam Progres',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
                   ),
-                  const SizedBox(height: 12),
-                  ...reports.map((report) => Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: _buildDetailedSOSProgressCard(report),
-                  )),
-                  const SizedBox(height: 16),
-                ],
-              );
-            },
-          ),
-          
-          // Squad Tasks accepted
-          StreamBuilder<QuerySnapshot>(
-            stream: _firestoreService.streamAllVolunteerTasks(),
-            builder: (context, snapshot) {
-              final allTasks = snapshot.hasData
-                  ? snapshot.data!.docs
-                      .map((doc) => VolunteerTaskModel.fromMap(
-                          doc.id, doc.data() as Map<String, dynamic>))
-                      .toList()
-                  : [];
-
-              final myTasks = allTasks
-                  .where((task) => task.hasAccepted(uid) && task.status != 'Selesai Tugas')
-                  .toList();
-
-              if (myTasks.isEmpty) return const SizedBox.shrink();
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Tugasan Skuad Dalam Progres',
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                ),
+                const SizedBox(height: 12),
+                ...reports.map((report) => Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: _buildDetailedSOSProgressCard(report),
+                )),
+                const SizedBox(height: 16),
+              ],
+            );
+          },
+        ),
+        
+        // Squad Tasks accepted - ADDED DETAILED DEBUGGING
+        StreamBuilder<QuerySnapshot>(
+          stream: _firestoreService.streamAllVolunteerTasks(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const Center(child: Text('Loading tasks...'));
+            }
+            
+            final allTasks = snapshot.data!.docs
+                .map((doc) => VolunteerTaskModel.fromMap(
+                    doc.id, doc.data() as Map<String, dynamic>))
+                .toList();
+            
+            print('=== MY PROGRESS TAB DEBUG ===');
+            print('Total tasks in DB: ${allTasks.length}');
+            print('My UID: $uid');
+            print('My assigned squad: $_assignedSquad');
+            print('My assigned squad ID: $_assignedSquadId');
+            
+            // Check ALL tasks to see if any have this volunteer in accepted list
+            for (var task in allTasks) {
+              final hasAccepted = task.acceptedVolunteerUIDs.contains(uid);
+              print('Task: ${task.squadName}');
+              print('  Accepted UIDs: ${task.acceptedVolunteerUIDs}');
+              print('  Does it contain $uid? $hasAccepted');
+              print('  Status: ${task.status}');
+              print('  ---');
+            }
+            
+            // Filter tasks where volunteer has accepted
+            final myAcceptedTasks = allTasks.where((task) {
+              return task.acceptedVolunteerUIDs.contains(uid) && 
+                     task.status != 'Selesai Tugas';
+            }).toList();
+            
+            print('My accepted tasks (in progress): ${myAcceptedTasks.length}');
+            
+            if (myAcceptedTasks.isEmpty) {
+              return Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    const Icon(Icons.info_outline_rounded, size: 32, color: AppColors.textHint),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Tiada tugasan skuad yang diterima.',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  ...myTasks.map((task) => Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: _buildDetailedSquadProgressCard(task, uid),
-                  )),
-                ],
+                    const SizedBox(height: 8),
+                    Text(
+                      'Pergi ke tab Misi > Tugasan Skuad untuk terima tugasan.',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        color: AppColors.textHint,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               );
-            },
-          ),
-        ],
-      ),
-    );
-  }
+            }
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Tugasan Skuad Dalam Progres',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ...myAcceptedTasks.map((task) => Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: _buildDetailedSquadProgressCard(task, uid),
+                )),
+              ],
+            );
+          },
+        ),
+      ],
+    ),
+  );
+}
 
   // ADD THIS NEW METHOD - Detailed SOS Progress Card (like reference design) - WITHOUT BUTTONS
   Widget _buildDetailedSOSProgressCard(SosReportModel report) {
@@ -1647,6 +1708,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
   }
 
   // UPDATE THE _buildDetailedSquadProgressCard to also use detailed design
+
   Widget _buildDetailedSquadProgressCard(VolunteerTaskModel task, String uid) {
     const statusSteps = [
       'Menuju ke Lokasi',
@@ -1654,8 +1716,22 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
       'Sedang Bertugas',
       'Selesai Tugas',
     ];
-    final currentStepIndex = statusSteps.indexOf(task.status).clamp(0, 3);
+    
+    // Find current step index based on task status
+    int currentStepIndex = statusSteps.indexOf(task.status);
+    if (currentStepIndex == -1) {
+      // If status not found, default to 0
+      currentStepIndex = 0;
+    }
+    
     final isCompleted = task.status == 'Selesai Tugas';
+    
+    print('=== BUILDING SQUAD PROGRESS CARD ===');
+    print('Task: ${task.squadName}');
+    print('Current status: ${task.status}');
+    print('Current step index: $currentStepIndex');
+    print('Is completed: $isCompleted');
+    print('Progress value: ${task.progress}');
 
     Color priorityColor;
     switch (task.priority) {
@@ -1675,6 +1751,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
     final slotsLeft = task.requiredVolunteerCount - task.acceptedVolunteerUIDs.length;
 
     return Container(
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -1690,7 +1767,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
+          // Header with priority and slots
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
@@ -1739,6 +1816,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Squad info row
                 Row(
                   children: [
                     Container(
@@ -1794,6 +1872,8 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                   ],
                 ),
                 const SizedBox(height: 12),
+                
+                // Task description
                 Text(
                   task.taskDescription,
                   style: GoogleFonts.inter(
@@ -1804,7 +1884,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                 ),
                 const SizedBox(height: 16),
                 
-                // Progress
+                // Progress bar
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1833,7 +1913,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
-                        value: task.progress,
+                        value: task.progress.clamp(0.0, 1.0),
                         minHeight: 6,
                         backgroundColor: priorityColor.withOpacity(0.1),
                         color: priorityColor,
@@ -1842,43 +1922,76 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                   ],
                 ),
                 
+                // PROGRESS UPDATE BUTTONS - ALWAYS SHOW if not completed
                 if (!isCompleted) ...[
                   const SizedBox(height: 16),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
+                  const Divider(height: 1),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Kemaskini Status Tugasan:',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      // Show all buttons, but disable ones that are before current step
+                      _buildStatusButton(
+                        label: 'Menuju ke Lokasi',
+                        isActive: currentStepIndex == 0,
+                        isCompleted: currentStepIndex > 0,
+                        onPressed: () => _updateSquadTaskProgress(task, 'Menuju ke Lokasi', uid),
+                        color: priorityColor,
+                      ),
+                      _buildStatusButton(
+                        label: 'Tiba di Lokasi',
+                        isActive: currentStepIndex == 1,
+                        isCompleted: currentStepIndex > 1,
+                        onPressed: () => _updateSquadTaskProgress(task, 'Tiba di Lokasi', uid),
+                        color: priorityColor,
+                      ),
+                      _buildStatusButton(
+                        label: 'Sedang Bertugas',
+                        isActive: currentStepIndex == 2,
+                        isCompleted: currentStepIndex > 2,
+                        onPressed: () => _updateSquadTaskProgress(task, 'Sedang Bertugas', uid),
+                        color: priorityColor,
+                      ),
+                      _buildStatusButton(
+                        label: 'Selesai Tugas',
+                        isActive: currentStepIndex == 3,
+                        isCompleted: currentStepIndex > 3,
+                        onPressed: () => _updateSquadTaskProgress(task, 'Selesai Tugas', uid),
+                        color: priorityColor,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.warning.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                     child: Row(
-                      children: List.generate(statusSteps.length, (i) {
-                        final stepLabel = statusSteps[i];
-                        final isDone = i < currentStepIndex;
-                        final isCurrent = i == currentStepIndex;
-                        final isNext = i == currentStepIndex + 1;
-                        final canTap = isNext;
-
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ElevatedButton(
-                            onPressed: canTap
-                                ? () => _updateSquadTaskProgress(task, stepLabel, uid)
-                                : null,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: canTap ? priorityColor : Colors.grey[300],
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: Text(
-                              stepLabel,
-                              style: GoogleFonts.inter(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                              ),
+                      children: [
+                        Icon(Icons.info_outline_rounded, size: 14, color: AppColors.warning),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Klik butang di atas untuk mengemaskini status tugasan anda',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              color: AppColors.warning,
                             ),
                           ),
-                        );
-                      }),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -1888,6 +2001,81 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
         ],
       ),
     );
+  }
+
+  // Add this helper method for status buttons
+  Widget _buildStatusButton({
+    required String label,
+    required bool isActive,
+    required bool isCompleted,
+    required VoidCallback onPressed,
+    required Color color,
+  }) {
+    // Determine button style based on state
+    if (isCompleted) {
+      // Already completed - show as green checkmark
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: AppColors.safe.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.safe),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.check_circle_rounded, size: 12, color: AppColors.safe),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: AppColors.safe,
+              ),
+            ),
+          ],
+        ),
+      );
+    } else if (isActive) {
+      // Current status - show as active (can't click again)
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+      );
+    } else {
+      // Next available button - clickable
+      return ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          elevation: 0,
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      );
+    }
   }
 
   // ADD THIS NEW METHOD - SOS Progress Card with Action Buttons

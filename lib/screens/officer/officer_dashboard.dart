@@ -2031,249 +2031,335 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
   void _assignVolunteerDialog() {
     String selectedSquad = 'Skuad Alpha (Penyelamat)';
     final Set<String> dynamicZonesSet = {};
-    for (var report in _activeReports) {
-      if (report.address.isNotEmpty) dynamicZonesSet.add(report.address);
-    }
-    dynamicZonesSet.addAll(_disasterZoneNames);
-    if (dynamicZonesSet.isEmpty) {
-      dynamicZonesSet.add('Tiada Zon Aktif');
-    }
-    final dynamicZones = dynamicZonesSet.toList()..sort();
-    String selectedZone = dynamicZones.first;
-    String selectedPriority = 'Sederhana';
-    int selectedVolunteerCount = 4;
-    final squadCtrl = TextEditingController(text: 'Skuad Alpha (Penyelamat)');
-    final taskCtrl = TextEditingController();
-    final etaCtrl = TextEditingController(text: '15 min');
-
+    
+    // Store the loading dialog context to close it later
+    BuildContext? loadingDialogContext;
+    
+    // Show loading dialog first while fetching data
     showDialog(
       context: context,
-      builder: (ctx) => StatefulBuilder(builder: (context, setDialogState) {
-        final zoneCoords = _zoneCoordinates(selectedZone);
-        
+      barrierDismissible: false,
+      builder: (BuildContext loadingCtx) {
+        loadingDialogContext = loadingCtx;
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text('Agih Skuad Baru',
-              style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.volunteerAccent)),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ── Squad selector ──────────────────────────────────────
-                DropdownButtonFormField<String>(
-                  decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                      labelText: 'Pilih Jenis Skuad'),
-                  value: selectedSquad,
-                  items: const [
-                    DropdownMenuItem(
-                        value: 'Skuad Alpha (Penyelamat)',
-                        child: Text('Skuad Alpha (Penyelamat)')),
-                    DropdownMenuItem(
-                        value: 'Skuad Bravo (Pembersihan)',
-                        child: Text('Skuad Bravo (Pembersihan)')),
-                    DropdownMenuItem(
-                        value: 'Skuad Charlie (Logistik)',
-                        child: Text('Skuad Charlie (Logistik)')),
-                    DropdownMenuItem(
-                        value: 'Skuad Delta (Perubatan)',
-                        child: Text('Skuad Delta (Perubatan)')),
-                    DropdownMenuItem(
-                        value: 'Skuad Echo (Dapur Jalanan)',
-                        child: Text('Skuad Echo (Dapur Jalanan)')),
-                    DropdownMenuItem(
-                        value: 'Skuad Foxtrot (Komunikasi)',
-                        child: Text('Skuad Foxtrot (Komunikasi)')),
-                  ],
-                  onChanged: (v) {
-                    if (v != null) {
-                      setDialogState(() {
-                        selectedSquad = v;
-                        squadCtrl.text = v;
-                      });
-                    }
-                  },
-                ),
-                const SizedBox(height: 12),
-                // ── Zone selector ───────────────────────────────────────
-                DropdownButtonFormField<String>(
-                  decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                      labelText: 'Lokasi Tugasan'),
-                  value: selectedZone,
-                  items: dynamicZones
-                      .map((z) => DropdownMenuItem(value: z, child: Text(z, overflow: TextOverflow.ellipsis)))
-                      .toList(),
-                  onChanged: (v) {
-                    if (v != null) {
-                      setDialogState(() => selectedZone = v);
-                    }
-                  },
-                ),
-                const SizedBox(height: 12),
-                // ── Priority selector ───────────────────────────────────
-                DropdownButtonFormField<String>(
-                  decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                      labelText: 'Keutamaan Insiden'),
-                  value: selectedPriority,
-                  items: const [
-                    DropdownMenuItem(value: 'Kritikal', child: Text('Kritikal')),
-                    DropdownMenuItem(value: 'Tinggi', child: Text('Tinggi')),
-                    DropdownMenuItem(value: 'Sederhana', child: Text('Sederhana')),
-                    DropdownMenuItem(value: 'Rendah', child: Text('Rendah')),
-                  ],
-                  onChanged: (v) {
-                    if (v != null) setDialogState(() => selectedPriority = v);
-                  },
-                ),
-                const SizedBox(height: 16),
-                
-                // ── Volunteer count slider ────────────────────────────────
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.groups_rounded, size: 15, color: AppColors.volunteerAccent),
-                        const SizedBox(width: 6),
-                        Text('Bilangan Sukarelawan Diperlukan',
-                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.volunteerAccent)),
-                      ],
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(color: AppColors.volunteerAccent, borderRadius: BorderRadius.circular(99)),
-                      child: Text('$selectedVolunteerCount orang',
-                          style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
-                    ),
-                  ],
-                ),
-                Slider(
-                  value: selectedVolunteerCount.toDouble(),
-                  min: 2,
-                  max: 8,
-                  divisions: 6,
-                  activeColor: AppColors.volunteerAccent,
-                  label: '$selectedVolunteerCount orang',
-                  onChanged: (v) => setDialogState(() => selectedVolunteerCount = v.round()),
-                ),
-                // ── Task description ────────────────────────────────────
-                TextField(
-                  controller: taskCtrl,
-                  decoration: InputDecoration(
-                      labelText: 'Tugasan Khusus',
-                      hintText: 'Terangkan tugasan skuad ini...',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
-                  maxLines: 2,
-                ),
-                const SizedBox(height: 12),
-                // ── ETA ──────────────────────────────────────────────────
-                TextField(
-                  controller: etaCtrl,
-                  decoration: InputDecoration(
-                      labelText: 'Anggaran Tiba (ETA)',
-                      hintText: 'Contoh: 15 min',
-                      prefixIcon: const Icon(Icons.timer_outlined, size: 18),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
-                ),
-                
-                // ── Info about squad assignment ─────────────────────────
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.warning.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(color: AppColors.volunteerAccent),
+              const SizedBox(height: 16),
+              Text('Memuatkan zon aktif...',
+                  style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+            ],
+          ),
+        );
+      },
+    );
+    
+    // Fetch active SOS reports directly from Firestore
+    FirebaseFirestore.instance
+        .collection('sos_reports')
+        .where('status', isEqualTo: SosReportModel.statusActive)
+        .get()
+        .then((sosSnapshot) {
+      // Also fetch disaster zones
+      FirebaseFirestore.instance
+          .collection('disaster_zones')
+          .get()
+          .then((zoneSnapshot) {
+        // Populate zones from active SOS reports
+        for (var doc in sosSnapshot.docs) {
+          final report = SosReportModel.fromDocument(doc);
+          if (report.address.isNotEmpty) {
+            dynamicZonesSet.add(report.address);
+          }
+          // Also add from coordinates if address is empty
+          if (report.address.isEmpty) {
+            dynamicZonesSet.add('${report.latitude.toStringAsFixed(4)}, ${report.longitude.toStringAsFixed(4)}');
+          }
+        }
+        
+        // Add declared disaster zones
+        for (var doc in zoneSnapshot.docs) {
+          final data = doc.data() as Map<String, dynamic>;
+          final zoneName = data['name'] as String?;
+          if (zoneName != null && zoneName.trim().isNotEmpty) {
+            dynamicZonesSet.add(zoneName);
+          }
+        }
+        
+        // Fallback if still empty
+        if (dynamicZonesSet.isEmpty) {
+          dynamicZonesSet.add('Tiada Zon Aktif');
+        }
+        
+        final dynamicZones = dynamicZonesSet.toList()..sort();
+        String selectedZone = dynamicZones.first;
+        String selectedPriority = 'Sederhana';
+        int selectedVolunteerCount = 4;
+        final squadCtrl = TextEditingController(text: selectedSquad);
+        final taskCtrl = TextEditingController();
+        final etaCtrl = TextEditingController(text: '15 min');
+        
+        // Close loading dialog
+        if (loadingDialogContext != null && mounted) {
+          Navigator.pop(loadingDialogContext!);
+        }
+        
+        // Show actual assignment dialog
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext dialogContext) => StatefulBuilder(
+            builder: (BuildContext ctx, StateSetter setDialogState) {
+              final zoneCoords = _zoneCoordinates(selectedZone);
+              
+              return AlertDialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                title: Text('Agih Skuad Baru',
+                    style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.volunteerAccent)),
+                content: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.info_outline_rounded, size: 14, color: AppColors.warning),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Tugasan ini hanya akan dilihat oleh sukarelawan yang dipilih',
-                          style: GoogleFonts.inter(fontSize: 11, color: AppColors.warning),
+                      // ── Squad selector ──────────────────────────────────────
+                      DropdownButtonFormField<String>(
+                        decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8)),
+                            labelText: 'Pilih Jenis Skuad'),
+                        value: selectedSquad,
+                        items: const [
+                          DropdownMenuItem(
+                              value: 'Skuad Alpha (Penyelamat)',
+                              child: Text('Skuad Alpha (Penyelamat)')),
+                          DropdownMenuItem(
+                              value: 'Skuad Bravo (Pembersihan)',
+                              child: Text('Skuad Bravo (Pembersihan)')),
+                          DropdownMenuItem(
+                              value: 'Skuad Charlie (Logistik)',
+                              child: Text('Skuad Charlie (Logistik)')),
+                          DropdownMenuItem(
+                              value: 'Skuad Delta (Perubatan)',
+                              child: Text('Skuad Delta (Perubatan)')),
+                          DropdownMenuItem(
+                              value: 'Skuad Echo (Dapur Jalanan)',
+                              child: Text('Skuad Echo (Dapur Jalanan)')),
+                          DropdownMenuItem(
+                              value: 'Skuad Foxtrot (Komunikasi)',
+                              child: Text('Skuad Foxtrot (Komunikasi)')),
+                        ],
+                        onChanged: (v) {
+                          if (v != null) {
+                            setDialogState(() {
+                              selectedSquad = v;
+                              squadCtrl.text = v;
+                            });
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      // ── Zone selector ───────────────────────────────────────
+                      DropdownButtonFormField<String>(
+                        decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8)),
+                            labelText: 'Lokasi Tugasan'),
+                        value: selectedZone,
+                        items: dynamicZones
+                            .map((z) => DropdownMenuItem(value: z, child: Text(z, overflow: TextOverflow.ellipsis)))
+                            .toList(),
+                        onChanged: (v) {
+                          if (v != null) {
+                            setDialogState(() => selectedZone = v);
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      // ── Priority selector ───────────────────────────────────
+                      DropdownButtonFormField<String>(
+                        decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8)),
+                            labelText: 'Keutamaan Insiden'),
+                        value: selectedPriority,
+                        items: const [
+                          DropdownMenuItem(value: 'Kritikal', child: Text('Kritikal')),
+                          DropdownMenuItem(value: 'Tinggi', child: Text('Tinggi')),
+                          DropdownMenuItem(value: 'Sederhana', child: Text('Sederhana')),
+                          DropdownMenuItem(value: 'Rendah', child: Text('Rendah')),
+                        ],
+                        onChanged: (v) {
+                          if (v != null) setDialogState(() => selectedPriority = v);
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // ── Volunteer count slider ────────────────────────────────
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.groups_rounded, size: 15, color: AppColors.volunteerAccent),
+                              const SizedBox(width: 6),
+                              Text('Bilangan Sukarelawan Diperlukan',
+                                  style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.volunteerAccent)),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(color: AppColors.volunteerAccent, borderRadius: BorderRadius.circular(99)),
+                            child: Text('$selectedVolunteerCount orang',
+                                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
+                          ),
+                        ],
+                      ),
+                      Slider(
+                        value: selectedVolunteerCount.toDouble(),
+                        min: 2,
+                        max: 8,
+                        divisions: 6,
+                        activeColor: AppColors.volunteerAccent,
+                        label: '$selectedVolunteerCount orang',
+                        onChanged: (v) => setDialogState(() => selectedVolunteerCount = v.round()),
+                      ),
+                      // ── Task description ────────────────────────────────────
+                      TextField(
+                        controller: taskCtrl,
+                        decoration: InputDecoration(
+                            labelText: 'Tugasan Khusus',
+                            hintText: 'Terangkan tugasan skuad ini...',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
+                        maxLines: 2,
+                      ),
+                      const SizedBox(height: 12),
+                      // ── ETA ──────────────────────────────────────────────────
+                      TextField(
+                        controller: etaCtrl,
+                        decoration: InputDecoration(
+                            labelText: 'Anggaran Tiba (ETA)',
+                            hintText: 'Contoh: 15 min',
+                            prefixIcon: const Icon(Icons.timer_outlined, size: 18),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
+                      ),
+                      
+                      // ── Info about squad assignment ─────────────────────────
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.warning.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.info_outline_rounded, size: 14, color: AppColors.warning),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Tugasan ini hanya akan dilihat oleh sukarelawan yang dipilih',
+                                style: GoogleFonts.inter(fontSize: 11, color: AppColors.warning),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
+                actions: [
+                  TextButton(
+                      onPressed: () {
+                        squadCtrl.dispose();
+                        taskCtrl.dispose();
+                        etaCtrl.dispose();
+                        Navigator.pop(ctx);
+                      },
+                      child: Text('Batal', style: GoogleFonts.inter(color: AppColors.textSecondary))),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.volunteerAccent),
+                    onPressed: () async {
+                      if (taskCtrl.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                            content: Text('Sila masukkan tugasan khusus.')));
+                        return;
+                      }
+                      final coords = _zoneCoordinates(selectedZone);
+                      // Create squadId from squad name
+                      final squadId = selectedSquad
+                          .toLowerCase()
+                          .replaceAll('(', '')
+                          .replaceAll(')', '')
+                          .replaceAll(' ', '_');
+                      
+                      print('Creating task with squadId: $squadId, zone: $selectedZone');
+                      
+                      final model = VolunteerTaskModel(
+                        id: '',
+                        squadName: selectedSquad,
+                        squadId: squadId,
+                        zone: selectedZone,
+                        priority: selectedPriority,
+                        status: 'Menuju ke Lokasi',
+                        progress: 0.1,
+                        taskDescription: taskCtrl.text.trim(),
+                        assignedVolunteer: selectedSquad,
+                        eta: etaCtrl.text.trim().isEmpty ? '-' : etaCtrl.text.trim(),
+                        lastKnownLocation: selectedZone,
+                        currentLat: coords.latitude,
+                        currentLng: coords.longitude,
+                        requiredVolunteerCount: selectedVolunteerCount,
+                        acceptedVolunteerUIDs: const [],
+                        declinedVolunteerUIDs: const [],
+                      );
+                      await _firestoreService.createVolunteerTask(model.toMap());
+
+                      squadCtrl.dispose();
+                      taskCtrl.dispose();
+                      etaCtrl.dispose();
+
+                      if (context.mounted) {
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                            content: Text('Skuad berjaya diagihkan!'),
+                            backgroundColor: AppColors.volunteerAccent));
+                      }
+                    },
+                    child: Text('Agih Pasukan',
+                        style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
+                  ),
+                ],
+              );
+            },
           ),
-          actions: [
-            TextButton(
-                onPressed: () {
-                  squadCtrl.dispose();
-                  taskCtrl.dispose();
-                  etaCtrl.dispose();
-                  Navigator.pop(ctx);
-                },
-                child: Text('Batal', style: GoogleFonts.inter(color: AppColors.textSecondary))),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.volunteerAccent),
-              onPressed: () async {
-                if (taskCtrl.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text('Sila masukkan tugasan khusus.')));
-                  return;
-                }
-                final coords = _zoneCoordinates(selectedZone);
-                // Create squadId from squad name (e.g., "Skuad Alpha (Penyelamat)" -> "skuad_alpha_penyelamat")
-                final squadId = selectedSquad
-                    .toLowerCase()
-                    .replaceAll('(', '')
-                    .replaceAll(')', '')
-                    .replaceAll(' ', '_');
-                
-                print('Creating task with squadId: $squadId');
-                
-                final model = VolunteerTaskModel(
-                  id: '',
-                  squadName: selectedSquad,
-                  squadId: squadId,
-                  zone: selectedZone,
-                  priority: selectedPriority,
-                  status: 'Menuju ke Lokasi',
-                  progress: 0.1,
-                  taskDescription: taskCtrl.text.trim(),
-                  assignedVolunteer: selectedSquad,
-                  eta: etaCtrl.text.trim().isEmpty ? '-' : etaCtrl.text.trim(),
-                  lastKnownLocation: selectedZone,
-                  currentLat: coords.latitude,
-                  currentLng: coords.longitude,
-                  requiredVolunteerCount: selectedVolunteerCount,
-                  acceptedVolunteerUIDs: const [],
-                  declinedVolunteerUIDs: const [],
-                );
-                await _firestoreService.createVolunteerTask(model.toMap());
-
-                squadCtrl.dispose();
-                taskCtrl.dispose();
-                etaCtrl.dispose();
-
-                if (context.mounted) {
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text('Skuad berjaya diagihkan!'),
-                      backgroundColor: AppColors.volunteerAccent));
-                }
-              },
-              child: Text('Agih Pasukan',
-                  style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
-            ),
-          ],
         );
-      }),
-    );
+      }).catchError((e) {
+        // Handle error - close loading dialog if open
+        if (loadingDialogContext != null && mounted) {
+          Navigator.pop(loadingDialogContext!);
+        }
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text('Gagal memuatkan zon: $e'),
+              backgroundColor: AppColors.danger));
+        }
+      });
+    }).catchError((e) {
+      // Handle error - close loading dialog if open
+      if (loadingDialogContext != null && mounted) {
+        Navigator.pop(loadingDialogContext!);
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Gagal memuatkan laporan SOS: $e'),
+            backgroundColor: AppColors.danger));
+      }
+    });
   }
 
 
