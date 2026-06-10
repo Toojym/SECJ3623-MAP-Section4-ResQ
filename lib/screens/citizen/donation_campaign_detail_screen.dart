@@ -859,6 +859,7 @@ class _DonationCampaignDetailScreenState
               ),
             ],
           ),
+          actionsOverflowButtonSpacing: 12,
           actions: [
             OutlinedButton.icon(
               onPressed: () async =>
