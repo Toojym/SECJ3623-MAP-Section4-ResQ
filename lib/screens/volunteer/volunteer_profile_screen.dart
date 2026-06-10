@@ -19,6 +19,7 @@ class VolunteerProfileScreen extends StatefulWidget {
 }
 
 class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
+  final _firestoreService = FirestoreService();
   final _formKey = GlobalKey<FormState>();
 
   // 1. Identity & Account
@@ -36,7 +37,13 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
   final _experienceCtrl = TextEditingController();
   final _customSkillsCtrl = TextEditingController();
 
-  // Skill chip selection — FIX: use List<String>, not a TextEditingController
+  // 3. Squad Assignment
+  String _selectedSquad = '';
+  String _selectedSquadId = '';
+  List<Map<String, dynamic>> _availableSquads = [];
+  bool _isLoadingSquads = false;
+
+  // Skill chip selection
   List<String> _selectedSkills = [];
   final List<String> _availableExpertise = [
     'Pertolongan Cemas',
@@ -61,6 +68,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
   void initState() {
     super.initState();
     _loadProfile();
+    _loadAvailableSquads();
   }
 
   @override
@@ -79,7 +87,19 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
     super.dispose();
   }
 
-  // ── Data ──────────────────────────────────────────────────────────────────
+  Future<void> _loadAvailableSquads() async {
+    setState(() => _isLoadingSquads = true);
+    try {
+      final squads = await _firestoreService.getAvailableSquads();
+      setState(() {
+        _availableSquads = squads;
+      });
+    } catch (e) {
+      print('Error loading squads: $e');
+    } finally {
+      setState(() => _isLoadingSquads = false);
+    }
+  }
 
   Future<void> _loadProfile() async {
     setState(() => _isLoading = true);
@@ -98,20 +118,21 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
       if (data != null && mounted) {
         setState(() {
           _fullNameCtrl.text = data['fullName'] as String? ?? state.displayName;
-          _emailCtrl.text =
-              data['email'] as String? ?? currentUser?.email ?? '';
+          _emailCtrl.text = data['email'] as String? ?? currentUser?.email ?? '';
           _passwordCtrl.text = data['password'] as String? ?? '';
           _icCtrl.text = data['icNumber'] as String? ?? '';
           _phoneCtrl.text = data['phone'] as String? ?? '';
           _addressCtrl.text = data['address'] as String? ?? '';
-          _emerNameCtrl.text =
-              data['emergencyContactName'] as String? ?? '';
-          _emerPhoneCtrl.text =
-              data['emergencyContactPhone'] as String? ?? '';
+          _emerNameCtrl.text = data['emergencyContactName'] as String? ?? '';
+          _emerPhoneCtrl.text = data['emergencyContactPhone'] as String? ?? '';
           _locationCtrl.text = data['location'] as String? ?? '';
           _experienceCtrl.text = data['experience'] as String? ?? '';
+          
+          // Load squad assignment
+          _selectedSquad = data['assignedSquad'] as String? ?? '';
+          _selectedSquadId = data['assignedSquadId'] as String? ?? '';
 
-          // Parse skills — stored as comma-separated string in Firestore
+          // Parse skills
           final skillsRaw = data['skills'];
           List<String> allSkills = [];
           if (skillsRaw is String && skillsRaw.isNotEmpty) {
@@ -165,6 +186,8 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
         'skills': allSkillsToSave.join(', '),
         'location': _locationCtrl.text.trim(),
         'experience': _experienceCtrl.text.trim(),
+        'assignedSquad': _selectedSquad,
+        'assignedSquadId': _selectedSquadId,
       });
 
       await FirestoreService().updateUserDocument(state.uid, {
@@ -194,8 +217,6 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
     }
   }
 
-  // ── Dialogs ───────────────────────────────────────────────────────────────
-
   void _changePasswordDialog() {
     final currentPassCtrl = TextEditingController();
     final newPassCtrl = TextEditingController();
@@ -204,8 +225,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(tr('changePassword'),
             style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
         content: SingleChildScrollView(
@@ -293,7 +313,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                       backgroundColor: AppColors.safe));
                 }
               } on FirebaseAuthException catch (e) {
-                String msg = tr('passwordChangedSuccess'); // Fallback
+                String msg = tr('passwordChangedSuccess');
                 if (e.code == 'wrong-password' ||
                     e.code == 'invalid-credential') {
                   msg = tr('wrongPasswordError');
@@ -323,13 +343,11 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(tr('logout'),
             style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
         content: Text(tr('logoutConfirm'),
-            style:
-                GoogleFonts.inter(color: AppColors.textSecondary)),
+            style: GoogleFonts.inter(color: AppColors.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -353,8 +371,6 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
       ),
     );
   }
-
-  // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -399,22 +415,22 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                     children: [
                       _buildAvatarSection(),
                       const SizedBox(height: 24),
-
                       _buildSectionTitle(tr('identityAccountSection')),
                       const SizedBox(height: 12),
                       _buildIdentityCard(),
                       const SizedBox(height: 24),
-
                       _buildSectionTitle(tr('volunteerInfoSection')),
                       const SizedBox(height: 12),
                       _buildVolunteerCard(),
                       const SizedBox(height: 24),
-
+                      _buildSectionTitle('Tugasan Skuad'),
+                      const SizedBox(height: 12),
+                      _buildSquadCard(),
+                      const SizedBox(height: 24),
                       _buildSectionTitle(tr('skillsTitle')),
                       const SizedBox(height: 12),
                       _buildSkillsCard(),
                       const SizedBox(height: 24),
-
                       if (_isEditing) ...[
                         Row(
                           children: [
@@ -452,16 +468,13 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                                     fontWeight: FontWeight.w600,
                                     color: AppColors.danger)),
                             style: TextButton.styleFrom(
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 16),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 side: BorderSide(
-                                    color:
-                                        AppColors.danger.withValues(alpha: 0.3)),
+                                    color: AppColors.danger.withValues(alpha: 0.3)),
                               ),
-                              backgroundColor:
-                                  AppColors.danger.withValues(alpha: 0.05),
+                              backgroundColor: AppColors.danger.withValues(alpha: 0.05),
                             ),
                           ),
                         ),
@@ -474,8 +487,6 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
       ),
     );
   }
-
-  // ── Section helpers ───────────────────────────────────────────────────────
 
   Widget _buildSectionTitle(String title) {
     return Text(
@@ -513,14 +524,10 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
     );
   }
 
-  // ── Avatar Section ────────────────────────────────────────────────────────
-  // Photo editing is DISABLED — avatar shows initials only.
-
   Widget _buildAvatarSection() {
     return Center(
       child: Column(
         children: [
-          // No GestureDetector / onTap — photo editing not allowed yet
           CircleAvatar(
             radius: 40,
             backgroundColor: AppColors.volunteerAccent.withValues(alpha: 0.12),
@@ -546,8 +553,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
           ),
           Container(
             margin: const EdgeInsets.only(top: 4),
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
             decoration: BoxDecoration(
                 color: AppColors.volunteerAccent.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(99)),
@@ -557,7 +563,6 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                     fontWeight: FontWeight.w600,
                     color: AppColors.volunteerAccent)),
           ),
-          // Inform user photo is not editable
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
@@ -571,16 +576,13 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
     );
   }
 
-  // ── Section 1 — Identity & Account ───────────────────────────────────────
-
   Widget _buildIdentityCard() {
     return _card([
       SigapTextField(
         label: tr('fullNameLabel'),
         hint: tr('fullNameHint'),
         controller: _fullNameCtrl,
-        validator: (v) =>
-            Validators.validateRequired(v, fieldName: 'Nama'),
+        validator: (v) => Validators.validateRequired(v, fieldName: 'Nama'),
         prefixIcon: const Icon(Icons.person_rounded, size: 20),
         enabled: _isEditing,
       ),
@@ -594,8 +596,6 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
         enabled: _isEditing,
       ),
       const SizedBox(height: 16),
-
-      // Password — read-only display, changed via dialog
       SigapTextField(
         label: tr('passwordLabel'),
         hint: tr('passwordHint'),
@@ -616,8 +616,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                   fontWeight: FontWeight.w600,
                   color: AppColors.primary)),
           style: TextButton.styleFrom(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             backgroundColor: AppColors.primary.withValues(alpha: 0.1),
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8)),
@@ -646,8 +645,6 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
       ),
     ]);
   }
-
-  // ── Section 2 — Volunteer Info ────────────────────────────────────────────
 
   Widget _buildVolunteerCard() {
     return _card([
@@ -703,8 +700,275 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
     ]);
   }
 
-  // ── Section 3 — Skills Chip Selector ─────────────────────────────────────
-  // FIX: This replaces the broken _skillsCtrl TextField reference.
+  Widget _buildSquadCard() {
+    Color getSquadColor(String squadName) {
+      if (squadName.toLowerCase().contains('alpha')) return Colors.red;
+      if (squadName.toLowerCase().contains('bravo')) return Colors.blue;
+      if (squadName.toLowerCase().contains('charlie')) return Colors.orange;
+      if (squadName.toLowerCase().contains('delta')) return Colors.green;
+      if (squadName.toLowerCase().contains('echo')) return Colors.purple;
+      if (squadName.toLowerCase().contains('foxtrot')) return Colors.teal;
+      return AppColors.volunteerAccent;
+    }
+
+    IconData getSquadIcon(String squadName) {
+      if (squadName.toLowerCase().contains('alpha')) return Icons.emergency_rounded;
+      if (squadName.toLowerCase().contains('bravo')) return Icons.cleaning_services_rounded;
+      if (squadName.toLowerCase().contains('charlie')) return Icons.inventory_2_rounded;
+      if (squadName.toLowerCase().contains('delta')) return Icons.medical_services_rounded;
+      if (squadName.toLowerCase().contains('echo')) return Icons.restaurant_rounded;
+      if (squadName.toLowerCase().contains('foxtrot')) return Icons.radio_rounded;
+      return Icons.group_rounded;
+    }
+
+    return _card([
+      if (_isEditing) ...[
+        Text(
+          'Pilih Skuad Anda',
+          style: GoogleFonts.inter(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Anda hanya akan menerima tugasan daripada skuad yang dipilih',
+          style: GoogleFonts.inter(
+            fontSize: 11,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (_isLoadingSquads)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: CircularProgressIndicator(),
+            ),
+          )
+        else if (_availableSquads.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.divider),
+            ),
+            child: Column(
+              children: [
+                Icon(Icons.group_off_rounded, size: 48, color: AppColors.textHint),
+                const SizedBox(height: 8),
+                Text(
+                  'Tiada skuad tersedia buat masa ini',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          ..._availableSquads.map((squad) {
+            final squadName = squad['name'] ?? squad['squadName'] ?? 'Unknown';
+            final isSelected = _selectedSquad == squadName;
+            final squadColor = getSquadColor(squadName);
+            
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _selectedSquad = squadName;
+                    _selectedSquadId = squad['id'] ?? squad['squadId'] ?? '';
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isSelected ? squadColor.withValues(alpha: 0.1) : AppColors.background,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected ? squadColor : AppColors.divider,
+                      width: isSelected ? 2 : 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: squadColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(getSquadIcon(squadName), color: squadColor, size: 24),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              squadName,
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: isSelected ? squadColor : AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              squad['description'] ?? 'Skuad bantuan',
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (isSelected)
+                        Icon(Icons.check_circle_rounded, color: squadColor, size: 20),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }),
+      ] else ...[
+        if (_selectedSquad.isNotEmpty)
+          Builder(
+            builder: (context) {
+              final squadColor = getSquadColor(_selectedSquad);
+
+              return Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      squadColor.withValues(alpha: 0.1),
+                      squadColor.withValues(alpha: 0.05),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: squadColor.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: squadColor.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        getSquadIcon(_selectedSquad),
+                        color: squadColor,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Skuad Ditugaskan',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _selectedSquad,
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: squadColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.safe.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.verified_rounded,
+                            size: 12,
+                            color: AppColors.safe,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Aktif',
+                            style: GoogleFonts.inter(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.safe,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          )
+        else
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.divider),
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.group_off_rounded,
+                  size: 48,
+                  color: AppColors.textHint,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Belum Memilih Skuad',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Tekan butang edit untuk memilih skuad anda',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppColors.textHint,
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    ]);
+  }
 
   Widget _buildSkillsCard() {
     return _card([

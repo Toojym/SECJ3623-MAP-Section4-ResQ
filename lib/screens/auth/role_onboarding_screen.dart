@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../blocs/auth/auth_bloc.dart';
@@ -31,7 +31,7 @@ class _RoleOnboardingScreenState extends State<RoleOnboardingScreen> {
             'isActive': false,
             'sigapMataPoints': 0,
             'certifications': <String>[],
-          }).timeout(const Duration(seconds: 5));
+          }).timeout(const Duration(seconds: 30));
           break;
         case 'officer':
           await firestore.createOfficerProfile(uid, {
@@ -39,7 +39,7 @@ class _RoleOnboardingScreenState extends State<RoleOnboardingScreen> {
             'designation': '',
             'badgeNumber': '',
             'district': '',
-          }).timeout(const Duration(seconds: 5));
+          }).timeout(const Duration(seconds: 30));
           break;
         default:
           await firestore.createCitizenProfile(uid, {
@@ -48,7 +48,7 @@ class _RoleOnboardingScreenState extends State<RoleOnboardingScreen> {
             'address': '',
             'householdSize': 1,
             'emergencyContacts': <Map>[],
-          }).timeout(const Duration(seconds: 5));
+          }).timeout(const Duration(seconds: 30));
           break;
       }
       if (context.mounted) {

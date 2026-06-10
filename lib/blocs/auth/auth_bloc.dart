@@ -63,7 +63,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     try {
       final user = await _authService
           .signInWithEmailPassword(event.email, event.password)
-          .timeout(const Duration(seconds: 8), onTimeout: () {
+          .timeout(const Duration(seconds: 30), onTimeout: () {
         throw 'Request timed out. Please check your connection.';
       });
       
@@ -93,7 +93,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       _fallbackRole = event.role;
       final user = await _authService
           .registerWithEmailPassword(event.email, event.password)
-          .timeout(const Duration(seconds: 8), onTimeout: () {
+          .timeout(const Duration(seconds: 30), onTimeout: () {
         throw 'Request timed out. Please check your connection.';
       });
       try {
@@ -123,7 +123,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     try {
       await _authService
           .sendPasswordResetEmail(event.email)
-          .timeout(const Duration(seconds: 8), onTimeout: () {
+          .timeout(const Duration(seconds: 30), onTimeout: () {
         throw 'Request timed out. Please check your connection.';
       });
       emit(const AuthPasswordResetSent());

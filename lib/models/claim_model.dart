@@ -11,12 +11,15 @@ class ClaimModel {
   final String photoEvidence;
   final String location;
   final String
-      status; // 'submitted', 'under_review', 'approved', 'disbursed', 'rejected'
+      status; // 'submitted', 'under_review', 'approved', 'disbursed', 'rejected', 'expired'
   final String? rejectReason;
   final String? infoRequestReason;
   final String? reviewedBy;
   final DateTime? reviewedAt;
   final DateTime? createdAt;
+  // New fields
+  final DateTime? infoDeadline;
+  final String? outOfZoneReason;
 
   ClaimModel({
     required this.id,
@@ -34,6 +37,8 @@ class ClaimModel {
     this.reviewedBy,
     this.reviewedAt,
     this.createdAt,
+    this.infoDeadline,
+    this.outOfZoneReason,
   });
 
   factory ClaimModel.fromMap(String id, Map<String, dynamic> data) {
@@ -59,6 +64,10 @@ class ClaimModel {
       createdAt: data['createdAt'] != null
           ? (data['createdAt'] as Timestamp).toDate()
           : null,
+      infoDeadline: data['infoDeadline'] != null
+          ? (data['infoDeadline'] as Timestamp).toDate()
+          : null,
+      outOfZoneReason: data['outOfZoneReason'],
     );
   }
 
@@ -80,6 +89,9 @@ class ClaimModel {
       'createdAt': createdAt != null
           ? Timestamp.fromDate(createdAt!)
           : FieldValue.serverTimestamp(),
+      'infoDeadline':
+          infoDeadline != null ? Timestamp.fromDate(infoDeadline!) : null,
+      'outOfZoneReason': outOfZoneReason,
     };
   }
 }

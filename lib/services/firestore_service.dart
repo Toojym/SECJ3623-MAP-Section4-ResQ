@@ -116,6 +116,17 @@ class FirestoreService {
         .update({'isActive': isActive});
   }
 
+  Future<void> updateVolunteerLocation(String uid, double lat, double lng) async {
+    await _db
+        .collection('volunteer_profiles')
+        .doc(uid)
+        .update({
+      'currentLat': lat,
+      'currentLng': lng,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   // ── SOS Reports ─────────────────────────────────────────────────────────────
 
   /// Create a new SOS report and return the document ID.
@@ -186,18 +197,21 @@ class FirestoreService {
   }
 
   /// Volunteer accepts / responds to an SOS report.
-  Future<void> respondToSOS(
-    String docId,
-    String volunteerId,
-    String volunteerName,
-  ) async {
-    await _db.collection('sos_reports').doc(docId).update({
-      'status': 'responded',
-      'responderId': volunteerId,
-      'responderName': volunteerName,
-      'respondedAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+  Future<void> respondToSOS(String docId, String volunteerId, String volunteerName) async {
+    print('respondToSOS called with docId: $docId, volunteerId: $volunteerId');
+    try {
+      await _db.collection('sos_reports').doc(docId).update({
+        'status': 'responded',
+        'responderId': volunteerId,
+        'responderName': volunteerName,
+        'respondedAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      print('respondToSOS successful');
+    } catch (e) {
+      print('respondToSOS error: $e');
+      rethrow;
+    }
   }
 
   /// Volunteer declines an SOS report so it won't appear on their task board.
@@ -340,7 +354,7 @@ class FirestoreService {
   Stream<QuerySnapshot> streamClaimsForOfficerReview() {
     return _db
         .collection('claims')
-        .where('status', whereIn: ['submitted', 'under_review']).snapshots();
+        .where('status', whereIn: ['submitted', 'under_review', 'expired']).snapshots();
   }
 
   Future<void> updateClaimStatus(
@@ -369,13 +383,23 @@ class FirestoreService {
     final pendingClaims = await _db
         .collection('claims')
         .where('status', isEqualTo: 'submitted')
-        .where('location', isEqualTo: location)
         .get();
 
     if (pendingClaims.docs.isEmpty) return 0;
 
+    final targetZone = location.toLowerCase().trim();
+    final matchingDocs = pendingClaims.docs.where((doc) {
+      final data = doc.data();
+      final claimLocation = (data['location'] as String? ?? '').toLowerCase().trim();
+      return claimLocation == targetZone ||
+          claimLocation.contains(targetZone) ||
+          targetZone.contains(claimLocation);
+    }).toList();
+
+    if (matchingDocs.isEmpty) return 0;
+
     final batch = _db.batch();
-    for (final doc in pendingClaims.docs) {
+    for (final doc in matchingDocs) {
       batch.update(doc.reference, {
         'status': 'approved',
         'rejectReason': FieldValue.delete(),
@@ -388,7 +412,7 @@ class FirestoreService {
       });
     }
     await batch.commit();
-    return pendingClaims.docs.length;
+    return matchingDocs.length;
   }
 
   Future<void> deleteClaim(String claimId) async {
@@ -513,20 +537,36 @@ class FirestoreService {
   }
 
   Stream<QuerySnapshot> streamActiveVolunteerTasks() {
-    return _db.collection('volunteer_tasks').where('status', whereIn: [
-      'Menuju ke Lokasi',
-      'Sedang Bertugas',
-      'Perlu Arahan',
-    ]).snapshots();
+    return _db.collection('volunteer_tasks').snapshots();
   }
 
-  Future<void> updateVolunteerTask(
-      String taskId, Map<String, dynamic> data) async {
-    await _db.collection('volunteer_tasks').doc(taskId).update({
-      ...data,
+  Future<void> updateVolunteerTask(String taskId, Map<String, dynamic> updates) async {
+    print('updateVolunteerTask called: taskId=$taskId, updates=$updates');
+    try {
+      await _db.collection('volunteer_tasks').doc(taskId).update({
+        ...updates,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      print('updateVolunteerTask successful');
+    } catch (e) {
+      print('updateVolunteerTask error: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> updateVolunteerSquadAssignment(String volunteerId, String squadName, String squadId) async {
+    await _db.collection('volunteer_profiles').doc(volunteerId).update({
+      'assignedSquad': squadName,
+      'assignedSquadId': squadId,
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
+
+  Stream<QuerySnapshot> streamAllVolunteerTasks() {
+    return _db.collection('volunteer_tasks').snapshots();
+  }
+
+
 
   // ── Volunteer Dispatch ────────────────────────────────────────────────────
 
@@ -560,5 +600,128 @@ class FirestoreService {
       'fcmToken': token,
       'fcmTokenUpdatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+  }
+
+  // Add to FirestoreService class
+  Future<List<Map<String, dynamic>>> getAvailableSquads() async {
+    try {
+      final snapshot = await _db.collection('volunteer_tasks').get();
+      final Set<String> uniqueSquads = {};
+      final List<Map<String, dynamic>> squads = [];
+      
+      for (final doc in snapshot.docs) {
+        final data = doc.data();
+        final squadName = data['squadName'] as String?;
+        final squadId = data['squadId'] as String?;
+        
+        if (squadName != null && squadName.isNotEmpty && !uniqueSquads.contains(squadName)) {
+          uniqueSquads.add(squadName);
+          squads.add({
+            'name': squadName,
+            'id': squadId ?? squadName.replaceAll(' ', '_').toLowerCase(),
+            'description': _getSquadDescription(squadName),
+          });
+        }
+      }
+      
+      // Also add predefined squads
+      final predefinedSquads = [
+        {'name': 'Skuad Alpha (Penyelamat)', 'id': 'skuad_alpha_penyelamat', 'description': 'Pasukan penyelamat utama'},
+        {'name': 'Skuad Bravo (Pembersihan)', 'id': 'skuad_bravo_pembersihan', 'description': 'Pasukan pembersihan dan sanitasi'},
+        {'name': 'Skuad Charlie (Logistik)', 'id': 'skuad_charlie_logistik', 'description': 'Pasukan logistik dan bekalan'},
+        {'name': 'Skuad Delta (Perubatan)', 'id': 'skuad_delta_perubatan', 'description': 'Pasukan perubatan dan kesihatan'},
+        {'name': 'Skuad Echo (Dapur Jalanan)', 'id': 'skuad_echo_dapur', 'description': 'Pasukan dapur dan makanan'},
+        {'name': 'Skuad Foxtrot (Komunikasi)', 'id': 'skuad_foxtrot_komunikasi', 'description': 'Pasukan komunikasi dan maklumat'},
+      ];
+      
+      for (final squad in predefinedSquads) {
+        if (!uniqueSquads.contains(squad['name'])) {
+          squads.add(squad);
+        }
+      }
+      
+      return squads;
+    } catch (e) {
+      print('Error getting squads: $e');
+      return [];
+    }
+  }
+
+  String _getSquadDescription(String squadName) {
+    if (squadName.toLowerCase().contains('alpha')) return 'Pasukan penyelamat dan tindakan pantas';
+    if (squadName.toLowerCase().contains('bravo')) return 'Pasukan pembersihan dan sanitasi';
+    if (squadName.toLowerCase().contains('charlie')) return 'Pasukan logistik dan bekalan';
+    if (squadName.toLowerCase().contains('delta')) return 'Pasukan perubatan dan kesihatan';
+    if (squadName.toLowerCase().contains('echo')) return 'Pasukan dapur dan makanan';
+    if (squadName.toLowerCase().contains('foxtrot')) return 'Pasukan komunikasi dan maklumat';
+    return 'Skuad bantuan bencana';
+  }
+
+  // Add to FirestoreService class
+  Future<void> assignVolunteerToSquad(String volunteerId, String squadName, String squadId) async {
+    await _db.collection('volunteer_profiles').doc(volunteerId).update({
+      'assignedSquad': squadName,
+      'assignedSquadId': squadId,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  // ── Claim Validation Helpers ──────────────────────────────────────────────
+
+  /// Check if a citizen (by IC number) already has an approved claim within 30 days.
+  /// Returns the list of matching approved claim documents.
+  Future<List<Map<String, dynamic>>> checkDuplicateICInZone(
+      String icNumber) async {
+    if (icNumber.trim().isEmpty || icNumber == '-') return [];
+    final cutoff = DateTime.now().subtract(const Duration(days: 30));
+    try {
+      final result = await _db
+          .collection('claims')
+          .where('icNumber', isEqualTo: icNumber.trim())
+          .where('status', isEqualTo: 'approved')
+          .get();
+      return result.docs
+          .map((d) => {'id': d.id, ...d.data()})
+          .where((d) {
+            final ts = d['createdAt'];
+            if (ts == null) return false;
+            final date = ts is Timestamp ? ts.toDate() : null;
+            return date != null && date.isAfter(cutoff);
+          })
+          .toList();
+    } catch (_) {
+      // Fail silently if composite index is not yet created
+      return [];
+    }
+  }
+
+  // ── Volunteer Task Helpers ─────────────────────────────────────────────────
+
+  /// Volunteer accepts a task — appends their UID to acceptedVolunteerUIDs.
+  Future<void> acceptVolunteerTask(String taskId, String volunteerId) async {
+    await _db.collection('volunteer_tasks').doc(taskId).update({
+      'acceptedVolunteerUIDs': FieldValue.arrayUnion([volunteerId]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Release all volunteers assigned to a completed task.
+  Future<void> releaseVolunteersFromTask(
+      String taskId, List<String> volunteerUIDs) async {
+    final batch = _db.batch();
+    for (final uid in volunteerUIDs) {
+      final ref = _db.collection('volunteer_profiles').doc(uid);
+      batch.update(ref, {
+        'currentTaskId': FieldValue.delete(),
+        'isActive': true,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    }
+    batch.update(_db.collection('volunteer_tasks').doc(taskId), {
+      'status': 'Selesai Tugas',
+      'progress': 1.0,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+    await batch.commit();
   }
 }
