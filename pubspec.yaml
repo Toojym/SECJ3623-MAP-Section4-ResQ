@@ -32,7 +32,10 @@ dependencies:
   geocoding: ^3.0.0
 
   # Formatting
-  intl: ^0.19.0
+  intl: ^0.20.2
+  flutter_localizations:
+    sdk: flutter
+  easy_localization: ^3.0.7
 
   # UI
   google_fonts: ^6.2.1
@@ -47,6 +50,8 @@ dependencies:
   printing: ^5.11.0
   share_plus: ^7.0.0
   path_provider: ^2.1.0
+  firebase_messaging: ^15.2.10
+  flutter_local_notifications: ^22.0.0
 
 dev_dependencies:
   flutter_test:
@@ -59,3 +64,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/sounds/
+    - assets/translations/

@@ -11,6 +11,7 @@ import '../../core/constants/app_routes.dart';
 import '../../models/sos_report_model.dart';
 import '../../services/firestore_service.dart';
 import '../../services/location_service.dart';
+import '../../services/notification_service.dart';
 import '../../widgets/common/sigap_app_bar.dart';
 
 class VolunteerDashboard extends StatefulWidget {
@@ -39,6 +40,33 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
     super.initState();
     _loadProfile();
     _initLocation();
+    // Listen for new SOS reports and fire local notifications
+    WidgetsBinding.instance.addPostFrameCallback((_) => _initSOSNotificationListener());
+  }
+
+  // Track already-seen SOS report IDs to avoid repeated notifications
+  final Set<String> _seenSosIds = {};
+
+  void _initSOSNotificationListener() {
+    _firestoreService.streamActiveSOSReports().listen((snapshot) {
+      for (final doc in snapshot.docs) {
+        final id = doc.id;
+        if (!_seenSosIds.contains(id)) {
+          _seenSosIds.add(id);
+          final data = doc.data() as Map<String, dynamic>;
+          final type = data['type'] as String? ?? 'Kecemasan';
+          final address = data['address'] as String? ?? 'Lokasi tidak diketahui';
+          // Don't notify for the very first load (empty set = first call)
+          if (_seenSosIds.length > 1) {
+            NotificationService.instance.showLocalNotification(
+              title: '🆘 SOS Baru: $type',
+              body: 'Insiden baru dilaporkan di $address. Sila semak Papan Tugas.',
+              id: id.hashCode,
+            );
+          }
+        }
+      }
+    });
   }
 
   Future<void> _initLocation() async {

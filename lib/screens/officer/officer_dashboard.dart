@@ -14,6 +14,7 @@ import '../../models/sos_report_model.dart';
 import '../../models/claim_model.dart';
 import '../../models/campaign_model.dart';
 import '../../models/volunteer_task_model.dart';
+import '../../services/authority_routing_service.dart';
 import '../../services/firestore_service.dart';
 import '../../widgets/common/sigap_app_bar.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -235,7 +236,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
             });
 
             return SizedBox(
-              height: 250,
+              height: 262,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: docs.length,
@@ -1582,6 +1583,41 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 8),
+                // Authority Routing Badge
+                Builder(builder: (_) {
+                  final authority = AuthorityRoutingService.instance.getAuthority(report.type);
+                  return Row(
+                    children: [
+                      Icon(authority.icon, size: 13, color: authority.color),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Dihalakan: ${authority.shortName}',
+                        style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: authority.color),
+                      ),
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: () => AuthorityRoutingService.instance.callAuthority(authority),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: authority.color.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: authority.color.withValues(alpha: 0.3)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.phone_rounded, size: 11, color: authority.color),
+                              const SizedBox(width: 3),
+                              Text(authority.phone, style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: authority.color)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }),
                 if (report.status == SosReportModel.statusResponded ||
                     report.needBackup) ...[
                   const SizedBox(height: 12),
@@ -3017,6 +3053,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
     final progress = campaign.progressFraction;
 
     return Container(
+      height: 240,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -3037,166 +3074,199 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Title + status badge
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  campaign.name,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: isClosed
-                      ? AppColors.divider
-                      : AppColors.safe.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  isClosed ? 'Ditutup' : 'Aktif',
-                  style: GoogleFonts.inter(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: isClosed ? AppColors.textSecondary : AppColors.safe,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            campaign.purpose,
-            style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 14),
-
-          // Amount + percent
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'RM ${_fmtAmount(campaign.currentAmount)}',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: isClosed ? AppColors.textSecondary : AppColors.officerAccent,
-                ),
-              ),
-              Text(
-                '${campaign.progressPercent}% / RM ${_fmtAmount(campaign.targetAmount)}',
-                style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-
-          // Progress bar
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 8,
-              backgroundColor: AppColors.divider,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                isClosed ? AppColors.textSecondary : AppColors.officerAccent,
-              ),
-            ),
-          ),
-          const SizedBox(height: 14),
-
-          // Allocation chips
-          if (campaign.allocations.isNotEmpty) ...[
-            Wrap(
-              spacing: 6,
-              runSpacing: 4,
-              children: campaign.allocations.entries.take(4).map((e) {
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppColors.officerAccent.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                        color: AppColors.officerAccent.withValues(alpha: 0.2)),
-                  ),
-                  child: Text(
-                    '${e.key} ${e.value.toStringAsFixed(0)}%',
-                    style: GoogleFonts.inter(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.officerAccent),
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 14),
-          ],
-
-          // Action buttons
-          if (!isClosed)
-            Row(
+          SizedBox(
+            height: 38,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _allocateFundsDialog(campaign),
-                    icon: const Icon(Icons.pie_chart_rounded, size: 14),
-                    label: const Text('Peruntuk'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.officerAccent,
-                      side: const BorderSide(color: AppColors.officerAccent),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      textStyle:
-                          GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600),
+                  child: Text(
+                    campaign.name,
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const SizedBox(width: 8),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () => _closeCampaignDialog(campaign),
-                    icon: const Icon(Icons.lock_rounded, size: 14),
-                    label: const Text('Tutup'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.danger,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      elevation: 0,
-                      textStyle:
-                          GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600),
+                Padding(
+                  padding: const EdgeInsets.only(top: 2.0),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: isClosed
+                          ? AppColors.divider
+                          : AppColors.safe.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      isClosed ? 'Ditutup' : 'Aktif',
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: isClosed ? AppColors.textSecondary : AppColors.safe,
+                      ),
                     ),
                   ),
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 4),
+          
+          // Purpose text
+          SizedBox(
+            height: 30,
+            child: Text(
+              campaign.purpose,
+              style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // Amount + percent
+          SizedBox(
+            height: 20,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'RM ${_fmtAmount(campaign.currentAmount)}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: isClosed ? AppColors.textSecondary : AppColors.officerAccent,
+                  ),
+                ),
+                Text(
+                  '${campaign.progressPercent}% / RM ${_fmtAmount(campaign.targetAmount)}',
+                  style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 6),
+
+          // Progress bar
+          SizedBox(
+            height: 8,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 8,
+                backgroundColor: AppColors.divider,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  isClosed ? AppColors.textSecondary : AppColors.officerAccent,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Allocation chips (Standardized height of 24px)
+          if (campaign.allocations.isNotEmpty)
+            SizedBox(
+              height: 24,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                children: campaign.allocations.entries.take(4).map((e) {
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 6.0),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.officerAccent.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                            color: AppColors.officerAccent.withValues(alpha: 0.2)),
+                      ),
+                      child: Center(
+                        child: Text(
+                          '${e.key} ${e.value.toStringAsFixed(0)}%',
+                          style: GoogleFonts.inter(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.officerAccent),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            )
+          else
+            const SizedBox(height: 24),
+
+          const Spacer(),
+
+          // Action buttons (Standardized height of 34px)
+          if (!isClosed)
+            SizedBox(
+              height: 34,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _allocateFundsDialog(campaign),
+                      icon: const Icon(Icons.pie_chart_rounded, size: 14),
+                      label: const Text('Peruntuk'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.officerAccent,
+                        side: const BorderSide(color: AppColors.officerAccent),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        textStyle:
+                            GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _closeCampaignDialog(campaign),
+                      icon: const Icon(Icons.lock_rounded, size: 14),
+                      label: const Text('Tutup'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.danger,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        elevation: 0,
+                        textStyle:
+                            GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             )
           else
             SizedBox(
               width: double.infinity,
+              height: 34,
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: AppColors.background,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   'Kempen ini telah ditutup',
-                  textAlign: TextAlign.center,
                   style: GoogleFonts.inter(
                       fontSize: 11,
+                      fontWeight: FontWeight.w600,
                       color: AppColors.textSecondary,
                       fontStyle: FontStyle.italic),
+                  textAlign: TextAlign.center,
                 ),
               ),
             ),

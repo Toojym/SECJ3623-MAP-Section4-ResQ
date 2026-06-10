@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -25,6 +26,7 @@ import 'screens/citizen/donation_campaign_detail_screen.dart';
 import 'models/campaign_model.dart';
 import 'services/auth_service.dart';
 import 'services/firestore_service.dart';
+import 'services/notification_service.dart';
 
 class SigapApp extends StatefulWidget {
   const SigapApp({super.key});
@@ -44,6 +46,21 @@ class _SigapAppState extends State<SigapApp> {
     super.initState();
     _authBloc = AuthBloc(authService: _authService, firestoreService: _firestoreService)
       ..add(const AuthStarted());
+
+    // Save FCM token whenever user becomes authenticated
+    _authBloc.stream.listen((state) async {
+      if (state is AuthAuthenticated) {
+        try {
+          final token = await NotificationService.instance.getToken();
+          if (token != null) {
+            await _firestoreService.saveFcmToken(state.uid, token);
+          }
+        } catch (e) {
+          debugPrint('[FCM] Token save failed: $e');
+        }
+      }
+    });
+
       
     _router = GoRouter(
       initialLocation: AppRoutes.splash,
@@ -214,6 +231,9 @@ class _SigapAppState extends State<SigapApp> {
         theme: AppTheme.lightTheme,
         routerConfig: _router,
         debugShowCheckedModeBanner: false,
+        localizationsDelegates: context.localizationDelegates,
+        supportedLocales: context.supportedLocales,
+        locale: context.locale,
       ),
     );
   }

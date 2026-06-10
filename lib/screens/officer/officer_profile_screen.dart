@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,7 +8,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/constants/app_strings.dart';
 import '../../core/utils/validators.dart';
 import '../../services/firestore_service.dart';
 import '../../widgets/common/sigap_app_bar.dart';
@@ -155,7 +155,7 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
       if (mounted) {
         setState(() => _isEditing = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profil berjaya disimpan.'), backgroundColor: AppColors.safe),
+          SnackBar(content: Text(tr('saveSuccess')), backgroundColor: AppColors.safe),
         );
       }
     } catch (e) {
@@ -178,33 +178,33 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Tukar Kata Laluan', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        title: Text(tr('changePassword'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Masukkan kata laluan semasa anda untuk pengesahan keselamatan.',
+                tr('passwordChangeSecurityHint'),
                 style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 16),
               SigapTextField(
-                label: 'Kata Laluan Semasa',
-                hint: 'Kata laluan log masuk anda',
+                label: tr('currentPasswordLabel'),
+                hint: tr('currentPasswordHint'),
                 controller: currentPassCtrl,
                 obscureText: true,
               ),
               const SizedBox(height: 16),
               SigapTextField(
-                label: 'Kata Laluan Baru',
-                hint: 'Masukkan kata laluan baru',
+                label: tr('newPasswordLabel'),
+                hint: tr('newPasswordHint'),
                 controller: newPassCtrl,
                 obscureText: true,
               ),
               const SizedBox(height: 16),
               SigapTextField(
-                label: 'Sahkan Kata Laluan Baru',
-                hint: 'Taip semula kata laluan baru',
+                label: tr('confirmNewPasswordLabel'),
+                hint: tr('confirmNewPasswordHint'),
                 controller: confirmPassCtrl,
                 obscureText: true,
               ),
@@ -214,20 +214,20 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
+            child: Text(tr('cancel')),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
             onPressed: () async {
               if (currentPassCtrl.text.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Sila masukkan kata laluan semasa!'), backgroundColor: AppColors.danger),
+                  SnackBar(content: Text(tr('enterCurrentPassword')), backgroundColor: AppColors.danger),
                 );
                 return;
               }
               if (newPassCtrl.text.isEmpty || newPassCtrl.text != confirmPassCtrl.text) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Kata Laluan baru tidak sepadan!'), backgroundColor: AppColors.danger),
+                  SnackBar(content: Text(tr('passwordMismatch')), backgroundColor: AppColors.danger),
                 );
                 return;
               }
@@ -256,15 +256,15 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
                 });
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Kata Laluan berjaya ditukar!'), backgroundColor: AppColors.safe),
+                    SnackBar(content: Text(tr('passwordChangedSuccess')), backgroundColor: AppColors.safe),
                   );
                 }
               } on FirebaseAuthException catch (e) {
-                String msg = 'Gagal menukar kata laluan.';
+                String msg = tr('passwordChangedSuccess'); // Fallback
                 if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
-                  msg = 'Kata laluan semasa tidak betul. Cuba lagi.';
+                  msg = tr('wrongPasswordError');
                 } else if (e.code == 'weak-password') {
-                  msg = 'Kata laluan baru terlalu lemah (minimum 6 aksara).';
+                  msg = tr('weakPasswordError');
                 }
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -279,7 +279,7 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
                 }
               }
             },
-            child: const Text('Tukar'),
+            child: Text(tr('changePassword')),
           ),
         ],
       ),
@@ -291,22 +291,27 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: SigapAppBar(
-        title: AppStrings.myProfile,
+        title: tr('officerProfileTitle'),
         showLogout: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.language_rounded, color: AppColors.primary),
-            tooltip: 'Tukar Bahasa / Language',
+            tooltip: tr('languageTooltip'),
             onPressed: () {
+              if (context.locale.languageCode == 'ms') {
+                context.setLocale(const Locale('en'));
+              } else {
+                context.setLocale(const Locale('ms'));
+              }
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Switched to English (WIP)')),
+                SnackBar(content: Text(tr('languageSwitched'))),
               );
             },
           ),
           if (!_isEditing)
             IconButton(
               icon: const Icon(Icons.edit_note_rounded, color: AppColors.primary),
-              tooltip: 'Kemaskini Profil',
+              tooltip: tr('editProfile'),
               onPressed: () => setState(() => _isEditing = true),
             ),
         ],
@@ -324,11 +329,11 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
                     children: [
                       _buildAvatarSection(),
                       const SizedBox(height: 24),
-                      _buildSectionTitle('1. Identiti & Akaun'),
+                      _buildSectionTitle(tr('identityAccountSection')),
                       const SizedBox(height: 12),
                       _buildIdentityCard(),
                       const SizedBox(height: 24),
-                      _buildSectionTitle('2. Maklumat Profesional'),
+                      _buildSectionTitle(tr('professionalSection')),
                       const SizedBox(height: 12),
                       _buildProfessionalCard(),
                       const SizedBox(height: 24),
@@ -337,7 +342,7 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
                           children: [
                             Expanded(
                               child: SigapButton(
-                                label: 'Batal',
+                                label: tr('cancel'),
                                 variant: SigapButtonVariant.outlined,
                                 onPressed: () {
                                   setState(() => _isEditing = false);
@@ -348,7 +353,7 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
                             const SizedBox(width: 16),
                             Expanded(
                               child: SigapButton(
-                                label: AppStrings.save,
+                                label: tr('save'),
                                 isLoading: _isSaving,
                                 onPressed: _isSaving ? null : _save,
                               ),
@@ -362,7 +367,7 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
                           child: TextButton.icon(
                             onPressed: _confirmLogout,
                             icon: const Icon(Icons.logout_rounded, color: AppColors.danger),
-                            label: Text('Log Keluar', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.danger)),
+                            label: Text(tr('logout'), style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.danger)),
                             style: TextButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: AppColors.danger.withValues(alpha: 0.3))),
@@ -447,7 +452,7 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
           if (_isEditing)
             Padding(
               padding: const EdgeInsets.only(top: 8),
-              child: Text('Ketik pada gambar untuk tukar', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+              child: Text(tr('tapToChangePhoto'), style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
             ),
         ],
       ),
@@ -466,7 +471,7 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
   Widget _buildIdentityCard() {
     return _card([
       SigapTextField(
-        label: 'Nama Penuh',
+        label: tr('fullNameLabel'),
         hint: 'Tuan/Puan ...',
         controller: _fullNameCtrl,
         validator: (v) => Validators.validateRequired(v, fieldName: 'Nama'),
@@ -475,7 +480,7 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
       ),
       const SizedBox(height: 16),
       SigapTextField(
-        label: 'E-mel Rasmi',
+        label: tr('emailLabel'),
         hint: 'pegawai@gov.my',
         controller: _emailCtrl,
         keyboardType: TextInputType.emailAddress,
@@ -484,7 +489,7 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
       ),
       const SizedBox(height: 16),
       SigapTextField(
-        label: 'Kata Laluan',
+        label: tr('passwordLabel'),
         hint: '••••••••',
         controller: _passwordCtrl,
         obscureText: true,
@@ -496,7 +501,7 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
         child: TextButton.icon(
           onPressed: _changePasswordDialog,
           icon: const Icon(Icons.lock_reset_rounded, size: 18, color: AppColors.primary),
-          label: Text('Tukar Kata Laluan', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary)),
+          label: Text(tr('changePassword'), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary)),
           style: TextButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             backgroundColor: AppColors.primary.withValues(alpha: 0.1),
@@ -506,8 +511,8 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
       ),
       const SizedBox(height: 16),
       SigapTextField(
-        label: 'Nombor IC',
-        hint: '123456789012',
+        label: tr('icLabel'),
+        hint: tr('icHint'),
         controller: _icCtrl,
         validator: Validators.validateIC,
         keyboardType: TextInputType.number,
@@ -516,8 +521,8 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
       ),
       const SizedBox(height: 16),
       SigapTextField(
-        label: 'Nombor Telefon',
-        hint: '0123456789',
+        label: tr('phoneLabel'),
+        hint: tr('phoneHint'),
         controller: _phoneCtrl,
         validator: Validators.validatePhone,
         keyboardType: TextInputType.phone,
@@ -530,8 +535,8 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
   Widget _buildProfessionalCard() {
     return _card([
       SigapTextField(
-        label: 'Nama Agensi',
-        hint: 'cth: Jabatan Bomba dan Penyelamat Malaysia',
+        label: tr('agencyLabel'),
+        hint: tr('agencyHint'),
         controller: _agencyCtrl,
         validator: (v) => Validators.validateRequired(v, fieldName: 'Nama agensi'),
         prefixIcon: const Icon(Icons.business_rounded, size: 20),
@@ -539,8 +544,8 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
       ),
       const SizedBox(height: 16),
       SigapTextField(
-        label: 'Jawatan',
-        hint: 'cth: Ketua Penolong Pengarah',
+        label: tr('designationLabel'),
+        hint: tr('designationHint'),
         controller: _designationCtrl,
         validator: (v) => Validators.validateRequired(v, fieldName: 'Jawatan'),
         prefixIcon: const Icon(Icons.work_outline_rounded, size: 20),
@@ -548,8 +553,8 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
       ),
       const SizedBox(height: 16),
       SigapTextField(
-        label: 'Nombor Lencana',
-        hint: 'cth: BM/2024/0123',
+        label: tr('badgeLabel'),
+        hint: tr('badgeHint'),
         controller: _badgeCtrl,
         validator: Validators.validateBadgeNumber,
         prefixIcon: const Icon(Icons.badge_rounded, size: 20),
@@ -557,8 +562,8 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
       ),
       const SizedBox(height: 16),
       SigapTextField(
-        label: 'Daerah Operasi',
-        hint: 'cth: Gombak',
+        label: tr('districtLabel'),
+        hint: tr('districtHint'),
         controller: _districtCtrl,
         validator: (v) => Validators.validateRequired(v, fieldName: 'Daerah'),
         prefixIcon: const Icon(Icons.map_rounded, size: 20),
@@ -572,12 +577,12 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(AppStrings.logout, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-        content: Text(AppStrings.logoutConfirm, style: GoogleFonts.inter(color: AppColors.textSecondary)),
+        title: Text(tr('logout'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        content: Text(tr('logoutConfirm'), style: GoogleFonts.inter(color: AppColors.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Tidak', style: TextStyle(color: AppColors.textSecondary)),
+            child: Text(tr('no'), style: const TextStyle(color: AppColors.textSecondary)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -588,7 +593,7 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
               Navigator.pop(ctx);
               context.read<AuthBloc>().add(const AuthLoggedOut());
             },
-            child: Text('Ya', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            child: Text(tr('yes'), style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
           ),
         ],
       ),

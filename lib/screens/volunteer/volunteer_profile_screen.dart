@@ -1,10 +1,10 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/constants/app_strings.dart';
 import '../../core/utils/validators.dart';
 import '../../services/firestore_service.dart';
 import '../../widgets/common/sigap_app_bar.dart';
@@ -175,8 +175,8 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
         context.read<AuthBloc>().add(const AuthProfileCompleted());
         setState(() => _isEditing = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profil berjaya disimpan.'),
+          SnackBar(
+            content: Text(tr('saveSuccess')),
             backgroundColor: AppColors.safe,
           ),
         );
@@ -206,35 +206,35 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
       builder: (ctx) => AlertDialog(
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Tukar Kata Laluan',
+        title: Text(tr('changePassword'),
             style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Masukkan kata laluan semasa anda untuk pengesahan keselamatan.',
+                tr('passwordChangeSecurityHint'),
                 style: GoogleFonts.inter(
                     fontSize: 12, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 16),
               SigapTextField(
-                label: 'Kata Laluan Semasa',
-                hint: 'Kata laluan log masuk anda',
+                label: tr('currentPasswordLabel'),
+                hint: tr('currentPasswordHint'),
                 controller: currentPassCtrl,
                 obscureText: true,
               ),
               const SizedBox(height: 16),
               SigapTextField(
-                label: 'Kata Laluan Baru',
-                hint: 'Masukkan kata laluan baru',
+                label: tr('newPasswordLabel'),
+                hint: tr('newPasswordHint'),
                 controller: newPassCtrl,
                 obscureText: true,
               ),
               const SizedBox(height: 16),
               SigapTextField(
-                label: 'Sahkan Kata Laluan Baru',
-                hint: 'Taip semula kata laluan baru',
+                label: tr('confirmNewPasswordLabel'),
+                hint: tr('confirmNewPasswordHint'),
                 controller: confirmPassCtrl,
                 obscureText: true,
               ),
@@ -244,22 +244,22 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
+            child: Text(tr('cancel')),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary),
             onPressed: () async {
               if (currentPassCtrl.text.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text('Sila masukkan kata laluan semasa!'),
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text(tr('enterCurrentPassword')),
                     backgroundColor: AppColors.danger));
                 return;
               }
               if (newPassCtrl.text.isEmpty ||
                   newPassCtrl.text != confirmPassCtrl.text) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text('Kata laluan baru tidak sepadan!'),
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text(tr('passwordMismatch')),
                     backgroundColor: AppColors.danger));
                 return;
               }
@@ -288,18 +288,17 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                   'password': newPassCtrl.text,
                 });
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text('Kata Laluan berjaya ditukar!'),
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(tr('passwordChangedSuccess')),
                       backgroundColor: AppColors.safe));
                 }
               } on FirebaseAuthException catch (e) {
-                String msg = 'Gagal menukar kata laluan.';
+                String msg = tr('passwordChangedSuccess'); // Fallback
                 if (e.code == 'wrong-password' ||
                     e.code == 'invalid-credential') {
-                  msg = 'Kata laluan semasa tidak betul. Cuba lagi.';
+                  msg = tr('wrongPasswordError');
                 } else if (e.code == 'weak-password') {
-                  msg =
-                      'Kata laluan baru terlalu lemah (minimum 6 aksara).';
+                  msg = tr('weakPasswordError');
                 }
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -313,7 +312,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                 }
               }
             },
-            child: const Text('Tukar'),
+            child: Text(tr('changePassword')),
           ),
         ],
       ),
@@ -326,16 +325,16 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
       builder: (ctx) => AlertDialog(
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(AppStrings.logout,
+        title: Text(tr('logout'),
             style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-        content: Text(AppStrings.logoutConfirm,
+        content: Text(tr('logoutConfirm'),
             style:
                 GoogleFonts.inter(color: AppColors.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Tidak',
-                style: TextStyle(color: AppColors.textSecondary)),
+            child: Text(tr('no'),
+                style: const TextStyle(color: AppColors.textSecondary)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -347,7 +346,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
               Navigator.pop(ctx);
               context.read<AuthBloc>().add(const AuthLoggedOut());
             },
-            child: Text('Ya',
+            child: Text(tr('yes'),
                 style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
           ),
         ],
@@ -362,23 +361,27 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: SigapAppBar(
-        title: 'Profil Sukarelawan',
+        title: tr('volunteerProfileTitle'),
         showLogout: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.language_rounded, color: AppColors.primary),
-            tooltip: 'Tukar Bahasa / Language',
+            tooltip: tr('languageTooltip'),
             onPressed: () {
+              if (context.locale.languageCode == 'ms') {
+                context.setLocale(const Locale('en'));
+              } else {
+                context.setLocale(const Locale('ms'));
+              }
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Switched to English (WIP)')),
+                SnackBar(content: Text(tr('languageSwitched'))),
               );
             },
           ),
           if (!_isEditing)
             IconButton(
-              icon: const Icon(Icons.edit_note_rounded,
-                  color: AppColors.primary),
-              tooltip: 'Kemaskini Profil',
+              icon: const Icon(Icons.edit_note_rounded, color: AppColors.primary),
+              tooltip: tr('editProfile'),
               onPressed: () => setState(() => _isEditing = true),
             ),
         ],
@@ -397,17 +400,17 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                       _buildAvatarSection(),
                       const SizedBox(height: 24),
 
-                      _buildSectionTitle('1. Identiti & Akaun'),
+                      _buildSectionTitle(tr('identityAccountSection')),
                       const SizedBox(height: 12),
                       _buildIdentityCard(),
                       const SizedBox(height: 24),
 
-                      _buildSectionTitle('2. Maklumat Sukarelawan'),
+                      _buildSectionTitle(tr('volunteerInfoSection')),
                       const SizedBox(height: 12),
                       _buildVolunteerCard(),
                       const SizedBox(height: 24),
 
-                      _buildSectionTitle('3. Kepakaran & Kemahiran'),
+                      _buildSectionTitle(tr('skillsTitle')),
                       const SizedBox(height: 12),
                       _buildSkillsCard(),
                       const SizedBox(height: 24),
@@ -417,7 +420,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                           children: [
                             Expanded(
                               child: SigapButton(
-                                label: 'Batal',
+                                label: tr('cancel'),
                                 variant: SigapButtonVariant.outlined,
                                 onPressed: () {
                                   setState(() => _isEditing = false);
@@ -428,7 +431,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                             const SizedBox(width: 16),
                             Expanded(
                               child: SigapButton(
-                                label: AppStrings.save,
+                                label: tr('save'),
                                 isLoading: _isSaving,
                                 onPressed: _isSaving ? null : _save,
                               ),
@@ -443,7 +446,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                             onPressed: _confirmLogout,
                             icon: const Icon(Icons.logout_rounded,
                                 color: AppColors.danger),
-                            label: Text('Log Keluar',
+                            label: Text(tr('logout'),
                                 style: GoogleFonts.inter(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
@@ -558,7 +561,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
-              'Gambar profil tidak boleh ditukar buat masa ini',
+              tr('photoNotEditable'),
               style: GoogleFonts.inter(
                   fontSize: 11, color: AppColors.textHint),
             ),
@@ -573,8 +576,8 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
   Widget _buildIdentityCard() {
     return _card([
       SigapTextField(
-        label: 'Nama Penuh',
-        hint: 'Masukkan nama penuh anda',
+        label: tr('fullNameLabel'),
+        hint: tr('fullNameHint'),
         controller: _fullNameCtrl,
         validator: (v) =>
             Validators.validateRequired(v, fieldName: 'Nama'),
@@ -583,8 +586,8 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
       ),
       const SizedBox(height: 16),
       SigapTextField(
-        label: 'E-mel Rasmi',
-        hint: 'sukarelawan@email.com',
+        label: tr('emailLabel'),
+        hint: tr('emailHint'),
         controller: _emailCtrl,
         keyboardType: TextInputType.emailAddress,
         prefixIcon: const Icon(Icons.email_rounded, size: 20),
@@ -594,8 +597,8 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
 
       // Password — read-only display, changed via dialog
       SigapTextField(
-        label: 'Kata Laluan',
-        hint: '••••••••',
+        label: tr('passwordLabel'),
+        hint: tr('passwordHint'),
         controller: _passwordCtrl,
         obscureText: true,
         readOnly: true,
@@ -607,7 +610,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
           onPressed: _changePasswordDialog,
           icon: const Icon(Icons.lock_reset_rounded,
               size: 18, color: AppColors.primary),
-          label: Text('Tukar Kata Laluan',
+          label: Text(tr('changePassword'),
               style: GoogleFonts.inter(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -623,8 +626,8 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
       ),
       const SizedBox(height: 16),
       SigapTextField(
-        label: 'Nombor Kad Pengenalan',
-        hint: '123456789012',
+        label: tr('icLabel'),
+        hint: tr('icHint'),
         controller: _icCtrl,
         validator: Validators.validateIC,
         keyboardType: TextInputType.number,
@@ -633,8 +636,8 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
       ),
       const SizedBox(height: 16),
       SigapTextField(
-        label: 'Nombor Telefon',
-        hint: '0123456789',
+        label: tr('phoneLabel'),
+        hint: tr('phoneHint'),
         controller: _phoneCtrl,
         validator: Validators.validatePhone,
         keyboardType: TextInputType.phone,
@@ -649,8 +652,8 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
   Widget _buildVolunteerCard() {
     return _card([
       SigapTextField(
-        label: 'Alamat Rumah',
-        hint: 'No. 1, Jalan ...',
+        label: tr('addressHomeLabel'),
+        hint: tr('addressHint'),
         controller: _addressCtrl,
         maxLines: 3,
         enabled: _isEditing,
@@ -658,40 +661,40 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
       ),
       const SizedBox(height: 16),
       SigapTextField(
-        label: 'Kawasan Tempat Tinggal',
-        hint: 'cth: Kuala Lumpur, Selangor',
+        label: tr('operatingDistrictLabel'),
+        hint: tr('operatingDistrictHint'),
         controller: _locationCtrl,
         enabled: _isEditing,
         prefixIcon: const Icon(Icons.location_on_outlined, size: 20),
       ),
       const SizedBox(height: 16),
       SigapTextField(
-        label: 'Pengalaman Sukarela',
-        hint: 'cth: 3 tahun bersama Bulan Sabit Merah',
+        label: tr('experienceLabel'),
+        hint: tr('experienceHint'),
         controller: _experienceCtrl,
         maxLines: 2,
         enabled: _isEditing,
         prefixIcon: const Icon(Icons.school_outlined, size: 20),
       ),
       const Divider(height: 32),
-      _cardTitle('Kenalan Kecemasan'),
+      _cardTitle(tr('emergencySection')),
       Text(
-        'Ahli waris / kenalan rapat (Sebaiknya di luar zon bencana)',
+        tr('emergencyContactHint'),
         style: GoogleFonts.inter(
             fontSize: 12, color: AppColors.textSecondary),
       ),
       const SizedBox(height: 12),
       SigapTextField(
-        label: 'Nama Kenalan Kecemasan',
-        hint: 'cth: Siti Sarah (Isteri)',
+        label: tr('emergencyNameLabel'),
+        hint: tr('emergencyNameHint'),
         controller: _emerNameCtrl,
         enabled: _isEditing,
         prefixIcon: const Icon(Icons.person_outline_rounded, size: 20),
       ),
       const SizedBox(height: 16),
       SigapTextField(
-        label: 'Nombor Telefon Kenalan',
-        hint: '0123456789',
+        label: tr('emergencyPhoneLabel'),
+        hint: tr('emergencyPhoneHint'),
         controller: _emerPhoneCtrl,
         keyboardType: TextInputType.phone,
         enabled: _isEditing,
@@ -706,7 +709,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
   Widget _buildSkillsCard() {
     return _card([
       Text(
-        'Pilih semua kepakaran yang berkaitan. Ini membantu SIGAP memadankan anda dengan misi yang sesuai.',
+        tr('skillsSub'),
         style: GoogleFonts.inter(
             fontSize: 12, color: AppColors.textSecondary),
       ),
@@ -770,7 +773,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
       if (_selectedSkills.isEmpty && !_isEditing) ...[
         const SizedBox(height: 12),
         Text(
-          'Tiada kepakaran dipilih. Ketik ikon edit untuk kemaskini.',
+          tr('noSkillsSelected'),
           style: GoogleFonts.inter(
               fontSize: 12,
               color: AppColors.textHint,
@@ -780,8 +783,8 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
       if (_isEditing || _customSkillsCtrl.text.isNotEmpty) ...[
         const SizedBox(height: 16),
         SigapTextField(
-          label: 'Kepakaran Lain',
-          hint: 'cth: Memasak, Menyelam (pisahkan dengan koma)',
+          label: tr('customSkillsLabel'),
+          hint: tr('customSkillsHint'),
           controller: _customSkillsCtrl,
           enabled: _isEditing,
           prefixIcon: const Icon(Icons.add_circle_outline_rounded, size: 20),

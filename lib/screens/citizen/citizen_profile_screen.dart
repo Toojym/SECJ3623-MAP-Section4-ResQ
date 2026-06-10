@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,7 +8,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/constants/app_strings.dart';
 import '../../core/utils/validators.dart';
 import '../../services/firestore_service.dart';
 import '../../widgets/common/sigap_app_bar.dart';
@@ -197,7 +197,7 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
       if (mounted) {
         setState(() => _isEditing = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profil berjaya disimpan.'), backgroundColor: AppColors.safe),
+          SnackBar(content: Text(tr('saveSuccess')), backgroundColor: AppColors.safe),
         );
       }
     } catch (e) {
@@ -218,19 +218,19 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Tambah Ahli Keluarga', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        title: Text(tr('addFamilyMemberTitle'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SigapTextField(label: 'Nama Penuh', controller: nameCtrl),
+            SigapTextField(label: tr('fullNameLabel'), controller: nameCtrl),
             const SizedBox(height: 16),
-            SigapTextField(label: 'Hubungan (Isteri/Anak/dll)', controller: relationCtrl),
+            SigapTextField(label: tr('relationshipLabel'), controller: relationCtrl),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
+            child: Text(tr('cancel')),
           ),
           ElevatedButton(
             onPressed: () {
@@ -246,7 +246,7 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
                 Navigator.pop(ctx);
               }
             },
-            child: const Text('Tambah'),
+            child: Text(tr('addFamilyButton')),
           ),
         ],
       ),
@@ -262,33 +262,33 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Tukar Kata Laluan', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        title: Text(tr('changePassword'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Masukkan kata laluan semasa anda ntuk pengesahan keselamatan.',
+                tr('passwordChangeSecurityHint'),
                 style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 16),
               SigapTextField(
-                label: 'Kata Laluan Semasa',
-                hint: 'Kata laluan log masuk anda',
+                label: tr('currentPasswordLabel'),
+                hint: tr('currentPasswordHint'),
                 controller: currentPassCtrl,
                 obscureText: true,
               ),
               const SizedBox(height: 16),
               SigapTextField(
-                label: 'Kata Laluan Baru',
-                hint: 'Masukkan kata laluan baru',
+                label: tr('newPasswordLabel'),
+                hint: tr('newPasswordHint'),
                 controller: newPassCtrl,
                 obscureText: true,
               ),
               const SizedBox(height: 16),
               SigapTextField(
-                label: 'Sahkan Kata Laluan Baru',
-                hint: 'Taip semula kata laluan baru',
+                label: tr('confirmNewPasswordLabel'),
+                hint: tr('confirmNewPasswordHint'),
                 controller: confirmPassCtrl,
                 obscureText: true,
               ),
@@ -298,20 +298,20 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
+            child: Text(tr('cancel')),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
             onPressed: () async {
               if (currentPassCtrl.text.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Sila masukkan kata laluan semasa!'), backgroundColor: AppColors.danger),
+                  SnackBar(content: Text(tr('enterCurrentPassword')), backgroundColor: AppColors.danger),
                 );
                 return;
               }
               if (newPassCtrl.text.isEmpty || newPassCtrl.text != confirmPassCtrl.text) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Kata Laluan baru tidak sepadan!'), backgroundColor: AppColors.danger),
+                  SnackBar(content: Text(tr('passwordMismatch')), backgroundColor: AppColors.danger),
                 );
                 return;
               }
@@ -344,15 +344,15 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
                 });
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Kata Laluan berjaya ditukar!'), backgroundColor: AppColors.safe),
+                    SnackBar(content: Text(tr('passwordChangedSuccess')), backgroundColor: AppColors.safe),
                   );
                 }
               } on FirebaseAuthException catch (e) {
-                String msg = 'Gagal menukar kata laluan.';
+                String msg = tr('passwordChangedSuccess'); // Fallback
                 if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
-                  msg = 'Kata laluan semasa tidak betul. Cuba lagi.';
+                  msg = tr('wrongPasswordError');
                 } else if (e.code == 'weak-password') {
-                  msg = 'Kata laluan baru terlalu lemah (minimum 6 aksara).';
+                  msg = tr('weakPasswordError');
                 }
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -367,7 +367,7 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
                 }
               }
             },
-            child: const Text('Tukar'),
+            child: Text(tr('changePassword')),
           ),
         ],
       ),
@@ -379,22 +379,27 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: SigapAppBar(
-        title: AppStrings.myProfile,
+        title: tr('myProfile'),
         showLogout: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.language_rounded, color: AppColors.primary),
-            tooltip: 'Tukar Bahasa / Language',
+            tooltip: tr('languageTooltip'),
             onPressed: () {
+              if (context.locale.languageCode == 'ms') {
+                context.setLocale(const Locale('en'));
+              } else {
+                context.setLocale(const Locale('ms'));
+              }
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Switched to English (WIP)')),
+                SnackBar(content: Text(tr('languageSwitched'))),
               );
             },
           ),
           if (!_isEditing)
             IconButton(
               icon: const Icon(Icons.edit_note_rounded, color: AppColors.primary),
-              tooltip: 'Kemaskini Profil',
+              tooltip: tr('editProfile'),
               onPressed: () => setState(() => _isEditing = true),
             ),
         ],
@@ -412,19 +417,19 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
                     children: [
                       _buildAvatarSection(),
                       const SizedBox(height: 24),
-                      _buildSectionTitle('1. Identiti & Lokasi'),
+                      _buildSectionTitle(tr('identitySection')),
                       const SizedBox(height: 12),
                       _buildIdentityCard(),
                       const SizedBox(height: 24),
-                      _buildSectionTitle('2. Kenalan Kecemasan'),
+                      _buildSectionTitle(tr('emergencySection')),
                       const SizedBox(height: 12),
                       _buildEmergencyContactCard(),
                       const SizedBox(height: 24),
-                      _buildSectionTitle('3. Perubatan & Kerentanan'),
+                      _buildSectionTitle(tr('medicalSection')),
                       const SizedBox(height: 12),
                       _buildMedicalCard(),
                       const SizedBox(height: 24),
-                      _buildSectionTitle('4. Isi Rumah (Untuk Penyelamat)'),
+                      _buildSectionTitle(tr('householdSection')),
                       const SizedBox(height: 12),
                       _buildHouseholdCard(),
                       const SizedBox(height: 24),
@@ -433,7 +438,7 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
                           children: [
                             Expanded(
                               child: SigapButton(
-                                label: 'Batal',
+                                label: tr('cancel'),
                                 variant: SigapButtonVariant.outlined,
                                 onPressed: () {
                                   setState(() => _isEditing = false);
@@ -444,7 +449,7 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
                             const SizedBox(width: 16),
                             Expanded(
                               child: SigapButton(
-                                label: AppStrings.save,
+                                label: tr('save'),
                                 isLoading: _isSaving,
                                 onPressed: _isSaving ? null : _save,
                               ),
@@ -458,7 +463,7 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
                           child: TextButton.icon(
                             onPressed: _confirmLogout,
                             icon: const Icon(Icons.logout_rounded, color: AppColors.danger),
-                            label: Text('Log Keluar', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.danger)),
+                            label: Text(tr('logout'), style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.danger)),
                             style: TextButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: AppColors.danger.withValues(alpha: 0.3))),
@@ -534,7 +539,7 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
           if (_isEditing)
             Padding(
               padding: const EdgeInsets.only(top: 4),
-              child: Text('Ketik pada gambar untuk tukar', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+              child: Text(tr('tapToChangePhoto'), style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
             ),
         ],
       ),
@@ -553,8 +558,8 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
   Widget _buildIdentityCard() {
     return _card([
       SigapTextField(
-        label: 'Nama Penuh (Seperti dalam IC)',
-        hint: 'Ali bin Abu',
+        label: tr('fullNameLabel'),
+        hint: tr('fullNameHint'),
         controller: _fullNameCtrl,
         validator: (v) => Validators.validateRequired(v, fieldName: 'Nama'),
         prefixIcon: const Icon(Icons.person_rounded, size: 20),
@@ -562,8 +567,8 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
       ),
       const SizedBox(height: 16),
       SigapTextField(
-        label: 'E-mel',
-        hint: 'ali@example.com',
+        label: tr('emailLabel'),
+        hint: tr('emailHint'),
         controller: _emailCtrl,
         keyboardType: TextInputType.emailAddress,
         prefixIcon: const Icon(Icons.email_rounded, size: 20),
@@ -573,8 +578,8 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
       
       // Password is read only, shows current password from DB
       SigapTextField(
-        label: 'Kata Laluan',
-        hint: 'Sila Tukar Kata Laluan (Akaun Lama)',
+        label: tr('passwordLabel'),
+        hint: tr('passwordHint'),
         controller: _passwordCtrl,
         obscureText: true,
         readOnly: true, // read only so eye icon still works
@@ -585,7 +590,7 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
         child: TextButton.icon(
           onPressed: _changePasswordDialog,
           icon: const Icon(Icons.lock_reset_rounded, size: 18, color: AppColors.primary),
-          label: Text('Tukar Kata Laluan', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary)),
+          label: Text(tr('changePassword'), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary)),
           style: TextButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             backgroundColor: AppColors.primary.withValues(alpha: 0.1),
@@ -596,8 +601,8 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
       
       const SizedBox(height: 16),
       SigapTextField(
-        label: 'Nombor Kad Pengenalan / Pasport',
-        hint: '123456789012',
+        label: tr('icLabel'),
+        hint: tr('icHint'),
         controller: _icCtrl,
         validator: Validators.validateIC,
         keyboardType: TextInputType.number,
@@ -606,8 +611,8 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
       ),
       const SizedBox(height: 16),
       SigapTextField(
-        label: 'Nombor Telefon Utama',
-        hint: '0123456789',
+        label: tr('phoneLabel'),
+        hint: tr('phoneHint'),
         controller: _phoneCtrl,
         validator: Validators.validatePhone,
         keyboardType: TextInputType.phone,
@@ -616,8 +621,8 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
       ),
       const SizedBox(height: 16),
       SigapTextField(
-        label: 'Alamat Rumah Semasa (Untuk Pasukan Penyelamat)',
-        hint: 'No. 1, Jalan ...',
+        label: tr('addressLabel'),
+        hint: tr('addressHint'),
         controller: _addressCtrl,
         validator: (v) => Validators.validateRequired(v, fieldName: 'Alamat'),
         maxLines: 3,
@@ -629,19 +634,19 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
 
   Widget _buildEmergencyContactCard() {
     return _card([
-      Text('Ahli waris / kenalan rapat (Sebaiknya di luar zon bencana)', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+      Text(tr('emergencyContactHint'), style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
       const SizedBox(height: 16),
       SigapTextField(
-        label: 'Nama Kenalan Kecemasan',
-        hint: 'Contoh: Siti Sarah (Isteri)',
+        label: tr('emergencyNameLabel'),
+        hint: tr('emergencyNameHint'),
         controller: _emerNameCtrl,
         prefixIcon: const Icon(Icons.person_rounded, size: 20),
         enabled: _isEditing,
       ),
       const SizedBox(height: 16),
       SigapTextField(
-        label: 'Nombor Telefon Kenalan',
-        hint: '0123456789',
+        label: tr('emergencyPhoneLabel'),
+        hint: tr('emergencyPhoneHint'),
         controller: _emerPhoneCtrl,
         keyboardType: TextInputType.phone,
         prefixIcon: const Icon(Icons.phone_rounded, size: 20),
@@ -652,51 +657,51 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
 
   Widget _buildMedicalCard() {
     return _card([
-      _buildSwitchTile('Kekangan Mobiliti?', _hasMobilityIssue, (val) => setState(() => _hasMobilityIssue = val)),
+      _buildSwitchTile(tr('mobilityQuestion'), _hasMobilityIssue, (val) => setState(() => _hasMobilityIssue = val)),
       if (_hasMobilityIssue) ...[
         const SizedBox(height: 8),
-        SigapTextField(label: 'Nyatakan (Cth: Kerusi roda, Terlantar)', controller: _mobilityDescCtrl, enabled: _isEditing),
+        SigapTextField(label: tr('mobilityDescHint'), controller: _mobilityDescCtrl, enabled: _isEditing),
       ],
       const Divider(height: 24),
       
-      _buildSwitchTile('Penyakit Kritikal?', _hasCriticalIllness, (val) => setState(() => _hasCriticalIllness = val)),
+      _buildSwitchTile(tr('illnessQuestion'), _hasCriticalIllness, (val) => setState(() => _hasCriticalIllness = val)),
       if (_hasCriticalIllness) ...[
         const SizedBox(height: 8),
-        SigapTextField(label: 'Nyatakan (Cth: Dialisis, Sakit Jantung)', controller: _illnessDescCtrl, enabled: _isEditing),
+        SigapTextField(label: tr('illnessDescHint'), controller: _illnessDescCtrl, enabled: _isEditing),
       ],
       const Divider(height: 24),
       
-      _buildSwitchTile('Sedang Mengandung?', _isPregnant, (val) => setState(() => _isPregnant = val)),
+      _buildSwitchTile(tr('pregnantQuestion'), _isPregnant, (val) => setState(() => _isPregnant = val)),
       if (_isPregnant) ...[
         const SizedBox(height: 8),
-        SigapTextField(label: 'Trimester ke berapa?', controller: _trimesterCtrl, enabled: _isEditing),
+        SigapTextField(label: tr('trimesterQuestion'), controller: _trimesterCtrl, enabled: _isEditing),
       ],
     ]);
   }
 
   Widget _buildHouseholdCard() {
     return _card([
-      _buildCounter('Jumlah Orang di Rumah (Dewasa + Kanak-kanak + Warga Emas)', _householdSize, (val) => setState(() => _householdSize = val), min: 1),
+      _buildCounter(tr('householdCountLabel'), _householdSize, (val) => setState(() => _householdSize = val), min: 1),
       const Divider(height: 24),
-      _buildSwitchTile('Ada Haiwan Peliharaan?', _hasPets, (val) => setState(() => _hasPets = val)),
+      _buildSwitchTile(tr('petsQuestion'), _hasPets, (val) => setState(() => _hasPets = val)),
       const Divider(height: 24),
       
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text('Senarai Ahli Keluarga', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+          Text(tr('familyMembersTitle'), style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
           if (_isEditing)
             TextButton.icon(
               onPressed: _addFamilyMemberDialog,
               icon: const Icon(Icons.add_rounded, size: 18),
-              label: Text('Tambah', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
+              label: Text(tr('addFamilyButton'), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
             )
         ],
       ),
       if (_familyMembers.isEmpty)
         Padding(
           padding: const EdgeInsets.only(top: 8),
-          child: Text('Tiada ahli keluarga ditambah.', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+          child: Text(tr('noFamilyAdded'), style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
         ),
       for (int i = 0; i < _familyMembers.length; i++)
         ListTile(
@@ -768,12 +773,12 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(AppStrings.logout, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-        content: Text(AppStrings.logoutConfirm, style: GoogleFonts.inter(color: AppColors.textSecondary)),
+        title: Text(tr('logout'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        content: Text(tr('logoutConfirm'), style: GoogleFonts.inter(color: AppColors.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Tidak', style: TextStyle(color: AppColors.textSecondary)),
+            child: Text(tr('no'), style: const TextStyle(color: AppColors.textSecondary)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -784,7 +789,7 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
               Navigator.pop(ctx);
               context.read<AuthBloc>().add(const AuthLoggedOut());
             },
-            child: Text('Ya', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            child: Text(tr('yes'), style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
           ),
         ],
       ),

@@ -16,8 +16,10 @@ import '../../core/constants/app_routes.dart';
 import '../../core/constants/app_strings.dart';
 import '../../models/sos_report_model.dart';
 import '../../models/claim_model.dart';
+import '../../services/authority_routing_service.dart';
 import '../../services/firestore_service.dart';
 import '../../services/location_service.dart';
+import '../../services/notification_service.dart';
 import '../../widgets/common/sigap_app_bar.dart';
 import '../../widgets/common/sigap_button.dart';
 import 'donation_campaigns_screen.dart';
@@ -158,6 +160,49 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
   bool _isSirenActive = false;
   bool _showAllClaims = false;
   String _selectedClaimFilter = 'Semua';
+
+  // Track previous claim statuses to detect changes for notifications
+  final Map<String, String> _lastKnownClaimStatuses = {};
+
+  @override
+  void initState() {
+    super.initState();
+    // Start claim status listener after first frame so BuildContext is ready
+    WidgetsBinding.instance.addPostFrameCallback((_) => _initClaimStatusListener());
+  }
+
+  void _initClaimStatusListener() {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is! AuthAuthenticated) return;
+
+    _firestoreService.streamClaimsForCitizen(authState.uid).listen((snapshot) {
+      for (final doc in snapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        final id = doc.id;
+        final status = data['status'] as String? ?? '';
+        final prev = _lastKnownClaimStatuses[id];
+
+        if (prev != null && prev != status) {
+          // Status changed — fire local notification
+          String statusLabel;
+          switch (status) {
+            case 'approved':   statusLabel = 'Diluluskan ✅'; break;
+            case 'rejected':   statusLabel = 'Ditolak ❌'; break;
+            case 'under_review': statusLabel = 'Sedang Disemak 🔍'; break;
+            case 'disbursed':  statusLabel = 'Dana Disalurkan 💰'; break;
+            case 'cancelled':  statusLabel = 'Dibatalkan'; break;
+            default:           statusLabel = status;
+          }
+          NotificationService.instance.showLocalNotification(
+            title: 'Kemaskini Tuntutan SIGAP',
+            body: 'Status tuntutan anda telah berubah kepada: $statusLabel',
+            id: id.hashCode,
+          );
+        }
+        _lastKnownClaimStatuses[id] = status;
+      }
+    });
+  }
 
   String _greeting() {
     final hour = DateTime.now().hour;
@@ -1822,25 +1867,12 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
 
       await _firestoreService.createSOSReport(reportData);
 
+      // Get the routed authority for this incident type
+      final authority = AuthorityRoutingService.instance.getAuthority(type);
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text('SOS berjaya dihantar! Sukarelawan berdekatan akan dimaklumkan.',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
-                ),
-              ],
-            ),
-            backgroundColor: AppColors.safe,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            duration: const Duration(seconds: 4),
-          ),
-        );
+        // Show authority routing bottom sheet
+        _showAuthorityRoutedSheet(authority, type);
       }
     } catch (e) {
       if (mounted) {
@@ -1856,7 +1888,159 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
     }
   }
 
-  /// Button to cancel an active SOS
+  /// Shows a bottom sheet confirming the authority routed for an SOS incident.
+  void _showAuthorityRoutedSheet(AuthorityContact authority, String incidentType) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: authority.color.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(authority.icon, color: authority.color, size: 40),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.check_circle_rounded, color: AppColors.safe, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'SOS Berjaya Dihantar!',
+                  style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Laporan $incidentType anda telah dihantar dan dihalakan kepada:',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: authority.color.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: authority.color.withValues(alpha: 0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    authority.name,
+                    style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(authority.description, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Icon(Icons.phone_rounded, size: 16, color: AppColors.primary),
+                      const SizedBox(width: 8),
+                      Text(authority.phone, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  AuthorityRoutingService.instance.callAuthority(authority);
+                },
+                icon: const Icon(Icons.phone_rounded),
+                label: Text('Hubungi ${authority.shortName} Sekarang', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: authority.color,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('Tutup', style: GoogleFonts.inter(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Confirms and cancels a citizen's pending claim.
+  void _confirmCancelClaim(String claimId) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Batal Tuntutan?', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        content: Text('Adakah anda pasti mahu membatalkan tuntutan ini? Tindakan ini tidak boleh dibalikkan.',
+            style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Tidak', style: GoogleFonts.inter(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.danger,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await _firestoreService.cancelClaim(claimId);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Tuntutan telah dibatalkan.', style: GoogleFonts.inter()),
+                      backgroundColor: AppColors.safe,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Gagal membatal: $e'), backgroundColor: AppColors.danger),
+                  );
+                }
+              }
+            },
+            child: Text('Ya, Batal', style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+
   Widget _buildCancelActiveSOSButton() {
     final authState = context.read<AuthBloc>().state;
     if (authState is! AuthAuthenticated) return const SizedBox.shrink();
@@ -2707,12 +2891,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                             SizedBox(
                               width: double.infinity,
                               child: OutlinedButton.icon(
-                                onPressed: () async {
-                                  await _firestoreService.deleteClaim(claim.id);
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tuntutan dibatalkan.')));
-                                  }
-                                },
+                                onPressed: () => _confirmCancelClaim(claim.id),
                                 icon: const Icon(Icons.cancel_outlined, size: 16),
                                 label: const Text('Batal Tuntutan'),
                                 style: OutlinedButton.styleFrom(

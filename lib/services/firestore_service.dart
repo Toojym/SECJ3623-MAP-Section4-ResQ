@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'authority_routing_service.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -118,8 +119,15 @@ class FirestoreService {
   // ── SOS Reports ─────────────────────────────────────────────────────────────
 
   /// Create a new SOS report and return the document ID.
+  /// Automatically computes and writes the routedAuthority field.
   Future<String> createSOSReport(Map<String, dynamic> data) async {
-    final docRef = await _db.collection('sos_reports').add(data);
+    final incidentType = data['type'] as String? ?? '';
+    final authorityData = AuthorityRoutingService.instance.getAuthorityData(incidentType);
+
+    final docRef = await _db.collection('sos_reports').add({
+      ...data,
+      'routedAuthority': authorityData,
+    });
 
     final reporterId = data['reporterId'] as String?;
     if (reporterId != null) {
@@ -387,18 +395,24 @@ class FirestoreService {
     await _db.collection('claims').doc(claimId).delete();
   }
 
-  Future<String> uploadClaimEvidence(File imageFile, String citizenId) async {
-    try {
-      final fileName =
-          '${DateTime.now().millisecondsSinceEpoch}_$citizenId.jpg';
-      final ref = _storage.ref().child('claims_evidence/$fileName');
+  /// Citizen cancels their own pending claim.
+  Future<void> cancelClaim(String claimId) async {
+    await _db.collection('claims').doc(claimId).update({
+      'status': 'cancelled',
+      'cancelledAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
 
+  /// Generic file upload to Firebase Storage. Falls back to base64 on failure.
+  Future<String> uploadFile(File imageFile, String storagePath) async {
+    try {
+      final ref = _storage.ref().child(storagePath);
       final bytes = await imageFile.readAsBytes();
       final uploadTask = ref.putData(
         bytes,
         SettableMetadata(contentType: 'image/jpeg'),
       );
-
       final snapshot = await uploadTask;
       if (snapshot.state == TaskState.success) {
         return await snapshot.ref.getDownloadURL();
@@ -410,6 +424,12 @@ class FirestoreService {
       final bytes = await imageFile.readAsBytes();
       return 'data:image/jpeg;base64,${base64Encode(bytes)}';
     }
+  }
+
+  /// Backward-compatible alias for evidence upload.
+  Future<String> uploadClaimEvidence(File imageFile, String citizenId) async {
+    final fileName = '${DateTime.now().millisecondsSinceEpoch}_$citizenId.jpg';
+    return uploadFile(imageFile, 'claims_evidence/$fileName');
   }
 
   // ── Donation Campaigns ─────────────────────────────────────────────────────
@@ -434,6 +454,11 @@ class FirestoreService {
       'closedAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
+  }
+
+  /// Permanently delete a campaign document.
+  Future<void> deleteCampaign(String campaignId) async {
+    await _db.collection('campaigns').doc(campaignId).delete();
   }
 
   Stream<QuerySnapshot> streamActiveCampaigns() {
@@ -501,5 +526,39 @@ class FirestoreService {
       ...data,
       'updatedAt': FieldValue.serverTimestamp(),
     });
+  }
+
+  // ── Volunteer Dispatch ────────────────────────────────────────────────────
+
+  /// Stream all volunteers who have set themselves as active/available.
+  Stream<QuerySnapshot> streamActiveVolunteers() {
+    return _db
+        .collection('volunteer_profiles')
+        .where('isActive', isEqualTo: true)
+        .snapshots();
+  }
+
+  /// Officer dispatches a specific volunteer to an SOS report.
+  Future<void> dispatchVolunteerToSOS(
+    String sosDocId,
+    String volunteerId,
+    String volunteerName,
+  ) async {
+    await _db.collection('sos_reports').doc(sosDocId).update({
+      'status': 'responded',
+      'responderId': volunteerId,
+      'responderName': volunteerName,
+      'respondedAt': FieldValue.serverTimestamp(),
+      'dispatchedByOfficer': true,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Save or refresh a user's FCM device token.
+  Future<void> saveFcmToken(String uid, String token) async {
+    await _db.collection('users').doc(uid).set({
+      'fcmToken': token,
+      'fcmTokenUpdatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 }
