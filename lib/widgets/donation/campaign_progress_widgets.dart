@@ -48,12 +48,16 @@ class CampaignProgressRing extends StatelessWidget {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              CircularProgressIndicator(
-                value: value,
-                strokeWidth: strokeWidth,
-                backgroundColor: AppColors.divider,
-                valueColor: AlwaysStoppedAnimation<Color>(ringColor),
-                strokeCap: StrokeCap.round,
+              SizedBox(
+                width: size,
+                height: size,
+                child: CircularProgressIndicator(
+                  value: value,
+                  strokeWidth: strokeWidth,
+                  backgroundColor: AppColors.divider,
+                  valueColor: AlwaysStoppedAnimation<Color>(ringColor),
+                  strokeCap: StrokeCap.round,
+                ),
               ),
               if (child != null) child!,
             ],

@@ -708,7 +708,17 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
           return const SizedBox.shrink();
         }
 
-        final doc = snapshot.data!.docs.first;
+        // Client-side safety filter: exclude cancelled/resolved reports
+        // in case Firestore composite index is missing or has propagation delay.
+        final activeDocs = snapshot.data!.docs.where((d) {
+          final status = (d.data() as Map<String, dynamic>)['status'] as String? ?? '';
+          return status == SosReportModel.statusActive ||
+              status == SosReportModel.statusResponded;
+        }).toList();
+
+        if (activeDocs.isEmpty) return const SizedBox.shrink();
+
+        final doc = activeDocs.first;
         final report = SosReportModel.fromDocument(doc);
 
         final bool isResponded = report.status == SosReportModel.statusResponded;
@@ -2052,7 +2062,15 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
           return const SizedBox.shrink();
         }
 
-        final activeCount = snapshot.data!.docs.length;
+        // Client-side filter: only show truly 'active' reports.
+        final activeDocs = snapshot.data!.docs.where((d) {
+          final s = (d.data() as Map<String, dynamic>)['status'] as String? ?? '';
+          return s == SosReportModel.statusActive;
+        }).toList();
+
+        if (activeDocs.isEmpty) return const SizedBox.shrink();
+
+        final activeCount = activeDocs.length;
 
         return Container(
           width: double.infinity,
@@ -2074,7 +2092,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                 ],
               ),
               const SizedBox(height: 12),
-              ...snapshot.data!.docs.map((doc) {
+              ...activeDocs.map((doc) {
                 final data = doc.data() as Map<String, dynamic>;
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
@@ -2449,75 +2467,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
   }
 
   Widget _buildAwanisScreen() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [const Color(0xFF6B4EE6).withValues(alpha: 0.05), Colors.white],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: const Color(0xFF6B4EE6).withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.smart_toy_rounded, color: Color(0xFF6B4EE6), size: 80),
-          ),
-          const SizedBox(height: 32),
-          Text('AWANIS', style: GoogleFonts.poppins(fontSize: 28, fontWeight: FontWeight.bold, color: const Color(0xFF6B4EE6))),
-          const SizedBox(height: 8),
-          Text('Pembantu AI Kecemasan Anda', style: GoogleFonts.inter(fontSize: 15, color: AppColors.textSecondary)),
-          const SizedBox(height: 48),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            decoration: BoxDecoration(
-              color: Colors.white, 
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 16, offset: const Offset(0, 8))],
-            ),
-            child: Row(
-              children: [
-                Expanded(child: Text('Apa patut saya buat sekarang?', style: GoogleFonts.inter(fontSize: 14, color: AppColors.textHint))),
-                const Icon(Icons.mic_rounded, color: Color(0xFF6B4EE6), size: 24),
-                const SizedBox(width: 16),
-                const Icon(Icons.send_rounded, color: Color(0xFF6B4EE6), size: 24),
-              ],
-            ),
-          ),
-          const SizedBox(height: 32),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            alignment: WrapAlignment.center,
-            children: [
-              _awanisChip('Pusat Bantuan Terdekat'),
-              _awanisChip('Saya Perlu Makanan'),
-              _awanisChip('Panduan Bantuan Kecemasan'),
-            ],
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget _awanisChip(String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(99),
-        border: Border.all(color: const Color(0xFF6B4EE6).withValues(alpha: 0.2)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2))],
-      ),
-      child: Text(text, style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF6B4EE6), fontWeight: FontWeight.w600)),
-    );
+    return _AwanisChatScreen();
   }
 
   Widget _buildFamilySafetyTracker(String uid) {
@@ -2770,7 +2720,6 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
               if (_selectedClaimFilter == 'Dihantar' && status == 'submitted') return true;
               if (_selectedClaimFilter == 'Sedang Disemak' && status == 'under_review') return true;
               if (_selectedClaimFilter == 'Diluluskan' && status == 'approved') return true;
-              if (_selectedClaimFilter == 'Telah Disalurkan' && status == 'disbursed') return true;
               if (_selectedClaimFilter == 'Ditolak' && status == 'rejected') return true;
               return false;
             }).toList();
@@ -2784,7 +2733,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      'Semua', 'Dihantar', 'Sedang Disemak', 'Diluluskan', 'Telah Disalurkan', 'Ditolak'
+                      'Semua', 'Dihantar', 'Sedang Disemak', 'Diluluskan', 'Ditolak'
                     ].map((filter) {
                       return Padding(
                         padding: const EdgeInsets.only(right: 8.0),
@@ -2831,14 +2780,14 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                     subText = 'Tuntutan sedang disemak oleh pegawai';
                   } else if (claim.status == 'approved') {
                     statusColor = AppColors.safe;
-                    statusText = 'Diluluskan';
-                    progress = 0.75;
-                    subText = 'Menunggu penyaluran bantuan';
-                  } else if (claim.status == 'disbursed') {
-                    statusColor = Colors.blue;
-                    statusText = 'Telah Disalurkan';
+                    statusText = 'Diluluskan ✅';
                     progress = 1.0;
-                    subText = 'Bantuan telah berjaya disalurkan';
+                    subText = 'Bantuan akan disalurkan dalam 7 hari bekerja';
+                  } else if (claim.status == 'expired') {
+                    statusColor = AppColors.textHint;
+                    statusText = 'Tamat Tempoh';
+                    progress = 1.0;
+                    subText = 'Tuntutan tamat tempoh — hubungi pejabat';
                   } else if (claim.status == 'rejected') {
                     statusColor = AppColors.danger;
                     statusText = 'Ditolak';
@@ -3322,53 +3271,463 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
     );
   }
   void _showClaimDetailsDialog(ClaimModel claim) {
-    showDialog(
-      context: context,
-      builder: (ctx) {
-        Widget imageWidget = const SizedBox();
-        if (claim.photoEvidence.isNotEmpty) {
-          if (claim.photoEvidence.startsWith('data:image')) {
-            try {
-              final base64String = claim.photoEvidence.split(',').last;
-              imageWidget = Image.memory(base64Decode(base64String), height: 150, fit: BoxFit.cover);
-            } catch (e) {
-              imageWidget = Container(height: 150, color: Colors.grey.shade200, child: const Center(child: Icon(Icons.broken_image, color: Colors.grey)));
-            }
-          } else {
-            imageWidget = Image.network(claim.photoEvidence, height: 150, fit: BoxFit.cover, errorBuilder: (_,__,___) => Container(height: 150, color: Colors.grey.shade200, child: const Center(child: Icon(Icons.broken_image, color: Colors.grey))));
-          }
+    Widget imageWidget = const SizedBox();
+    if (claim.photoEvidence.isNotEmpty) {
+      if (claim.photoEvidence.startsWith('data:image')) {
+        try {
+          final base64String = claim.photoEvidence.split(',').last;
+          imageWidget = Image.memory(base64Decode(base64String), height: 160, width: double.infinity, fit: BoxFit.cover);
+        } catch (_) {
+          imageWidget = Container(height: 160, color: Colors.grey.shade200, child: const Center(child: Icon(Icons.broken_image, color: Colors.grey)));
         }
-
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text('Butiran Tuntutan', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16)),
-          content: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (claim.photoEvidence.isNotEmpty) ...[
-                  ClipRRect(borderRadius: BorderRadius.circular(8), child: imageWidget),
-                  const SizedBox(height: 16),
-                ],
-                _detailRow('Jenis', claim.type),
-                _detailRow('Lokasi', claim.location),
-                _detailRow('Keterangan Kerosakan', claim.damageDescription),
-                _detailRow('Saiz Isi Rumah', claim.householdSize.toString()),
-                _detailRow('Status', claim.status.toUpperCase()),
-                if (claim.rejectReason != null && claim.rejectReason!.isNotEmpty)
-                  _detailRow('Sebab Ditolak', claim.rejectReason!),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Tutup'),
-            ),
-          ],
-        );
+      } else {
+        imageWidget = Image.network(claim.photoEvidence, height: 160, width: double.infinity, fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(height: 160, color: Colors.grey.shade200,
+                child: const Center(child: Icon(Icons.broken_image, color: Colors.grey))));
       }
+    }
+
+    // Status display config
+    Color statusColor;
+    String statusLabel;
+    IconData statusIcon;
+    switch (claim.status) {
+      case 'submitted':
+        statusColor = AppColors.warning;
+        statusLabel = 'Dihantar — Menunggu Semakan';
+        statusIcon = Icons.hourglass_empty_rounded;
+        break;
+      case 'under_review':
+        statusColor = Colors.purple;
+        statusLabel = 'Sedang Disemak oleh Pegawai';
+        statusIcon = Icons.manage_search_rounded;
+        break;
+      case 'approved':
+        statusColor = AppColors.safe;
+        statusLabel = 'Diluluskan ✅';
+        statusIcon = Icons.verified_rounded;
+        break;
+      case 'rejected':
+        statusColor = AppColors.danger;
+        statusLabel = 'Ditolak';
+        statusIcon = Icons.cancel_rounded;
+        break;
+      case 'expired':
+        statusColor = AppColors.textHint;
+        statusLabel = 'Tamat Tempoh';
+        statusIcon = Icons.timer_off_rounded;
+        break;
+      default:
+        statusColor = AppColors.textSecondary;
+        statusLabel = claim.status.toUpperCase();
+        statusIcon = Icons.info_outline_rounded;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.85,
+        maxChildSize: 0.95,
+        minChildSize: 0.5,
+        builder: (_, scrollCtrl) => Container(
+          decoration: const BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: ListView(
+            controller: scrollCtrl,
+            padding: EdgeInsets.zero,
+            children: [
+              // Handle bar
+              Center(
+                child: Container(
+                  margin: const EdgeInsets.only(top: 12, bottom: 8),
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(color: AppColors.divider, borderRadius: BorderRadius.circular(2)),
+                ),
+              ),
+
+              // Photo evidence banner
+              if (claim.photoEvidence.isNotEmpty)
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(0)),
+                  child: imageWidget,
+                )
+              else
+                Container(
+                  height: 100,
+                  color: AppColors.primary.withValues(alpha: 0.07),
+                  child: Center(
+                    child: Icon(Icons.receipt_long_rounded, size: 48, color: AppColors.primary.withValues(alpha: 0.4)),
+                  ),
+                ),
+
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Status badge
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: statusColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: statusColor.withValues(alpha: 0.4)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(statusIcon, size: 14, color: statusColor),
+                              const SizedBox(width: 6),
+                              Text(statusLabel,
+                                  style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: statusColor)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    Text(claim.type,
+                        style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                    const SizedBox(height: 4),
+                    Text(claim.location,
+                        style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+                    const SizedBox(height: 20),
+
+                    // Progress stepper
+                    _buildClaimProgressStepper(claim.status),
+                    const SizedBox(height: 24),
+
+                    // ── APPROVED NEXT STEPS PANEL ──
+                    if (claim.status == 'approved') ...[
+                      Container(
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [AppColors.safe.withValues(alpha: 0.08), AppColors.safe.withValues(alpha: 0.02)],
+                            begin: Alignment.topLeft, end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.safe.withValues(alpha: 0.35)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.safe.withValues(alpha: 0.15),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.celebration_rounded, size: 20, color: AppColors.safe),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text('Tuntutan Anda Diluluskan!',
+                                      style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.safe)),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
+                            _nextStepItem(Icons.schedule_rounded, AppColors.safe,
+                                'Penyaluran Bantuan',
+                                'Bantuan akan disalurkan dalam 7 hari bekerja dari tarikh kelulusan.'),
+                            const SizedBox(height: 10),
+                            _nextStepItem(Icons.email_rounded, AppColors.primary,
+                                'Makluman melalui E-mel',
+                                'Anda akan menerima e-mel rasmi berkenaan kaedah & jadual penyaluran bantuan. Semak peti masuk anda secara berkala.'),
+                            const SizedBox(height: 10),
+                            _nextStepItem(Icons.phone_in_talk_rounded, AppColors.warning,
+                                'Dihubungi Melalui Telefon',
+                                'Pegawai kami mungkin menghubungi nombor telefon berdaftar anda untuk pengesahan sebelum penyaluran.'),
+                            const SizedBox(height: 10),
+                            _nextStepItem(Icons.location_on_rounded, AppColors.danger,
+                                'Sila Kekal di Lokasi Berdaftar',
+                                'Pastikan anda mudah dihubungi di alamat yang telah didaftarkan semasa permohonan.'),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Hotline info
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.support_agent_rounded, size: 20, color: AppColors.primary),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Talian Bantuan SIGAP',
+                                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                                  Text('1-800-88-SIGAP (74427)  •  Isnin–Jumaat, 8pg–5ptg',
+                                      style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
+                    // ── UNDER REVIEW PANEL ──
+                    if (claim.status == 'under_review') ...[
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.purple.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: Colors.purple.withValues(alpha: 0.25)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.manage_search_rounded, size: 20, color: Colors.purple),
+                                const SizedBox(width: 10),
+                                Text('Tuntutan Sedang Disemak',
+                                    style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.purple)),
+                              ],
+                            ),
+                            if (claim.infoRequestReason != null && claim.infoRequestReason!.isNotEmpty) ...[
+                              const SizedBox(height: 12),
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.warning_amber_rounded, size: 16, color: Colors.orange),
+                                        const SizedBox(width: 6),
+                                        Text('Pegawai Meminta Maklumat Tambahan',
+                                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.orange)),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(claim.infoRequestReason!,
+                                        style: GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary)),
+                                  ],
+                                ),
+                              ),
+                            ] else ...[
+                              const SizedBox(height: 8),
+                              Text('Pegawai sedang menyemak bukti yang anda hantar. Tiada tindakan diperlukan buat masa ini.',
+                                  style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
+                    // ── REJECTED PANEL ──
+                    if (claim.status == 'rejected') ...[
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.danger.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppColors.danger.withValues(alpha: 0.25)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.cancel_rounded, size: 20, color: AppColors.danger),
+                                const SizedBox(width: 10),
+                                Text('Sebab Penolakan',
+                                    style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.danger)),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(claim.rejectReason ?? 'Maklumat tidak lengkap atau tidak memenuhi syarat.',
+                                style: GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary)),
+                            const SizedBox(height: 12),
+                            Text('Anda boleh memfailkan tuntutan baru dengan maklumat yang lebih lengkap.',
+                                style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary, fontStyle: FontStyle.italic)),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
+                    // ── CLAIM DETAILS ──
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.divider),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Maklumat Tuntutan',
+                              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                          const SizedBox(height: 12),
+                          _detailRow('No. IC', claim.icNumber),
+                          _detailRow('Saiz Isi Rumah', '${claim.householdSize} orang'),
+                          _detailRow('Lokasi / Zon', claim.location),
+                          _detailRow('Jenis Bantuan', claim.type),
+                          _detailRow('Keterangan Kerosakan', claim.damageDescription),
+                          if (claim.createdAt != null)
+                            _detailRow('Tarikh Permohonan',
+                                '${claim.createdAt!.day}/${claim.createdAt!.month}/${claim.createdAt!.year}'),
+                          if (claim.reviewedAt != null)
+                            _detailRow('Tarikh Semakan',
+                                '${claim.reviewedAt!.day}/${claim.reviewedAt!.month}/${claim.reviewedAt!.year}'),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Close button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
+                        ),
+                        child: Text('Tutup', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Small icon+text row for the approved next-steps panel.
+  Widget _nextStepItem(IconData icon, Color color, String title, String desc) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          margin: const EdgeInsets.only(top: 2),
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, size: 14, color: color),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+              const SizedBox(height: 2),
+              Text(desc, style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary, height: 1.4)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 4-step progress stepper for claim flow.
+  Widget _buildClaimProgressStepper(String status) {
+    final steps = [
+      ('Dihantar', Icons.upload_rounded),
+      ('Disemak', Icons.manage_search_rounded),
+      ('Diputuskan', Icons.gavel_rounded),
+    ];
+    int currentStep;
+    switch (status) {
+      case 'submitted': currentStep = 0; break;
+      case 'under_review': currentStep = 1; break;
+      case 'approved':
+      case 'rejected':
+      case 'expired': currentStep = 2; break;
+      default: currentStep = 0;
+    }
+    final isRejected = status == 'rejected';
+    final stepColor = isRejected ? AppColors.danger : AppColors.safe;
+
+    return Row(
+      children: List.generate(steps.length, (i) {
+        final isActive = i == currentStep;
+        final isDone = i < currentStep;
+        final color = (isActive || isDone)
+            ? (i == currentStep && isRejected ? AppColors.danger : AppColors.safe)
+            : AppColors.divider;
+        return Expanded(
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  children: [
+                    Container(
+                      width: 32, height: 32,
+                      decoration: BoxDecoration(
+                        color: (isActive || isDone) ? color : Colors.transparent,
+                        border: Border.all(color: color, width: 2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        isDone ? Icons.check_rounded : steps[i].$2,
+                        size: 14,
+                        color: (isActive || isDone) ? Colors.white : color,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(steps[i].$1,
+                        style: GoogleFonts.inter(
+                          fontSize: 10,
+                          fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                          color: (isActive || isDone) ? color : AppColors.textHint,
+                        ),
+                        textAlign: TextAlign.center),
+                  ],
+                ),
+              ),
+              if (i < steps.length - 1)
+                Expanded(
+                  child: Container(
+                    height: 2,
+                    margin: const EdgeInsets.only(bottom: 20),
+                    color: i < currentStep ? stepColor : AppColors.divider,
+                  ),
+                ),
+            ],
+          ),
+        );
+      }),
     );
   }
 
@@ -3575,12 +3934,6 @@ class _CallSimulationScreenState extends State<_CallSimulationScreen>
       ),
     );
   }
-
-  // ── AWANIS Chat Screen ─────────────────────────────────────────────────────
-
-  Widget _buildAwanisScreen() {
-    return _AwanisChatScreen();
-  }
 }
 
 // ── Standalone AWANIS Chat Widget ────────────────────────────────────────────
@@ -3594,73 +3947,35 @@ class _AwanisChatScreenState extends State<_AwanisChatScreen>
     with SingleTickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _inputController = TextEditingController();
+
   bool _showTyping = false;
   bool _inputFocused = false;
+  bool _demoRunning = false;
+  bool _guidedDemoActive = false;
+  int _guidedDemoStep = 0;
 
-  /// Pre-seeded conversation messages
-  /// Each map: { 'sender': 'ai'|'user', 'text': '...', 'time': '...', 'chips': [...] }
-  final List<Map<String, dynamic>> _messages = [
-    {
-      'sender': 'ai',
-      'time': '9:02 AM',
-      'type': 'greeting',
-    },
-    {
-      'sender': 'user',
-      'text': 'Kawasan rumah saya sudah banjir. Macam mana nak hantar SOS?',
-      'time': '9:04 AM',
-    },
-    {
-      'sender': 'ai',
-      'time': '9:05 AM',
-      'type': 'sos_guide',
-    },
-    {
-      'sender': 'user',
-      'text': 'Adik saya masih di rumah. Macam mana nak tahu dia selamat?',
-      'time': '9:07 AM',
-    },
-    {
-      'sender': 'ai',
-      'time': '9:08 AM',
-      'type': 'family_safety',
-    },
-    {
-      'sender': 'user',
-      'text': 'Nombor kecemasan mana yang perlu saya hubungi untuk banjir?',
-      'time': '9:09 AM',
-    },
-    {
-      'sender': 'ai',
-      'time': '9:10 AM',
-      'type': 'emergency_numbers',
-    },
-    {
-      'sender': 'user',
-      'text': 'Di mana pusat pemindahan berhampiran Taman Melati, KL?',
-      'time': '9:12 AM',
-    },
-    {
-      'sender': 'ai',
-      'time': '9:13 AM',
-      'type': 'evac_centres',
-    },
-    {
-      'sender': 'user',
-      'text': 'Terima kasih AWANIS! Sangat membantu 🙏',
-      'time': '9:14 AM',
-    },
-    {
-      'sender': 'ai',
-      'time': '9:14 AM',
-      'type': 'farewell',
-    },
-  ];
+  final List<Map<String, dynamic>> _messages = [];
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+    _messages.addAll([
+      {
+        'sender': 'ai',
+        'type': 'greeting',
+        'time': '9:02 AM',
+      },
+      {
+        'sender': 'user',
+        'text': 'Kawasan rumah saya sudah banjir. Macam mana nak hantar SOS?',
+        'time': '9:04 AM',
+      },
+      {
+        'sender': 'ai',
+        'type': 'sos_guide',
+        'time': '9:05 AM',
+      },
+    ]);
   }
 
   @override
@@ -3671,13 +3986,116 @@ class _AwanisChatScreenState extends State<_AwanisChatScreen>
   }
 
   void _scrollToBottom() {
-    if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent + 200,
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeOut,
-      );
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent + 300,
+          duration: const Duration(milliseconds: 450),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+
+
+  void _startInteractiveDemo() {
+    setState(() {
+      _messages.clear();
+      _messages.add({
+        'sender': 'ai',
+        'type': 'greeting',
+        'time': _nowTime(),
+      });
+      _guidedDemoActive = true;
+      _guidedDemoStep = 0;
+      _demoRunning = false;
+    });
+    _scrollToBottom();
+  }
+
+  void _startInteractiveDemoWithPreset(String userText, String aiReplyType) {
+    setState(() {
+      _messages.clear();
+      _messages.add({
+        'sender': 'ai',
+        'type': 'greeting',
+        'time': _nowTime(),
+      });
+      _guidedDemoActive = true;
+      _demoRunning = false;
+      
+      if (aiReplyType == 'sos_guide') _guidedDemoStep = 1;
+      else if (aiReplyType == 'family_safety') _guidedDemoStep = 2;
+      else if (aiReplyType == 'emergency_numbers') _guidedDemoStep = 3;
+      else if (aiReplyType == 'evac_centres') _guidedDemoStep = 4;
+      else if (aiReplyType == 'farewell') _guidedDemoStep = 5;
+    });
+    _scrollToBottom();
+
+    Future.delayed(const Duration(milliseconds: 600), () {
+      _sendPresetMessage(userText, aiReplyType);
+    });
+  }
+
+  void _sendPresetMessage(String userText, String aiReplyType) {
+    if (_showTyping) return;
+    setState(() {
+      _guidedDemoActive = true;
+      _messages.add({
+        'sender': 'user',
+        'text': userText,
+        'time': _nowTime(),
+      });
+      _showTyping = true;
+      
+      if (aiReplyType == 'sos_guide') _guidedDemoStep = 1;
+      else if (aiReplyType == 'family_safety') _guidedDemoStep = 2;
+      else if (aiReplyType == 'emergency_numbers') _guidedDemoStep = 3;
+      else if (aiReplyType == 'evac_centres') _guidedDemoStep = 4;
+      else if (aiReplyType == 'farewell') _guidedDemoStep = 5;
+    });
+    _scrollToBottom();
+
+    Future.delayed(const Duration(milliseconds: 1400), () {
+      if (!mounted) return;
+      setState(() {
+        _showTyping = false;
+        _messages.add({
+          'sender': 'ai',
+          'type': aiReplyType,
+          'time': _nowTime(),
+        });
+      });
+      _scrollToBottom();
+    });
+  }
+
+  void _sendGuidedStep(String userText, String aiReplyType) {
+    if (_showTyping) return;
+    setState(() {
+      _messages.add({
+        'sender': 'user',
+        'text': userText,
+        'time': _nowTime(),
+      });
+      _showTyping = true;
+      _guidedDemoStep++;
+    });
+    _scrollToBottom();
+
+    Future.delayed(const Duration(milliseconds: 1400), () {
+      if (!mounted) return;
+      setState(() {
+        _showTyping = false;
+        _messages.add({
+          'sender': 'ai',
+          'type': aiReplyType,
+          'time': _nowTime(),
+        });
+      });
+      _scrollToBottom();
+    });
   }
 
   void _handleSend() {
@@ -3689,18 +4107,62 @@ class _AwanisChatScreenState extends State<_AwanisChatScreen>
       _showTyping = true;
     });
     _scrollToBottom();
-    Future.delayed(const Duration(milliseconds: 1800), () {
+
+    final lowerText = text.toLowerCase();
+    String type = 'generic_reply';
+    String? replyText;
+
+    if (lowerText.contains('sos') || lowerText.contains('hantar sos') || lowerText.contains('banjir')) {
+      type = 'sos_guide';
+      if (_guidedDemoActive && _guidedDemoStep == 0) {
+        setState(() => _guidedDemoStep = 1);
+      }
+    } else if (lowerText.contains('keluarga') || lowerText.contains('adik') || lowerText.contains('selamat')) {
+      type = 'family_safety';
+      if (_guidedDemoActive && _guidedDemoStep == 1) {
+        setState(() => _guidedDemoStep = 2);
+      }
+    } else if (lowerText.contains('nombor') || lowerText.contains('talian') || lowerText.contains('kecemasan') || lowerText.contains('bomba') || lowerText.contains('nadma')) {
+      type = 'emergency_numbers';
+      if (_guidedDemoActive && _guidedDemoStep == 2) {
+        setState(() => _guidedDemoStep = 3);
+      }
+    } else if (lowerText.contains('pusat') || lowerText.contains('pemindahan') || lowerText.contains('taman melati')) {
+      type = 'evac_centres';
+      if (_guidedDemoActive && _guidedDemoStep == 3) {
+        setState(() => _guidedDemoStep = 4);
+      }
+    } else if (lowerText.contains('terima kasih') || lowerText.contains('thank you') || lowerText.contains('tq')) {
+      type = 'farewell';
+      if (_guidedDemoActive && _guidedDemoStep == 4) {
+        setState(() => _guidedDemoStep = 5);
+      }
+    } else {
+      replyText = 'Terima kasih atas soalan anda. Sila gunakan menu pilihan di atas atau taip soalan spesifik mengenai kecemasan banjir, keselamatan keluarga, talian kecemasan, atau lokasi pusat pemindahan untuk mendapatkan panduan dari saya. 💙';
+    }
+
+    Future.delayed(const Duration(milliseconds: 1400), () {
       if (!mounted) return;
       setState(() {
         _showTyping = false;
         _messages.add({
           'sender': 'ai',
           'time': _nowTime(),
-          'type': 'generic_reply',
-          'text': 'Terima kasih atas soalan anda. Saya sedang memproses maklumat terkini dan akan membantu anda sebaik mungkin. Jika ini kecemasan, sila tekan butang SOS merah di bawah. 💙',
+          'type': type,
+          if (replyText != null) 'text': replyText,
         });
       });
       _scrollToBottom();
+    });
+  }
+
+  void _resetDemo() {
+    setState(() {
+      _messages.clear();
+      _showTyping = false;
+      _demoRunning = false;
+      _guidedDemoActive = false;
+      _guidedDemoStep = 0;
     });
   }
 
@@ -3713,148 +4175,226 @@ class _AwanisChatScreenState extends State<_AwanisChatScreen>
     return '$hour12:$m $period';
   }
 
+  Widget _buildGuidedDemoHelper() {
+    if (!_guidedDemoActive) return const SizedBox.shrink();
+
+    String btnText = '';
+    String userQuestion = '';
+    String aiReplyType = '';
+
+    switch (_guidedDemoStep) {
+      case 0:
+        btnText = 'Tanya Cara Hantar SOS 📢';
+        userQuestion = 'Kawasan rumah saya sudah banjir. Macam mana nak hantar SOS?';
+        aiReplyType = 'sos_guide';
+        break;
+      case 1:
+        btnText = 'Tanya Status Keluarga 👨‍👩‍👧';
+        userQuestion = 'Adik saya masih di rumah. Macam mana nak tahu dia selamat?';
+        aiReplyType = 'family_safety';
+        break;
+      case 2:
+        btnText = 'Tanya Talian Kecemasan ☎️';
+        userQuestion = 'Nombor kecemasan mana yang perlu saya hubungi untuk banjir?';
+        aiReplyType = 'emergency_numbers';
+        break;
+      case 3:
+        btnText = 'Cari Pusat Pemindahan 📍';
+        userQuestion = 'Di mana pusat pemindahan berhampiran Taman Melati, KL?';
+        aiReplyType = 'evac_centres';
+        break;
+      case 4:
+        btnText = 'Katakan Terima Kasih 🙏';
+        userQuestion = 'Terima kasih AWANIS! Sangat membantu 🙏';
+        aiReplyType = 'farewell';
+        break;
+      default:
+        btnText = 'Tamat Demo (Reset) 🔄';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1B4B),
+        border: Border(
+          top: BorderSide(color: const Color(0xFF4338CA).withValues(alpha: 0.5), width: 1.5),
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        bottom: false,
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF818CF8),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        _guidedDemoStep <= 4 ? 'DEMO TERBIMBING (LANGKAH ${_guidedDemoStep + 1}/5)' : 'DEMO SELESAI',
+                        style: GoogleFonts.inter(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFF818CF8),
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _guidedDemoStep <= 4
+                        ? 'Klik butang di sebelah untuk menghantar soalan.'
+                        : 'Tahniah! Anda telah selesai mencuba demo AWANIS.',
+                    style: GoogleFonts.inter(fontSize: 11, color: Colors.white70),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton(
+              onPressed: () {
+                if (_guidedDemoStep <= 4) {
+                  _sendGuidedStep(userQuestion, aiReplyType);
+                } else {
+                  _resetDemo();
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4F46E5),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                elevation: 0,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(btnText, style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600)),
+                  const SizedBox(width: 4),
+                  Icon(
+                    _guidedDemoStep <= 4 ? Icons.arrow_forward_rounded : Icons.refresh_rounded,
+                    size: 14,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     const aiPurple = Color(0xFF6366F1);
     const chatBg = Color(0xFFF5F6FA);
+    final isEmpty = _messages.isEmpty && !_showTyping;
 
     return Column(
       children: [
-        // ── Header banner
-        Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF1A1A2E), Color(0xFF2D2A6E)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+
+
+        // ── Quick chips (only when not running demo)
+        if (!_demoRunning)
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _sugChip('🔄 Reset', Colors.grey[700]!, () {
+                    _resetDemo();
+                  }),
+                  const SizedBox(width: 8),
+                  _sugChip('🌊 Status banjir', aiPurple, () {
+                    _sendPresetMessage(
+                      "Apakah status banjir terkini?",
+                      "flood_status_reply",
+                    );
+                  }),
+                  const SizedBox(width: 8),
+                  _sugChip('📢 Hantar SOS', Colors.red, () {
+                    _sendPresetMessage(
+                      "Kawasan rumah saya sudah banjir. Macam mana nak hantar SOS?",
+                      "sos_guide",
+                    );
+                  }),
+                  const SizedBox(width: 8),
+                  _sugChip('👨‍👩‍👧 Keluarga saya', const Color(0xFF10B981), () {
+                    _sendPresetMessage(
+                      "Adik saya masih di rumah. Macam mana nak tahu dia selamat?",
+                      "family_safety",
+                    );
+                  }),
+                  const SizedBox(width: 8),
+                  _sugChip('📍 Pusat pemindahan', const Color(0xFFF59E0B), () {
+                    _sendPresetMessage(
+                      "Di mana pusat pemindahan berhampiran Taman Melati, KL?",
+                      "evac_centres",
+                    );
+                  }),
+                  const SizedBox(width: 8),
+                  _sugChip('☎️ Nombor kecemasan', AppColors.primary, () {
+                    _sendPresetMessage(
+                      "Nombor kecemasan mana yang perlu saya hubungi untuk banjir?",
+                      "emergency_numbers",
+                    );
+                  }),
+                  const SizedBox(width: 8),
+                  _sugChip('😊 Terima Kasih', const Color(0xFF818CF8), () {
+                    _sendPresetMessage(
+                      "Terima kasih AWANIS! Sangat membantu 🙏",
+                      "farewell",
+                    );
+                  }),
+                ],
+              ),
             ),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF6366F1), Color(0xFF818CF8)],
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF6366F1).withValues(alpha: 0.4),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: const Icon(Icons.smart_toy_rounded, color: Colors.white, size: 26),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'AWANIS',
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 17,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        Container(
-                          width: 7,
-                          height: 7,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF10B981),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          'Online · AI Pembantu Kecemasan SIGAP',
-                          style: GoogleFonts.inter(
-                            color: Colors.white60,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-                ),
-                child: Text(
-                  'Automated Welfare & Alert\nNavigation Intelligence System',
-                  style: GoogleFonts.inter(fontSize: 8, color: Colors.white54),
-                  textAlign: TextAlign.right,
-                ),
-              ),
-            ],
-          ),
-        ),
 
-        // ── Quick suggestion chips
-        Container(
-          color: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _sugChip('🌊 Status banjir', aiPurple),
-                const SizedBox(width: 8),
-                _sugChip('📢 Hantar SOS', Colors.red),
-                const SizedBox(width: 8),
-                _sugChip('👨‍👩‍👧 Keluarga saya', const Color(0xFF10B981)),
-                const SizedBox(width: 8),
-                _sugChip('📍 Pusat pemindahan', const Color(0xFFF59E0B)),
-                const SizedBox(width: 8),
-                _sugChip('☎️ Nombor kecemasan', AppColors.primary),
-              ],
-            ),
-          ),
-        ),
-
-        // ── Messages
+        // ── Messages area
         Expanded(
           child: Container(
             color: chatBg,
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              itemCount: _messages.length + (_showTyping ? 1 : 0),
-              itemBuilder: (ctx, i) {
-                if (_showTyping && i == _messages.length) {
-                  return _buildTypingIndicator();
-                }
-                final msg = _messages[i];
-                final isAi = msg['sender'] == 'ai';
-                return isAi
-                    ? _buildAiMessage(msg, aiPurple)
-                    : _buildUserMessage(msg);
-              },
-            ),
+            child: isEmpty
+                ? _buildWelcomeState()
+                : ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    itemCount: _messages.length + (_showTyping ? 1 : 0),
+                    itemBuilder: (ctx, i) {
+                      if (_showTyping && i == _messages.length) {
+                        return _buildTypingIndicator();
+                      }
+                      final msg = _messages[i];
+                      final isAi = msg['sender'] == 'ai';
+                      return isAi
+                          ? _buildAiMessage(msg, aiPurple)
+                          : _buildUserMessage(msg);
+                    },
+                  ),
           ),
         ),
+        _buildGuidedDemoHelper(),
 
         // ── Input bar
         Container(
           color: Colors.white,
           padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 10,
+            left: 16, right: 16, top: 10,
             bottom: MediaQuery.of(context).viewInsets.bottom + 12,
           ),
           child: Column(
@@ -3896,8 +4436,7 @@ class _AwanisChatScreenState extends State<_AwanisChatScreen>
                       onTap: _handleSend,
                       child: Container(
                         margin: const EdgeInsets.all(6),
-                        width: 40,
-                        height: 40,
+                        width: 40, height: 40,
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
                             colors: [Color(0xFF6366F1), Color(0xFF818CF8)],
@@ -3906,8 +4445,7 @@ class _AwanisChatScreenState extends State<_AwanisChatScreen>
                           boxShadow: [
                             BoxShadow(
                               color: aiPurple.withValues(alpha: 0.35),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
+                              blurRadius: 8, offset: const Offset(0, 3),
                             ),
                           ],
                         ),
@@ -3918,10 +4456,8 @@ class _AwanisChatScreenState extends State<_AwanisChatScreen>
                 ),
               ),
               const SizedBox(height: 6),
-              Text(
-                '🔒 Perbualan anda selamat · Dikuasakan oleh AWANIS AI',
-                style: GoogleFonts.inter(fontSize: 10, color: AppColors.textHint),
-              ),
+              Text('🔒 Perbualan anda selamat · Dikuasakan oleh AWANIS AI',
+                  style: GoogleFonts.inter(fontSize: 10, color: AppColors.textHint)),
             ],
           ),
         ),
@@ -3929,11 +4465,143 @@ class _AwanisChatScreenState extends State<_AwanisChatScreen>
     );
   }
 
-  Widget _sugChip(String label, Color color) {
+  // ── Welcome / empty state with demo button ───────────────────────────────
+
+  Widget _buildWelcomeState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Glow avatar
+            Container(
+              width: 88, height: 88,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF6366F1), Color(0xFF818CF8)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF6366F1).withValues(alpha: 0.35),
+                    blurRadius: 28,
+                    spreadRadius: 4,
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.smart_toy_rounded, color: Colors.white, size: 44),
+            ),
+            const SizedBox(height: 20),
+            Text('AWANIS',
+                style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w800, fontSize: 24,
+                    color: AppColors.textPrimary, letterSpacing: 1)),
+            const SizedBox(height: 6),
+            Text('Automated Welfare & Alert Navigation\nIntelligence System',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary, height: 1.5)),
+            const SizedBox(height: 24),
+
+            // Feature pills
+            Wrap(
+              spacing: 8, runSpacing: 8,
+              alignment: WrapAlignment.center,
+              children: [
+                _featurePill('📢 Panduan SOS', const Color(0xFFEF4444), () {
+                  _startInteractiveDemoWithPreset(
+                    "Kawasan rumah saya sudah banjir. Macam mana nak hantar SOS?",
+                    "sos_guide",
+                  );
+                }),
+                _featurePill('👨‍👩‍👧 Keselamatan Keluarga', const Color(0xFF10B981), () {
+                  _startInteractiveDemoWithPreset(
+                    "Adik saya masih di rumah. Macam mana nak tahu dia selamat?",
+                    "family_safety",
+                  );
+                }),
+                _featurePill('📍 Pusat Pemindahan', const Color(0xFFF59E0B), () {
+                  _startInteractiveDemoWithPreset(
+                    "Di mana pusat pemindahan berhampiran Taman Melati, KL?",
+                    "evac_centres",
+                  );
+                }),
+                _featurePill('☎️ Talian Kecemasan', const Color(0xFF6366F1), () {
+                  _startInteractiveDemoWithPreset(
+                    "Nombor kecemasan mana yang perlu saya hubungi untuk banjir?",
+                    "emergency_numbers",
+                  );
+                }),
+              ],
+            ),
+            const SizedBox(height: 32),
+
+            // Demo button — main CTA
+            GestureDetector(
+              onTap: _startInteractiveDemo,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF6366F1), Color(0xFF818CF8)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF6366F1).withValues(alpha: 0.4),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.play_circle_rounded, color: Colors.white, size: 24),
+                    const SizedBox(width: 10),
+                    Text('Cuba Demo AWANIS',
+                        style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15)),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text('Lihat bagaimana AWANIS membantu anda\nsemasa banjir — langkah demi langkah',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(fontSize: 12, color: AppColors.textHint, height: 1.5)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _featurePill(String label, Color color, VoidCallback onTap) {
     return GestureDetector(
-      onTap: () {
-        _inputController.text = label.replaceAll(RegExp(r'^[^\w]+'), '').trim();
-      },
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Text(label,
+            style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
+      ),
+    );
+  }
+
+  Widget _sugChip(String label, Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
@@ -3941,19 +4609,19 @@ class _AwanisChatScreenState extends State<_AwanisChatScreen>
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
-        child: Text(
-          label,
-          style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: color),
-        ),
+        child: Text(label,
+            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
       ),
     );
   }
+
+  // ── Message bubble builders ───────────────────────────────────────────────
 
   Widget _buildUserMessage(Map<String, dynamic> msg) {
     return Align(
       alignment: Alignment.centerRight,
       child: Padding(
-        padding: const EdgeInsets.only(left: 48, bottom: 16),
+        padding: const EdgeInsets.only(left: 56, bottom: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
@@ -3961,8 +4629,7 @@ class _AwanisChatScreenState extends State<_AwanisChatScreen>
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF3B6DD4), Color(0xFF5B8DEF)],
-                ),
+                    colors: [Color(0xFF3B6DD4), Color(0xFF5B8DEF)]),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(18),
                   topRight: Radius.circular(18),
@@ -3972,21 +4639,16 @@ class _AwanisChatScreenState extends State<_AwanisChatScreen>
                 boxShadow: [
                   BoxShadow(
                     color: AppColors.primary.withValues(alpha: 0.25),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
+                    blurRadius: 8, offset: const Offset(0, 3),
                   ),
                 ],
               ),
-              child: Text(
-                msg['text'] ?? '',
-                style: GoogleFonts.inter(fontSize: 14, color: Colors.white, height: 1.5),
-              ),
+              child: Text(msg['text'] ?? '',
+                  style: GoogleFonts.inter(fontSize: 14, color: Colors.white, height: 1.5)),
             ),
             const SizedBox(height: 4),
-            Text(
-              msg['time'] ?? '',
-              style: GoogleFonts.inter(fontSize: 10, color: AppColors.textHint),
-            ),
+            Text(msg['time'] ?? '',
+                style: GoogleFonts.inter(fontSize: 10, color: AppColors.textHint)),
           ],
         ),
       ),
@@ -3998,18 +4660,16 @@ class _AwanisChatScreenState extends State<_AwanisChatScreen>
     return Align(
       alignment: Alignment.centerLeft,
       child: Padding(
-        padding: const EdgeInsets.only(right: 48, bottom: 16),
+        padding: const EdgeInsets.only(right: 56, bottom: 16),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Container(
-              width: 32,
-              height: 32,
+              width: 32, height: 32,
               margin: const EdgeInsets.only(right: 8, bottom: 18),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF6366F1), Color(0xFF818CF8)],
-                ),
+                    colors: [Color(0xFF6366F1), Color(0xFF818CF8)]),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(Icons.smart_toy_rounded, color: Colors.white, size: 16),
@@ -4020,10 +4680,8 @@ class _AwanisChatScreenState extends State<_AwanisChatScreen>
                 children: [
                   _buildAiBubbleContent(type, msg, aiPurple),
                   const SizedBox(height: 4),
-                  Text(
-                    msg['time'] ?? '',
-                    style: GoogleFonts.inter(fontSize: 10, color: AppColors.textHint),
-                  ),
+                  Text(msg['time'] ?? '',
+                      style: GoogleFonts.inter(fontSize: 10, color: AppColors.textHint)),
                 ],
               ),
             ),
@@ -4046,16 +4704,32 @@ class _AwanisChatScreenState extends State<_AwanisChatScreen>
               style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary, height: 1.55),
             ),
             const SizedBox(height: 12),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                _actionPill('📢 Hantar SOS', aiPurple),
-                _actionPill('✅ Status Keluarga', const Color(0xFF10B981)),
-                _actionPill('🗺️ Peta Bencana', const Color(0xFFF59E0B)),
-                _actionPill('☎️ Pihak Berkuasa', AppColors.danger),
-              ],
-            ),
+            Wrap(spacing: 6, runSpacing: 6, children: [
+              _actionPill('📢 Hantar SOS', aiPurple, () {
+                _sendPresetMessage(
+                  "Kawasan rumah saya sudah banjir. Macam mana nak hantar SOS?",
+                  "sos_guide",
+                );
+              }),
+              _actionPill('✅ Status Keluarga', const Color(0xFF10B981), () {
+                _sendPresetMessage(
+                  "Adik saya masih di rumah. Macam mana nak tahu dia selamat?",
+                  "family_safety",
+                );
+              }),
+              _actionPill('🗺️ Peta Bencana', const Color(0xFFF59E0B), () {
+                _sendPresetMessage(
+                  "Di mana pusat pemindahan berhampiran Taman Melati, KL?",
+                  "evac_centres",
+                );
+              }),
+              _actionPill('☎️ Pihak Berkuasa', AppColors.danger, () {
+                _sendPresetMessage(
+                  "Nombor kecemasan mana yang perlu saya hubungi untuk banjir?",
+                  "emergency_numbers",
+                );
+              }),
+            ]),
           ],
         ));
 
@@ -4065,18 +4739,16 @@ class _AwanisChatScreenState extends State<_AwanisChatScreen>
           children: [
             _tagChip('🌊 Panduan SOS Banjir', Colors.orange),
             const SizedBox(height: 8),
-            Text(
-              'Jangan panik. Ikut langkah berikut:',
-              style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary),
-            ),
+            Text('Jangan panik. Ikut langkah berikut:',
+                style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary)),
             const SizedBox(height: 10),
             _stepCard('1', 'Tekan butang SOS 🔴 di bawah dashboard anda.', Colors.orange),
             const SizedBox(height: 6),
             _stepCard('2', 'Pilih jenis kejadian: "Banjir 🌊"', aiPurple),
             const SizedBox(height: 6),
-            _stepCard('3', 'Benarkan akses lokasi untuk pasukan penyelamat mengesan anda.', const Color(0xFF10B981)),
+            _stepCard('3', 'Benarkan akses lokasi supaya pasukan penyelamat mengesan anda.', const Color(0xFF10B981)),
             const SizedBox(height: 6),
-            _stepCard('4', 'Tekan "Hantar SOS". Laporan dihantar ke NADMA & sukarelawan terdekat serta-merta.', aiPurple),
+            _stepCard('4', 'Tekan "Hantar SOS". Laporan terus dihantar ke NADMA & sukarelawan terdekat.', aiPurple),
             const SizedBox(height: 10),
             _alertStrip('⚠️ NADMA akan dihubungi secara automatik melalui sistem SIGAP.', Colors.orange),
           ],
@@ -4103,6 +4775,47 @@ class _AwanisChatScreenState extends State<_AwanisChatScreen>
               'Adik anda belum mengemas kini statusnya. Saya cadangkan anda hubungi beliau segera.',
               style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary, height: 1.5),
             ),
+            const SizedBox(height: 10),
+            Wrap(spacing: 6, children: [
+              _actionPill('📞 Hubungi Adik', const Color(0xFF10B981), () {
+                _sendPresetMessage(
+                  "Hubungi adik saya Haziq",
+                  "contact_brother_reply",
+                );
+              }),
+              _actionPill('🤝 Hantar Sukarelawan', aiPurple, () {
+                _sendPresetMessage(
+                  "Minta sukarelawan bantu adik saya",
+                  "volunteer_brother_reply",
+                );
+              }),
+            ]),
+          ],
+        ));
+
+      case 'contact_brother_reply':
+        return _aiBubble(Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _tagChip('📞 Sambungan Telefon', const Color(0xFF10B981)),
+            const SizedBox(height: 8),
+            Text(
+              'Menyambungkan panggilan ke Haziq (012-3456789)... Sila pastikan talian selular anda aktif. Sekiranya tidak dijawab, anda boleh memohon tinjauan sukarelawan.',
+              style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary, height: 1.55),
+            ),
+          ],
+        ));
+
+      case 'volunteer_brother_reply':
+        return _aiBubble(Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _tagChip('🤝 Tindak Balas Sukarelawan', aiPurple),
+            const SizedBox(height: 8),
+            Text(
+              'Permohonan tinjauan sukarelawan berjaya dihantar! Sukarelawan terdekat (Zulhilmi) telah ditugaskan untuk menyemak keadaan adik anda di Taman Melati. Anda akan menerima notifikasi status segera.',
+              style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary, height: 1.55),
+            ),
           ],
         ));
 
@@ -4112,10 +4825,8 @@ class _AwanisChatScreenState extends State<_AwanisChatScreen>
           children: [
             _tagChip('☎️ Talian Kecemasan Malaysia', aiPurple),
             const SizedBox(height: 8),
-            Text(
-              'Untuk bencana banjir & tanah runtuh, hubungi:',
-              style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary),
-            ),
+            Text('Untuk bencana banjir & tanah runtuh, hubungi:',
+                style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary)),
             const SizedBox(height: 10),
             _infoCard('🌊 NADMA — Agensi Pengurusan Bencana Negara', [
               _cardRow('Nombor Telefon', '03-8064 2400', aiPurple),
@@ -4140,10 +4851,8 @@ class _AwanisChatScreenState extends State<_AwanisChatScreen>
           children: [
             _tagChip('📍 Pusat Pemindahan Berdekatan', Colors.orange),
             const SizedBox(height: 8),
-            Text(
-              'Berdasarkan lokasi anda di Taman Melati, KL:',
-              style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary),
-            ),
+            Text('Berdasarkan lokasi anda di Taman Melati, KL:',
+                style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary)),
             const SizedBox(height: 10),
             _infoCard('🏫 SK Taman Melati', [
               _cardRow('Jarak', '1.2 km', const Color(0xFF10B981)),
@@ -4157,12 +4866,45 @@ class _AwanisChatScreenState extends State<_AwanisChatScreen>
               _cardRow('Status', '🟢 Buka', const Color(0xFF10B981)),
             ], aiPurple),
             const SizedBox(height: 10),
-            Wrap(
-              spacing: 6,
-              children: [
-                _actionPill('🗺️ Lihat di Peta', aiPurple),
-                _actionPill('🚗 Dapatkan Arah', const Color(0xFF10B981)),
-              ],
+            Wrap(spacing: 6, children: [
+              _actionPill('🗺️ Lihat di Peta', aiPurple, () {
+                _sendPresetMessage(
+                  "Lihat pusat pemindahan di peta",
+                  "show_map_reply",
+                );
+              }),
+              _actionPill('🚗 Dapatkan Arah', const Color(0xFF10B981), () {
+                _sendPresetMessage(
+                  "Dapatkan arah pemanduan",
+                  "show_directions_reply",
+                );
+              }),
+            ]),
+          ],
+        ));
+
+      case 'show_map_reply':
+        return _aiBubble(Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _tagChip('🗺️ Peta Bencana', Colors.orange),
+            const SizedBox(height: 8),
+            Text(
+              'Paparan peta telah dikemas kini dengan pin lokasi bagi SK Taman Melati (1.2 km) dan Dewan Komuniti Wangsa Maju (2.7 km). Sila rujuk panel Peta di dashboard.',
+              style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary, height: 1.55),
+            ),
+          ],
+        ));
+
+      case 'show_directions_reply':
+        return _aiBubble(Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _tagChip('🚗 Navigasi Arah', const Color(0xFF10B981)),
+            const SizedBox(height: 8),
+            Text(
+              'Menyediakan laluan terpantas ke SK Taman Melati (1.2 km) melalui Jalan Melati Utama. Laluan ini dilaporkan bebas daripada air banjir bertakung buat masa ini.',
+              style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary, height: 1.55),
             ),
           ],
         ));
@@ -4188,7 +4930,7 @@ class _AwanisChatScreenState extends State<_AwanisChatScreen>
     }
   }
 
-  // ─── Helper bubble wrapper ───────────────────────────────────────────────
+  // ── Shared UI helpers ─────────────────────────────────────────────────────
 
   Widget _aiBubble(Widget child) {
     return Container(
@@ -4202,11 +4944,7 @@ class _AwanisChatScreenState extends State<_AwanisChatScreen>
           bottomRight: Radius.circular(18),
         ),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 10, offset: const Offset(0, 3)),
         ],
         border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
@@ -4223,10 +4961,7 @@ class _AwanisChatScreenState extends State<_AwanisChatScreen>
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
-      child: Text(
-        label,
-        style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: color),
-      ),
+      child: Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: color)),
     );
   }
 
@@ -4242,17 +4977,14 @@ class _AwanisChatScreenState extends State<_AwanisChatScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 22,
-            height: 22,
+            width: 22, height: 22,
             decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(6)),
-            child: Center(
-              child: Text(num, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white)),
-            ),
+            child: Center(child: Text(num,
+                style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white))),
           ),
           const SizedBox(width: 10),
-          Expanded(
-            child: Text(text, style: GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary, height: 1.4)),
-          ),
+          Expanded(child: Text(text,
+              style: GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary, height: 1.4))),
         ],
       ),
     );
@@ -4290,7 +5022,8 @@ class _AwanisChatScreenState extends State<_AwanisChatScreen>
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
-          Text(value, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: valueColor)),
+          Text(value,
+              style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: valueColor)),
         ],
       ),
     );
@@ -4304,24 +5037,23 @@ class _AwanisChatScreenState extends State<_AwanisChatScreen>
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
-      child: Text(
-        text,
-        style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: color, height: 1.4),
-      ),
+      child: Text(text,
+          style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: color, height: 1.4)),
     );
   }
 
-  Widget _actionPill(String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.35)),
-      ),
-      child: Text(
-        label,
-        style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: color),
+  Widget _actionPill(String label, Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withValues(alpha: 0.35)),
+        ),
+        child: Text(label,
+            style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: color)),
       ),
     );
   }
@@ -4335,13 +5067,11 @@ class _AwanisChatScreenState extends State<_AwanisChatScreen>
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Container(
-              width: 32,
-              height: 32,
+              width: 32, height: 32,
               margin: const EdgeInsets.only(right: 8),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF6366F1), Color(0xFF818CF8)],
-                ),
+                    colors: [Color(0xFF6366F1), Color(0xFF818CF8)]),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(Icons.smart_toy_rounded, color: Colors.white, size: 16),
@@ -4369,6 +5099,8 @@ class _AwanisChatScreenState extends State<_AwanisChatScreen>
     );
   }
 }
+
+// ── Animated typing dots ──────────────────────────────────────────────────────
 
 class _TypingDots extends StatefulWidget {
   const _TypingDots();
@@ -4416,3 +5148,4 @@ class _TypingDotsState extends State<_TypingDots> with SingleTickerProviderState
     );
   }
 }
+

@@ -37,6 +37,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
   String? _profileImageUrl;
   String _skills = '';
   Position? _currentPosition;
+  String _selectedMissionFilter = 'all';
 
   StreamSubscription<Position>? _positionSubscription;
   StreamSubscription<QuerySnapshot>? _taskSubscription;
@@ -1029,10 +1030,6 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
   }
 
   Widget _buildAcceptSquadTaskCard(VolunteerTaskModel task, String uid) {
-    final mySkillsList = _skills.split(',').map((s) => s.trim().toLowerCase()).toList();
-    final squadNameLower = task.squadName.toLowerCase();
-    final hasMatchingSkill = mySkillsList.any((skill) => squadNameLower.contains(skill) || skill.contains(squadNameLower.split(' ').first));
-
     Color priorityColor;
     switch (task.priority) {
       case 'Kritikal': priorityColor = const Color(0xFFDC2626); break;
@@ -1282,152 +1279,218 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
 
   // Replace the _buildMyProgressTab method with this:
 
-  // Replace your _buildMyProgressTab method with this debug version:
+  Widget _buildMyProgressTab(String uid) {
+  return StreamBuilder<QuerySnapshot>(
+    stream: FirebaseFirestore.instance
+        .collection('sos_reports')
+        .where('responderId', isEqualTo: uid)
+        .snapshots(),
+    builder: (context, sosSnapshot) {
+      return StreamBuilder<QuerySnapshot>(
+        stream: _firestoreService.streamAllVolunteerTasks(),
+        builder: (context, taskSnapshot) {
+          if (sosSnapshot.connectionState == ConnectionState.waiting ||
+              taskSnapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator(color: AppColors.volunteerAccent));
+          }
 
-Widget _buildMyProgressTab(String uid) {
-  return SingleChildScrollView(
-    padding: const EdgeInsets.all(16),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // SOS Missions accepted
-        StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection('sos_reports')
-              .where('responderId', isEqualTo: uid)
-              .snapshots(),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) {
-              return const SizedBox.shrink();
+          // Parse and filter SOS reports
+          final allReports = sosSnapshot.hasData
+              ? sosSnapshot.data!.docs.map((doc) => SosReportModel.fromDocument(doc)).toList()
+              : <SosReportModel>[];
+
+          final filteredReports = allReports.where((r) {
+            // Always hide cancelled SOS reports — citizen withdrew the request.
+            if (r.status == SosReportModel.statusCancelled) return false;
+
+            final isCompleted = r.status == 'resolved' ||
+                r.status == 'completed' ||
+                r.status == SosReportModel.statusResolved;
+            if (_selectedMissionFilter == 'active') {
+              return !isCompleted;
+            } else if (_selectedMissionFilter == 'completed') {
+              return isCompleted;
             }
+            return true; // 'all'
+          }).toList();
 
-            final reports = snapshot.data!.docs
-                .map((doc) => SosReportModel.fromDocument(doc))
-                .where((r) => 
-                    r.status != 'cancelled' &&
-                    r.status != 'resolved' &&
-                    r.status != 'completed' &&
-                    r.responderId == uid)
-                .toList();
+          // Parse and filter Squad Tasks
+          final allTasks = taskSnapshot.hasData
+              ? taskSnapshot.data!.docs
+                  .map((doc) => VolunteerTaskModel.fromMap(doc.id, doc.data() as Map<String, dynamic>))
+                  .toList()
+              : <VolunteerTaskModel>[];
 
-            if (reports.isEmpty) return const SizedBox.shrink();
+          final filteredTasks = allTasks.where((task) {
+            if (!task.acceptedVolunteerUIDs.contains(uid)) return false;
+            final isCompleted = task.status == 'Selesai Tugas';
+            if (_selectedMissionFilter == 'active') {
+              return !isCompleted;
+            } else if (_selectedMissionFilter == 'completed') {
+              return isCompleted;
+            }
+            return true; // 'all'
+          }).toList();
 
-            return Column(
+          final isEmpty = filteredReports.isEmpty && filteredTasks.isEmpty;
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Misi SOS Dalam Progres',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                // ── Classification Menu Bar
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      _buildFilterTab('all', 'Semua'),
+                      _buildFilterTab('active', 'Aktif'),
+                      _buildFilterTab('completed', 'Selesai'),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 12),
-                ...reports.map((report) => Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: _buildDetailedSOSProgressCard(report),
-                )),
-                const SizedBox(height: 16),
-              ],
-            );
-          },
-        ),
-        
-        // Squad Tasks accepted - ADDED DETAILED DEBUGGING
-        StreamBuilder<QuerySnapshot>(
-          stream: _firestoreService.streamAllVolunteerTasks(),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) {
-              return const Center(child: Text('Loading tasks...'));
-            }
-            
-            final allTasks = snapshot.data!.docs
-                .map((doc) => VolunteerTaskModel.fromMap(
-                    doc.id, doc.data() as Map<String, dynamic>))
-                .toList();
-            
-            print('=== MY PROGRESS TAB DEBUG ===');
-            print('Total tasks in DB: ${allTasks.length}');
-            print('My UID: $uid');
-            print('My assigned squad: $_assignedSquad');
-            print('My assigned squad ID: $_assignedSquadId');
-            
-            // Check ALL tasks to see if any have this volunteer in accepted list
-            for (var task in allTasks) {
-              final hasAccepted = task.acceptedVolunteerUIDs.contains(uid);
-              print('Task: ${task.squadName}');
-              print('  Accepted UIDs: ${task.acceptedVolunteerUIDs}');
-              print('  Does it contain $uid? $hasAccepted');
-              print('  Status: ${task.status}');
-              print('  ---');
-            }
-            
-            // Filter tasks where volunteer has accepted
-            final myAcceptedTasks = allTasks.where((task) {
-              return task.acceptedVolunteerUIDs.contains(uid) && 
-                     task.status != 'Selesai Tugas';
-            }).toList();
-            
-            print('My accepted tasks (in progress): ${myAcceptedTasks.length}');
-            
-            if (myAcceptedTasks.isEmpty) {
-              return Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  children: [
-                    const Icon(Icons.info_outline_rounded, size: 32, color: AppColors.textHint),
-                    const SizedBox(height: 8),
+                const SizedBox(height: 20),
+
+                if (isEmpty)
+                  _buildEmptyMissionsState()
+                else ...[
+                  if (filteredReports.isNotEmpty) ...[
                     Text(
-                      'Tiada tugasan skuad yang diterima.',
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        color: AppColors.textSecondary,
+                      _selectedMissionFilter == 'completed'
+                          ? 'Misi SOS Selesai'
+                          : 'Misi SOS Dalam Progres',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
                       ),
-                      textAlign: TextAlign.center,
                     ),
+                    const SizedBox(height: 12),
+                    ...filteredReports.map((report) => Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _buildDetailedSOSProgressCard(report),
+                    )),
                     const SizedBox(height: 8),
-                    Text(
-                      'Pergi ke tab Misi > Tugasan Skuad untuk terima tugasan.',
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        color: AppColors.textHint,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
                   ],
-                ),
-              );
-            }
-
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Tugasan Skuad Dalam Progres',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ...myAcceptedTasks.map((task) => Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: _buildDetailedSquadProgressCard(task, uid),
-                )),
+                  if (filteredTasks.isNotEmpty) ...[
+                    Text(
+                      _selectedMissionFilter == 'completed'
+                          ? 'Tugasan Skuad Selesai'
+                          : 'Tugasan Skuad Dalam Progres',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ...filteredTasks.map((task) => Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _buildDetailedSquadProgressCard(task, uid),
+                    )),
+                  ],
+                ],
               ],
-            );
-          },
-        ),
-      ],
-    ),
+            ),
+          );
+        },
+      );
+    },
   );
 }
+
+  Widget _buildFilterTab(String value, String label) {
+    final isSelected = _selectedMissionFilter == value;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedMissionFilter = value),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    )
+                  ]
+                : [],
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              color: isSelected ? AppColors.volunteerAccent : AppColors.textSecondary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyMissionsState() {
+    String title = 'Tiada Misi';
+    String subtitle = 'Anda belum menerima sebarang misi atau tugasan lagi.\nTeroka Papan Tugas untuk misi terkini.';
+    IconData icon = Icons.assignment_rounded;
+
+    if (_selectedMissionFilter == 'active') {
+      title = 'Tiada Misi Aktif';
+      subtitle = 'Anda tidak mempunyai sebarang misi aktif\nyang sedang dijalankan buat masa ini.';
+      icon = Icons.directions_run_rounded;
+    } else if (_selectedMissionFilter == 'completed') {
+      title = 'Tiada Misi Selesai';
+      subtitle = 'Anda belum melengkapkan sebarang misi lagi.\nTeruskan usaha murni anda!';
+      icon = Icons.check_circle_rounded;
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.textHint.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 48, color: AppColors.textHint),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            title,
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              color: AppColors.textHint,
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   // ADD THIS NEW METHOD - Detailed SOS Progress Card (like reference design) - WITHOUT BUTTONS
   Widget _buildDetailedSOSProgressCard(SosReportModel report) {
@@ -2076,225 +2139,6 @@ Widget _buildMyProgressTab(String uid) {
         ),
       );
     }
-  }
-
-  // ADD THIS NEW METHOD - SOS Progress Card with Action Buttons
-  Widget _buildSOSProgressCardWithActions(SosReportModel report) {
-    final isResolved = report.status == SosReportModel.statusResolved;
-    
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isResolved ? AppColors.safe : AppColors.volunteerAccent, width: 1.5),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.warning_rounded, color: isResolved ? AppColors.safe : AppColors.volunteerAccent, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(report.type,
-                    style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: isResolved ? AppColors.safe : AppColors.warning,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(isResolved ? 'Selesai' : 'Dalam Progres',
-                    style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.white)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(report.address, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
-          const SizedBox(height: 12),
-          LinearProgressIndicator(
-            value: isResolved ? 1.0 : 0.5,
-            backgroundColor: Colors.grey[200],
-            color: isResolved ? AppColors.safe : AppColors.volunteerAccent,
-            minHeight: 6,
-            borderRadius: BorderRadius.circular(4),
-          ),
-          const SizedBox(height: 12),
-          // Action Buttons
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => context.push(AppRoutes.missionChecklist, extra: report.id),
-                  icon: Icon(Icons.checklist_rounded, size: 16, color: Colors.purple),
-                  label: Text('Senarai Semak', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.purple,
-                    side: BorderSide(color: Colors.purple.withValues(alpha: 0.5)),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => context.push(AppRoutes.missionCompletion, extra: report.id),
-                  icon: Icon(Icons.check_circle_rounded, size: 16, color: Colors.white),
-                  label: Text('Selesai', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.safe,
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSOSProgressCard(SosReportModel report) {
-    final isResolved = report.status == SosReportModel.statusResolved;
-    
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isResolved ? AppColors.safe : AppColors.volunteerAccent, width: 1.5),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.warning_rounded, color: isResolved ? AppColors.safe : AppColors.volunteerAccent, size: 20),
-              const SizedBox(width: 8),
-              Expanded(child: Text(report.type, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary))),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(color: isResolved ? AppColors.safe : AppColors.warning, borderRadius: BorderRadius.circular(6)),
-                child: Text(isResolved ? 'Selesai' : 'Dalam Progres', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.white)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(report.address, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
-          const SizedBox(height: 12),
-          LinearProgressIndicator(
-            value: isResolved ? 1.0 : 0.5,
-            backgroundColor: Colors.grey[200],
-            color: isResolved ? AppColors.safe : AppColors.volunteerAccent,
-            minHeight: 6,
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSquadProgressCard(VolunteerTaskModel task, String uid) {
-    const statusSteps = [
-      'Menuju ke Lokasi',
-      'Tiba di Lokasi',
-      'Sedang Bertugas',
-      'Selesai Tugas',
-    ];
-    final currentStepIndex = statusSteps.indexOf(task.status).clamp(0, 3);
-    final isCompleted = task.status == 'Selesai Tugas';
-
-    Color statusColor = isCompleted ? AppColors.safe : (task.status == 'Sedang Bertugas' ? AppColors.warning : AppColors.volunteerAccent);
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: statusColor.withValues(alpha: 0.3), width: 1.5),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-                child: Icon(Icons.group_rounded, color: statusColor, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(task.squadName, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-                    Text('Zon: ${task.zone}', style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary)),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(99)),
-                child: Text(task.status, style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: statusColor)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(task.taskDescription, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textPrimary)),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: LinearProgressIndicator(
-                  value: task.progress,
-                  backgroundColor: statusColor.withValues(alpha: 0.1),
-                  color: statusColor,
-                  minHeight: 6,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text('${(task.progress * 100).round()}%', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold)),
-            ],
-          ),
-          if (!isCompleted) ...[
-            const SizedBox(height: 12),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: List.generate(statusSteps.length, (i) {
-                  final stepLabel = statusSteps[i];
-                  final isDone = i < currentStepIndex;
-                  final isCurrent = i == currentStepIndex;
-                  final isNext = i == currentStepIndex + 1;
-                  final canTap = isNext;
-
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ElevatedButton(
-                      onPressed: canTap ? () => _updateSquadTaskProgress(task, stepLabel, uid) : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: canTap ? statusColor : Colors.grey[300],
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        elevation: 0,
-                      ),
-                      child: Text(stepLabel, style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600)),
-                    ),
-                  );
-                }),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
   }
 
   // ============================================================

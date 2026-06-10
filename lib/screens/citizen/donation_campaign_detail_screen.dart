@@ -194,22 +194,23 @@ class _DonationCampaignDetailScreenState
         children: [
           CampaignProgressRing(
             fraction: _campaign.progressFraction,
-            size: 110,
+            size: 120,
             strokeWidth: 12,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   '${_campaign.progressPercent}%',
                   style: GoogleFonts.poppins(
-                    fontSize: 20,
+                    fontSize: 24,
                     fontWeight: FontWeight.w800,
                     color: _campaign.isClosed ? AppColors.textSecondary : AppColors.primary,
                   ),
                 ),
                 Text(
                   'Sasaran',
-                  style: GoogleFonts.inter(fontSize: 10, color: AppColors.textHint),
+                  style: GoogleFonts.inter(fontSize: 12, color: AppColors.textHint, fontWeight: FontWeight.w500),
                 ),
               ],
             ),
@@ -866,6 +867,23 @@ class _DonationCampaignDetailScreenState
                   ReceiptService.shareReceipt(pdfFile, donation.receiptNo),
               icon: const Icon(Icons.share_rounded),
               label: const Text('Kongsi PDF'),
+            ),
+            OutlinedButton.icon(
+              onPressed: () async {
+                try {
+                  await ReceiptService.downloadReceipt(pdfFile, donation.receiptNo);
+                } catch (e) {
+                  if (!ctx.mounted) return;
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    SnackBar(
+                      content: Text('Gagal memuat turun resit: $e'),
+                      backgroundColor: AppColors.danger,
+                    ),
+                  );
+                }
+              },
+              icon: const Icon(Icons.download_rounded),
+              label: const Text('Muat Turun PDF'),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx),

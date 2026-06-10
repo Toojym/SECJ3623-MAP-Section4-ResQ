@@ -3,6 +3,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:printing/printing.dart';
 
 class ReceiptService {
   static Future<File> generateReceiptPdf({
@@ -129,6 +130,13 @@ class ReceiptService {
     await Share.shareXFiles(
       [XFile(pdfFile.path)],
       text: 'SIGAP Donation Receipt - $receiptNo\n\nTerima kasih atas sumbangan anda!',
+    );
+  }
+
+  static Future<void> downloadReceipt(File pdfFile, String receiptNo) async {
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => pdfFile.readAsBytes(),
+      name: 'receipt_$receiptNo.pdf',
     );
   }
 

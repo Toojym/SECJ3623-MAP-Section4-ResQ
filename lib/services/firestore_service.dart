@@ -161,11 +161,12 @@ class FirestoreService {
   }
 
   /// Stream the current user's active SOS reports (for citizen cancellation UI).
+  /// Single-field filter only to avoid composite index requirements.
+  /// Status filtering (isEqualTo 'active') is done client-side in the widget.
   Stream<QuerySnapshot> streamMyActiveSOSReports(String uid) {
     return _db
         .collection('sos_reports')
         .where('reporterId', isEqualTo: uid)
-        .where('status', isEqualTo: 'active')
         .snapshots();
   }
 
@@ -293,11 +294,14 @@ class FirestoreService {
   }
 
   /// Stream active or responded SOS reports for a specific citizen.
+  /// NOTE: We intentionally do NOT filter by status in Firestore here because
+  /// the compound index (reporterId + status) may not be deployed. Status
+  /// filtering is done client-side in the widget to guarantee correctness.
   Stream<QuerySnapshot> streamMyActiveAndRespondedSOSReports(String uid) {
     return _db
         .collection('sos_reports')
         .where('reporterId', isEqualTo: uid)
-        .where('status', whereIn: ['active', 'responded']).snapshots();
+        .snapshots();
   }
 
   /// Request backup/reinforcements for a specific SOS report.
