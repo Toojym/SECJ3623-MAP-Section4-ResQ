@@ -2804,327 +2804,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
     );
   }
 
-  void _createCampaignDialog() {
-    final nameCtrl = TextEditingController();
-    final targetCtrl = TextEditingController();
-    final purposeCtrl = TextEditingController();
 
-    // Dynamic allocations
-    List<Map<String, TextEditingController>> allocationCtrls = [
-      {
-        'label': TextEditingController(text: 'Makanan'),
-        'value': TextEditingController()
-      },
-      {
-        'label': TextEditingController(text: 'Perubatan'),
-        'value': TextEditingController()
-      },
-      {
-        'label': TextEditingController(text: 'Logistik'),
-        'value': TextEditingController()
-      },
-    ];
-
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(builder: (context, setState) {
-        return AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text('Cipta Kempen Baru',
-              style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primary)),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextField(
-                    controller: nameCtrl,
-                    decoration: InputDecoration(
-                        labelText: 'Nama Kempen',
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8)))),
-                const SizedBox(height: 12),
-                TextField(
-                    controller: targetCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                        labelText: 'Sasaran Kutipan (RM)',
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8)))),
-                const SizedBox(height: 12),
-                TextField(
-                    controller: purposeCtrl,
-                    decoration: InputDecoration(
-                        labelText: 'Tujuan Dana',
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8))),
-                    maxLines: 2),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Pecahan Alokasi (%)',
-                        style: GoogleFonts.inter(
-                            fontWeight: FontWeight.w600, fontSize: 13)),
-                    TextButton.icon(
-                      onPressed: () {
-                        setState(() {
-                          allocationCtrls.add({
-                            'label': TextEditingController(),
-                            'value': TextEditingController()
-                          });
-                        });
-                      },
-                      icon: const Icon(Icons.add_rounded, size: 16),
-                      label: const Text('Tambah Kategori'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                ...allocationCtrls.map((ctrls) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: TextField(
-                            controller: ctrls['label'],
-                            decoration: InputDecoration(
-                                labelText: 'Kategori',
-                                isDense: true,
-                                border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8))),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          flex: 1,
-                          child: TextField(
-                            controller: ctrls['value'],
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                                labelText: '%',
-                                isDense: true,
-                                border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8))),
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.remove_circle_outline,
-                              color: AppColors.danger),
-                          onPressed: () {
-                            setState(() {
-                              allocationCtrls.remove(ctrls);
-                            });
-                          },
-                        )
-                      ],
-                    ),
-                  );
-                }),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: Text('Batal',
-                    style: GoogleFonts.inter(color: AppColors.textSecondary))),
-            ElevatedButton(
-              style:
-                  ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-              onPressed: () async {
-                if (nameCtrl.text.isEmpty || targetCtrl.text.isEmpty) return;
-
-                Map<String, double> allocations = {};
-                for (var ctrls in allocationCtrls) {
-                  final label = ctrls['label']!.text.trim();
-                  final valueStr = ctrls['value']!.text.trim();
-                  if (label.isNotEmpty && valueStr.isNotEmpty) {
-                    allocations[label] = double.tryParse(valueStr) ?? 0.0;
-                  }
-                }
-
-                final campaign = CampaignModel(
-                  id: '',
-                  name: nameCtrl.text,
-                  targetAmount: double.tryParse(targetCtrl.text) ?? 0.0,
-                  purpose: purposeCtrl.text,
-                  allocations: allocations,
-                );
-
-                await _firestoreService.createCampaign(campaign.toMap());
-                if (context.mounted) {
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text('Kempen Derma berjaya dicipta!'),
-                      backgroundColor: AppColors.safe));
-                }
-              },
-              child: Text('Cipta & Siar',
-                  style: GoogleFonts.inter(
-                      color: Colors.white, fontWeight: FontWeight.w600)),
-            ),
-          ],
-        );
-      }),
-    );
-  }
-
-  Widget _donationCampaignCard(CampaignModel campaign) {
-    final colors = [
-      Colors.orange,
-      Colors.blue,
-      Colors.red,
-      Colors.teal,
-      Colors.brown,
-      Colors.purple,
-      Colors.pink,
-      Colors.green
-    ];
-    int c = 0;
-    List<Map<String, dynamic>> allocation =
-        campaign.allocations.entries.map((e) {
-      return {
-        'label': e.key,
-        'value': e.value,
-        'color': colors[c++ % colors.length],
-      };
-    }).toList();
-
-    double progress = campaign.targetAmount > 0
-        ? campaign.currentAmount / campaign.targetAmount
-        : 0.0;
-    if (progress > 1.0) progress = 1.0;
-
-    return Container(
-      width: 340,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Campaign Name
-          Text(campaign.name,
-            style: GoogleFonts.inter(
-              fontWeight: FontWeight.w700,
-              fontSize: 15,
-              color: AppColors.textPrimary
-            ),
-          ),
-          const SizedBox(height: 4),
-          
-          // Purpose
-          Text('Tujuan: ${campaign.purpose}',
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.inter(
-              fontSize: 12, 
-              color: AppColors.textSecondary
-            ),
-          ),
-          const SizedBox(height: 16),
-          
-          // Progress Row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Terkumpul: RM ${campaign.currentAmount.toStringAsFixed(0)}',
-                style: GoogleFonts.inter(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                  color: AppColors.primary
-                ),
-              ),
-              Text('Sasaran: RM ${campaign.targetAmount.toStringAsFixed(0)}',
-                style: GoogleFonts.inter(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
-                  color: AppColors.textSecondary
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          
-          // Progress Bar
-          LinearProgressIndicator(
-            value: progress,
-            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-            color: AppColors.primary,
-            minHeight: 8,
-            borderRadius: BorderRadius.circular(4),
-          ),
-          const SizedBox(height: 16),
-          
-          // Allocation Header
-          Text('Pecahan Alokasi Dana:',
-            style: GoogleFonts.inter(
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
-              color: AppColors.textPrimary
-            ),
-          ),
-          const SizedBox(height: 12),
-          
-          Row(
-            children: allocation.map((item) {
-              return Expanded(
-                flex: (item['value'] as num).toInt(),
-                child: Container(
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: item['color'] as Color,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(allocation.first == item ? 4 : 0),
-                      bottomLeft: Radius.circular(allocation.first == item ? 4 : 0),
-                      topRight: Radius.circular(allocation.last == item ? 4 : 0),
-                      bottomRight: Radius.circular(allocation.last == item ? 4 : 0),
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 12),
-          
-          Wrap(
-            spacing: 12,
-            // runSpacing: 8,
-            children: allocation.map((item) {
-              return Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 10,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: item['color'] as Color,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text('${item['label']} (${item['value']}%)',
-                      style: GoogleFonts.inter(
-                          fontSize: 11,
-                          color: AppColors.textSecondary)),
-                ],
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-  }
 
   // ─── SHARED HELPERS ───────────────────────────────────────────────
 
@@ -3326,4 +3006,746 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
         return Icons.warning_amber_rounded;
     }
   }
-}
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // DONATION CAMPAIGN MANAGEMENT (Officer)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /// Builds a rich campaign management card for the officer home tab.
+  Widget _donationCampaignCard(CampaignModel campaign) {
+    final isClosed = campaign.isClosed;
+    final progress = campaign.progressFraction;
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isClosed ? AppColors.divider : AppColors.primary.withValues(alpha: 0.25),
+          width: isClosed ? 1 : 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Title + status badge
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  campaign.name,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: isClosed
+                      ? AppColors.divider
+                      : AppColors.safe.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  isClosed ? 'Ditutup' : 'Aktif',
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: isClosed ? AppColors.textSecondary : AppColors.safe,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            campaign.purpose,
+            style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 14),
+
+          // Amount + percent
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'RM ${_fmtAmount(campaign.currentAmount)}',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: isClosed ? AppColors.textSecondary : AppColors.officerAccent,
+                ),
+              ),
+              Text(
+                '${campaign.progressPercent}% / RM ${_fmtAmount(campaign.targetAmount)}',
+                style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // Progress bar
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 8,
+              backgroundColor: AppColors.divider,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                isClosed ? AppColors.textSecondary : AppColors.officerAccent,
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // Allocation chips
+          if (campaign.allocations.isNotEmpty) ...[
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: campaign.allocations.entries.take(4).map((e) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.officerAccent.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                        color: AppColors.officerAccent.withValues(alpha: 0.2)),
+                  ),
+                  child: Text(
+                    '${e.key} ${e.value.toStringAsFixed(0)}%',
+                    style: GoogleFonts.inter(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.officerAccent),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 14),
+          ],
+
+          // Action buttons
+          if (!isClosed)
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _allocateFundsDialog(campaign),
+                    icon: const Icon(Icons.pie_chart_rounded, size: 14),
+                    label: const Text('Peruntuk'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.officerAccent,
+                      side: const BorderSide(color: AppColors.officerAccent),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      textStyle:
+                          GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _closeCampaignDialog(campaign),
+                    icon: const Icon(Icons.lock_rounded, size: 14),
+                    label: const Text('Tutup'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.danger,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      elevation: 0,
+                      textStyle:
+                          GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+              ],
+            )
+          else
+            SizedBox(
+              width: double.infinity,
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Kempen ini telah ditutup',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                      fontStyle: FontStyle.italic),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// Dialog to create a new donation campaign.
+  void _createCampaignDialog() {
+    final nameCtrl = TextEditingController();
+    final purposeCtrl = TextEditingController();
+    final targetCtrl = TextEditingController();
+    final imageCtrl = TextEditingController();
+    bool isSubmitting = false;
+
+    // Dynamic allocation key-value pairs
+    final allocationKeys = [TextEditingController()];
+    final allocationVals = [TextEditingController()];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Container(
+          padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          decoration: const BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.divider,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    const Icon(Icons.campaign_rounded,
+                        color: AppColors.officerAccent, size: 22),
+                    const SizedBox(width: 10),
+                    Text('Cipta Kempen Baru',
+                        style: GoogleFonts.poppins(
+                            fontSize: 17, fontWeight: FontWeight.w700)),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                _officerField('Nama Kempen', nameCtrl,
+                    hint: 'Contoh: Tabung Banjir Kelantan 2025'),
+                const SizedBox(height: 12),
+                _officerField('Tujuan / Keterangan', purposeCtrl,
+                    hint: 'Terangkan tujuan kempen ini...', maxLines: 3),
+                const SizedBox(height: 12),
+                _officerField('Sasaran Jumlah (RM)', targetCtrl,
+                    hint: '50000', keyboardType: TextInputType.number),
+                const SizedBox(height: 12),
+                _officerField('URL Imej Kempen (Pilihan)', imageCtrl,
+                    hint: 'https://...'),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Text('Pengagihan Dana (%)',
+                        style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary)),
+                    const Spacer(),
+                    TextButton.icon(
+                      onPressed: () {
+                        setModalState(() {
+                          allocationKeys.add(TextEditingController());
+                          allocationVals.add(TextEditingController());
+                        });
+                      },
+                      icon: const Icon(Icons.add_rounded, size: 16),
+                      label: const Text('Tambah'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.officerAccent,
+                        textStyle:
+                            GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ...List.generate(allocationKeys.length, (i) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: TextField(
+                            controller: allocationKeys[i],
+                            decoration: InputDecoration(
+                              hintText: 'Kategori (cth: Makanan)',
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 10),
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10)),
+                            ),
+                            style: GoogleFonts.inter(fontSize: 12),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          flex: 2,
+                          child: TextField(
+                            controller: allocationVals[i],
+                            decoration: InputDecoration(
+                              hintText: '%',
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 10),
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10)),
+                            ),
+                            keyboardType: TextInputType.number,
+                            style: GoogleFonts.inter(fontSize: 12),
+                          ),
+                        ),
+                        if (allocationKeys.length > 1)
+                          IconButton(
+                            onPressed: () {
+                              setModalState(() {
+                                allocationKeys.removeAt(i);
+                                allocationVals.removeAt(i);
+                              });
+                            },
+                            icon: const Icon(Icons.remove_circle_outline_rounded,
+                                color: AppColors.danger, size: 20),
+                          ),
+                      ],
+                    ),
+                  );
+                }),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: isSubmitting
+                        ? null
+                        : () async {
+                            final name = nameCtrl.text.trim();
+                            final purpose = purposeCtrl.text.trim();
+                            final target = double.tryParse(targetCtrl.text) ?? 0.0;
+
+                            if (name.isEmpty || purpose.isEmpty || target <= 0) {
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                                  content: Text('Sila lengkapkan semua medan wajib.')));
+                              return;
+                            }
+
+                            // Build allocation map
+                            final Map<String, double> allocations = {};
+                            for (int i = 0; i < allocationKeys.length; i++) {
+                              final key = allocationKeys[i].text.trim();
+                              final val = double.tryParse(allocationVals[i].text) ?? 0.0;
+                              if (key.isNotEmpty && val > 0) {
+                                allocations[key] = val;
+                              }
+                            }
+
+                            setModalState(() => isSubmitting = true);
+                            await _firestoreService.createCampaign({
+                              'name': name,
+                              'purpose': purpose,
+                              'targetAmount': target,
+                              'currentAmount': 0.0,
+                              'allocations': allocations,
+                              'status': 'active',
+                              if (imageCtrl.text.trim().isNotEmpty)
+                                'imageUrl': imageCtrl.text.trim(),
+                            });
+                            if (mounted) {
+                              Navigator.pop(ctx);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Kempen "$name" berjaya dicipta!'),
+                                  backgroundColor: AppColors.safe,
+                                ),
+                              );
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.officerAccent,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
+                      elevation: 0,
+                    ),
+                    child: isSubmitting
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                                color: Colors.white, strokeWidth: 2))
+                        : Text('Cipta Kempen',
+                            style: GoogleFonts.inter(
+                                fontSize: 14, fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Dialog to edit fund allocation percentages of an existing campaign.
+  void _allocateFundsDialog(CampaignModel campaign) {
+    // Pre-fill existing allocations
+    final keys = campaign.allocations.keys
+        .map((k) => TextEditingController(text: k))
+        .toList();
+    final vals = campaign.allocations.values
+        .map((v) => TextEditingController(text: v.toStringAsFixed(0)))
+        .toList();
+    if (keys.isEmpty) {
+      keys.add(TextEditingController());
+      vals.add(TextEditingController());
+    }
+    bool isSaving = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Container(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          decoration: const BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.divider,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    const Icon(Icons.pie_chart_rounded,
+                        color: AppColors.officerAccent, size: 22),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Kemaskini Pengagihan Dana',
+                        style: GoogleFonts.poppins(
+                            fontSize: 16, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(campaign.name,
+                    style: GoogleFonts.inter(
+                        fontSize: 12, color: AppColors.textSecondary)),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Kategori & Peratus',
+                        style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary)),
+                    TextButton.icon(
+                      onPressed: () {
+                        setModalState(() {
+                          keys.add(TextEditingController());
+                          vals.add(TextEditingController());
+                        });
+                      },
+                      icon: const Icon(Icons.add_rounded, size: 16),
+                      label: const Text('Tambah'),
+                      style: TextButton.styleFrom(
+                          foregroundColor: AppColors.officerAccent),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ...List.generate(keys.length, (i) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: TextField(
+                            controller: keys[i],
+                            decoration: InputDecoration(
+                              hintText: 'Kategori',
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 10),
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10)),
+                            ),
+                            style: GoogleFonts.inter(fontSize: 12),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          flex: 2,
+                          child: TextField(
+                            controller: vals[i],
+                            decoration: InputDecoration(
+                              hintText: '%',
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 10),
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10)),
+                            ),
+                            keyboardType: TextInputType.number,
+                            style: GoogleFonts.inter(fontSize: 12),
+                          ),
+                        ),
+                        if (keys.length > 1)
+                          IconButton(
+                            onPressed: () {
+                              setModalState(() {
+                                keys.removeAt(i);
+                                vals.removeAt(i);
+                              });
+                            },
+                            icon: const Icon(Icons.remove_circle_outline_rounded,
+                                color: AppColors.danger, size: 20),
+                          ),
+                      ],
+                    ),
+                  );
+                }),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: isSaving
+                        ? null
+                        : () async {
+                            final Map<String, double> newAllocations = {};
+                            for (int i = 0; i < keys.length; i++) {
+                              final k = keys[i].text.trim();
+                              final v = double.tryParse(vals[i].text) ?? 0.0;
+                              if (k.isNotEmpty && v > 0) newAllocations[k] = v;
+                            }
+                            setModalState(() => isSaving = true);
+                            await _firestoreService.updateCampaign(
+                                campaign.id, {'allocations': newAllocations});
+                            if (mounted) {
+                              Navigator.pop(ctx);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Pengagihan dana berjaya dikemaskini.'),
+                                  backgroundColor: AppColors.safe,
+                                ),
+                              );
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.officerAccent,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
+                      elevation: 0,
+                    ),
+                    child: isSaving
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                                color: Colors.white, strokeWidth: 2))
+                        : Text('Simpan Perubahan',
+                            style: GoogleFonts.inter(
+                                fontSize: 14, fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Confirm dialog to close a campaign.
+  void _closeCampaignDialog(CampaignModel campaign) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.lock_rounded, color: AppColors.danger, size: 20),
+            const SizedBox(width: 8),
+            Text('Tutup Kempen',
+                style: GoogleFonts.poppins(
+                    fontSize: 15, fontWeight: FontWeight.w700)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              campaign.name,
+              style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Kempen ini akan ditutup dan tidak lagi menerima sumbangan baru. Rekod derma sedia ada kekal disimpan.\n\nAdakah anda pasti?',
+              style: GoogleFonts.inter(
+                  fontSize: 13, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.warningLight,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.warning.withValues(alpha: 0.4)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline_rounded,
+                      color: AppColors.warning, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Tindakan ini tidak boleh diundur.',
+                      style: GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.warning),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Batal',
+                style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await _firestoreService.closeCampaign(campaign.id);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Kempen "${campaign.name}" telah ditutup.'),
+                    backgroundColor: AppColors.danger,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.danger,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+              elevation: 0,
+            ),
+            child: Text('Ya, Tutup Kempen',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Helper text field for officer dialogs.
+  Widget _officerField(
+    String label,
+    TextEditingController ctrl, {
+    String hint = '',
+    int maxLines = 1,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary)),
+        const SizedBox(height: 6),
+        TextField(
+          controller: ctrl,
+          maxLines: maxLines,
+          keyboardType: keyboardType,
+          decoration: InputDecoration(
+            hintText: hint,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.border)),
+            focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide:
+                    const BorderSide(color: AppColors.officerAccent, width: 1.5)),
+          ),
+          style: GoogleFonts.inter(fontSize: 13),
+        ),
+      ],
+    );
+  }
+
+  String _fmtAmount(double v) {
+    if (v >= 1000000) return '${(v / 1000000).toStringAsFixed(1)}J';
+    if (v >= 1000) return '${(v / 1000).toStringAsFixed(0)}K';
+    return v.toStringAsFixed(0);
+  }
+}

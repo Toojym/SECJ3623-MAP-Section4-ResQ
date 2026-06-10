@@ -20,6 +20,9 @@ import 'screens/volunteer/sos_response_screen.dart';
 import 'screens/volunteer/volunteer_notifications_screen.dart';
 import 'screens/volunteer/mission_checklist_screen.dart';
 import 'screens/volunteer/mission_completion_screen.dart';
+import 'screens/citizen/donation_campaigns_screen.dart';
+import 'screens/citizen/donation_campaign_detail_screen.dart';
+import 'models/campaign_model.dart';
 import 'services/auth_service.dart';
 import 'services/firestore_service.dart';
 
@@ -180,6 +183,17 @@ class _SigapAppState extends State<SigapApp> {
         GoRoute(
           path: AppRoutes.officerProfile,
           builder: (_, __) => const OfficerProfileScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.donationCampaigns,
+          builder: (_, __) => const DonationCampaignsScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.donationCampaignDetail,
+          builder: (context, state) {
+            final campaign = state.extra as CampaignModel;
+            return DonationCampaignDetailScreen(campaign: campaign);
+          },
         ),
       ],
     );

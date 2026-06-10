@@ -16,13 +16,11 @@ import '../../core/constants/app_routes.dart';
 import '../../core/constants/app_strings.dart';
 import '../../models/sos_report_model.dart';
 import '../../models/claim_model.dart';
-import '../../models/campaign_model.dart';
-import '../../models/donation_model.dart';
 import '../../services/firestore_service.dart';
 import '../../services/location_service.dart';
 import '../../widgets/common/sigap_app_bar.dart';
 import '../../widgets/common/sigap_button.dart';
-import '../../services/receipt_service.dart';
+import 'donation_campaigns_screen.dart';
 
 class SirenOverlay extends StatefulWidget {
   final VoidCallback onClose;
@@ -269,9 +267,75 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
       children: [
         _buildReliefClaimTracker(),
         const SizedBox(height: 32),
-        const DonationTransparencyWidget(),
+        _buildDonationBanner(),
         const SizedBox(height: 80),
       ],
+    );
+  }
+
+  Widget _buildDonationBanner() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => BlocProvider.value(
+              value: context.read<AuthBloc>(),
+              child: const DonationCampaignsScreen(),
+            ),
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF3B6DD4), Color(0xFF5B8DEF)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.3),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.volunteer_activism_rounded, color: Colors.white, size: 28),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Tabung Bantuan',
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Text(
+                    'Lihat kempen derma aktif & sumbang sekarang',
+                    style: GoogleFonts.inter(fontSize: 12, color: Colors.white70),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: Colors.white70, size: 24),
+          ],
+        ),
+      ),
     );
   }
 
@@ -3332,541 +3396,4 @@ class _CallSimulationScreenState extends State<_CallSimulationScreen>
       ),
     );
   }
-}
-
-class DonationTransparencyWidget extends StatefulWidget {
-  const DonationTransparencyWidget({super.key});
-
-  @override
-  State<DonationTransparencyWidget> createState() => _DonationTransparencyWidgetState();
-}
-
-class _DonationTransparencyWidgetState extends State<DonationTransparencyWidget> {
-  final FirestoreService _firestoreService = FirestoreService();
-  String? _selectedCampaignId;
-  CampaignModel? _selectedCampaign;
-  
-  late final Stream<QuerySnapshot> _campaignsStream;
-
-  @override
-  void initState() {
-    super.initState();
-    _campaignsStream = _firestoreService.streamActiveCampaigns();
-  }
-
-  Widget _buildSectionHeader(String title, {String? actionLabel, VoidCallback? onAction}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(title, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-        if (actionLabel != null && onAction != null)
-          TextButton(
-            onPressed: onAction,
-            style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 0), tapTargetSize: MaterialTapTargetSize.shrinkWrap),
-            child: Text(actionLabel, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary)),
-          ),
-      ],
-    );
-  }
-
-  BoxDecoration _cardDecoration() {
-    return BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(20),
-      boxShadow: [
-        BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, 10)),
-      ],
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final authState = context.read<AuthBloc>().state;
-    final uid = authState is AuthAuthenticated ? authState.uid : '';
-
-    return StreamBuilder<QuerySnapshot>(
-      stream: _firestoreService.streamUserDonations(uid),
-      builder: (context, donationSnapshot) {
-        // Map campaignId -> list of DonationModels
-        Map<String, List<DonationModel>> userDonationsMap = {};
-        if (donationSnapshot.hasData) {
-          for (var doc in donationSnapshot.data!.docs) {
-            final data = doc.data() as Map<String, dynamic>;
-            final campaignId = data['campaignId'] as String? ?? '';
-            final donation = DonationModel.fromMap(doc.id, data);
-            if (!userDonationsMap.containsKey(campaignId)) {
-              userDonationsMap[campaignId] = [];
-            }
-            userDonationsMap[campaignId]!.add(donation);
-          }
-          // Sort donations by date descending
-          for (var list in userDonationsMap.values) {
-            list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-          }
-        }
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSectionHeader(
-              'Telus Tabung Bantuan',
-              actionLabel: 'Derma',
-              onAction: () {
-                if (_selectedCampaign == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sila pilih kempen terlebih dahulu.')));
-                } else {
-                  _showDonationDialog(_selectedCampaign!);
-                }
-              },
-            ),
-            const SizedBox(height: 16),
-            StreamBuilder<QuerySnapshot>(
-              stream: _campaignsStream,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SizedBox(
-                    height: 200,
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
-                final docs = snapshot.hasData ? snapshot.data!.docs.toList() : [];
-                if (docs.isEmpty) {
-                  return Container(
-                    height: 100,
-                    alignment: Alignment.center,
-                    decoration: _cardDecoration(),
-                    child: Text('Tiada tabung aktif', style: GoogleFonts.inter(color: AppColors.textSecondary)),
-                  );
-                }
-                docs.sort((a, b) {
-                  final aTime = (a.data() as Map<String, dynamic>)['createdAt'] as Timestamp?;
-                  final bTime = (b.data() as Map<String, dynamic>)['createdAt'] as Timestamp?;
-                  if (aTime == null || bTime == null) return 0;
-                  return bTime.compareTo(aTime);
-                });
-
-                return Column(
-                  children: [
-                    SizedBox(
-                      height: 250,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: docs.length,
-                        itemBuilder: (context, index) {
-                          final data = docs[index].data() as Map<String, dynamic>;
-                          final campaign = CampaignModel.fromMap(docs[index].id, data);
-                          final isSelected = _selectedCampaignId == campaign.id;
-                          final donationsList = userDonationsMap[campaign.id] ?? [];
-                          final donatedAmount = donationsList.fold(0.0, (sum, item) => sum + item.amount);
-                          
-                          double progress = campaign.targetAmount > 0 ? campaign.currentAmount / campaign.targetAmount : 0.0;
-                          if (progress > 1.0) progress = 1.0;
-
-                          final colors = [Colors.orange, Colors.blue, Colors.red, Colors.green, Colors.teal, Colors.brown, Colors.purple, Colors.pink];
-                          int c = 0;
-                          
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 16.0),
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _selectedCampaignId = campaign.id;
-                                  _selectedCampaign = campaign;
-                                });
-                              },
-                              child: Stack(
-                                children: [
-                                  Container(
-                                    width: 320,
-                                    padding: const EdgeInsets.all(20),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(color: isSelected ? AppColors.primary : Colors.black.withValues(alpha: 0.05), width: isSelected ? 2 : 1),
-                                      boxShadow: [
-                                        BoxShadow(color: AppColors.primary.withValues(alpha: isSelected ? 0.2 : 0.05), blurRadius: 20, offset: const Offset(0, 10))
-                                      ],
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(campaign.name, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                        const SizedBox(height: 12),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'Tujuan: ${campaign.purpose}',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 11, 
-                                            color: AppColors.textSecondary,
-                                          ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const SizedBox(height: 12),
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text('RM ${campaign.currentAmount.toStringAsFixed(0)} terkumpul', style: GoogleFonts.inter(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w700)),
-                                            Text('Sasaran RM ${campaign.targetAmount.toStringAsFixed(0)}', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 12),
-                                        ClipRRect(
-                                          borderRadius: BorderRadius.circular(6),
-                                          child: LinearProgressIndicator(value: progress, minHeight: 10, backgroundColor: AppColors.divider, color: AppColors.primary),
-                                        ),
-                                        const SizedBox(height: 24),
-                                        Text('Pengagihan Dana:', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
-                                        const SizedBox(height: 16),
-                                        SingleChildScrollView(
-                                          scrollDirection: Axis.horizontal,
-                                          child: Row(
-                                            children: campaign.allocations.entries.map((e) {
-                                              return Padding(
-                                                padding: const EdgeInsets.only(right: 16.0),
-                                                child: _fundDist('${e.value}%', e.key, colors[c++ % colors.length]),
-                                              );
-                                            }).toList(),
-                                          ),
-                                        )
-                                      ],
-                                    ),
-                                  ),
-                                  if (donatedAmount > 0)
-                                    Positioned(
-                                      top: 16,
-                                      right: 16,
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: Colors.amber.withValues(alpha: 0.2),
-                                          borderRadius: BorderRadius.circular(12),
-                                          border: Border.all(color: Colors.amber),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            const Icon(Icons.verified_rounded, size: 12, color: Colors.amber),
-                                            const SizedBox(width: 4),
-                                            Text('Penderma', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.amber.shade800)),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    if (_selectedCampaignId != null)
-                      Container(
-                        width: double.infinity,
-                        margin: const EdgeInsets.only(top: 16),
-                        decoration: _cardDecoration(),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: Theme(
-                            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-                            child: ExpansionTile(
-                              title: Text('Rekod Sumbangan Anda', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-                              subtitle: (userDonationsMap[_selectedCampaignId] != null && userDonationsMap[_selectedCampaignId]!.isNotEmpty)
-                                  ? Text('Jumlah: RM ${userDonationsMap[_selectedCampaignId]!.fold(0.0, (sum, d) => sum + d.amount).toStringAsFixed(2)}', style: GoogleFonts.inter(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w600))
-                                  : null,
-                              leading: Icon((userDonationsMap[_selectedCampaignId] != null && userDonationsMap[_selectedCampaignId]!.isNotEmpty) ? Icons.favorite_rounded : Icons.history_rounded, color: (userDonationsMap[_selectedCampaignId] != null && userDonationsMap[_selectedCampaignId]!.isNotEmpty) ? Colors.pink : AppColors.textSecondary),
-                              children: [
-                                if (userDonationsMap[_selectedCampaignId] == null || userDonationsMap[_selectedCampaignId]!.isEmpty)
-                                  Padding(
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: Text('Tiada Rekod Bantuan', style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary)),
-                                  )
-                                else
-                                  ...userDonationsMap[_selectedCampaignId]!.map((d) => ListTile(
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
-                                        title: Text('RM ${d.amount.toStringAsFixed(2)}', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                                        subtitle: Text('${d.paymentMethod} • ${d.createdAt.toString().substring(0, 16)}', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
-                                        trailing: const Icon(Icons.receipt_long_rounded, color: AppColors.textSecondary, size: 20),
-                                        onTap: () => _showReceiptDialog(d),
-                                      )),
-                                const SizedBox(height: 8),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                );
-              },
-            ),
-          ],
-        );
-      }
-    );
-  }
-
-  void _showDonationDialog(CampaignModel campaign) {
-    String selectedMethod = 'FPX';
-    bool isProcessing = false;
-    
-    final amountCtrl = TextEditingController();
-    final nameCtrl = TextEditingController();
-
-    // Pre-fill name from logged-in user
-    final authState = context.read<AuthBloc>().state;
-    if (authState is AuthAuthenticated && authState.displayName.isNotEmpty) {
-      nameCtrl.text = authState.displayName;
-    }
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Text('Derma: ${campaign.name}', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16)),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextField(
-                    controller: nameCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Nama Penderma',
-                      hintText: 'Masukkan nama anda',
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: amountCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Jumlah Derma (RM)',
-                      prefixText: 'RM ',
-                    ),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  ),
-                  const SizedBox(height: 16),
-                  Text('Kaedah Pembayaran', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 8),
-                  DropdownButtonFormField<String>(
-                    value: selectedMethod,
-                    items: ['FPX', 'Kad Kredit / Debit'].map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
-                    onChanged: (val) {
-                      if (val != null) setState(() => selectedMethod = val);
-                    },
-                    decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
-                  ),
-                  const SizedBox(height: 12),
-                  if (selectedMethod == 'FPX')
-                    DropdownButtonFormField<String>(
-                      items: ['Maybank2U', 'CIMB Clicks', 'RHB Now', 'Bank Islam', 'Public Bank'].map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
-                      onChanged: (val) {},
-                      decoration: const InputDecoration(labelText: 'Pilih Bank'),
-                    )
-                  else
-                    Column(
-                      children: [
-                        const TextField(decoration: InputDecoration(labelText: 'Nombor Kad', hintText: '0000 0000 0000 0000')),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: const [
-                            Expanded(child: TextField(decoration: InputDecoration(labelText: 'Luput (MM/YY)'))),
-                            SizedBox(width: 8),
-                            Expanded(child: TextField(decoration: InputDecoration(labelText: 'CVV'))),
-                          ],
-                        )
-                      ],
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              if (!isProcessing)
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Batal'),
-                ),
-              ElevatedButton(
-                onPressed: isProcessing ? null : () async {
-                  final amount = double.tryParse(amountCtrl.text) ?? 0.0;
-                  final donorName = nameCtrl.text.trim();
-                  
-                  if (amount <= 0) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sila masukkan jumlah derma yang sah')));
-                    return;
-                  }
-                  if (donorName.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sila masukkan nama penderma')));
-                    return;
-                  }
-
-                  setState(() => isProcessing = true);
-                  
-                  await Future.delayed(const Duration(seconds: 2));
-
-                  if (!mounted) return;
-                  final authState = context.read<AuthBloc>().state;
-                  if (authState is AuthAuthenticated) {
-                    final receiptNo = 'SIGAP-${DateTime.now().millisecondsSinceEpoch}';
-                    final donation = DonationModel(
-                      id: '',
-                      campaignId: campaign.id,
-                      campaignName: campaign.name,
-                      citizenId: authState.uid,
-                      amount: amount,
-                      paymentMethod: selectedMethod,
-                      receiptNo: receiptNo,
-                      createdAt: DateTime.now(),
-                      donorName: donorName,
-                    );
-
-                    await _firestoreService.submitDonation(campaign.id, donation.toMap(), amount);
-
-                    if (mounted) {
-                      Navigator.pop(ctx);
-                      _showReceiptDialog(donation);
-                    }
-                  }
-                },
-                child: isProcessing 
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Text('Bayar Sekarang'),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  void _showReceiptDialog(DonationModel donation) async {
-    // Show loading
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => const AlertDialog(
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Menjana resit PDF...'),
-          ],
-        ),
-      ),
-    );
-
-    try {
-      final pdfFile = await ReceiptService.generateReceiptPdf(
-        donorName: donation.donorName.isNotEmpty ? donation.donorName : 'Penderma',
-        amount: donation.amount,
-        campaignName: donation.campaignName,
-        transactionId: donation.receiptNo,
-        date: donation.createdAt,
-        paymentMethod: donation.paymentMethod,
-      );
-
-      if (!mounted) return;
-      Navigator.pop(context); // Close loading
-
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Center(
-            child: Column(
-              children: [
-                Icon(Icons.receipt_long_rounded, size: 48, color: AppColors.primary),
-                SizedBox(height: 8),
-                Text('Resit Cukai Digital', style: TextStyle(fontWeight: FontWeight.bold)),
-              ],
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'RM ${donation.amount.toStringAsFixed(2)}',
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.primary),
-              ),
-              const SizedBox(height: 8),
-              Text(donation.campaignName, textAlign: TextAlign.center),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  children: [
-                    _receiptRow('No. Resit:', donation.receiptNo),
-                    _receiptRow('Tarikh:', '${donation.createdAt.day}/${donation.createdAt.month}/${donation.createdAt.year}'),
-                    _receiptRow('Kaedah:', donation.paymentMethod),
-                    _receiptRow('Penderma:', donation.donorName.isNotEmpty ? donation.donorName : 'N/A'),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                '*Sumbangan ini layak mendapat pengecualian cukai di bawah Subseksyen 44(6) Akta Cukai Pendapatan 1967.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
-              ),
-            ],
-          ),
-          actionsOverflowButtonSpacing: 12,
-          actions: [
-            OutlinedButton.icon(
-              onPressed: () async {
-                await ReceiptService.shareReceipt(pdfFile, donation.receiptNo);
-              },
-              icon: const Icon(Icons.share_rounded),
-              label: const Text('Kongsi PDF'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Tutup'),
-            ),
-          ],
-        ),
-      );
-    } catch (e) {
-      if (mounted) {
-        Navigator.pop(context); // Close loading
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Gagal menjana resit: $e'),
-            backgroundColor: AppColors.danger,
-          ),
-        );
-      }
-    }
-  }
-
-  Widget _receiptRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-          Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-        ],
-      ),
-    );
-  }
-
-  Widget _fundDist(String percent, String label, Color color) {
-    return Column(
-      children: [
-        Text(percent, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700, color: color)),
-        const SizedBox(height: 4),
-        Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.textSecondary), textAlign: TextAlign.center),
-      ],
-    );
-  }
-
 }

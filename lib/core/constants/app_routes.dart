@@ -20,4 +20,9 @@ class AppRoutes {
   static const String missionChecklist = '/volunteer/mission-checklist';
   static const String missionCompletion = '/volunteer/mission-completion';
   static const String officerProfile = '/officer/profile';
+
+  // Donation screens
+  static const String donationCampaigns = '/citizen/donations';
+  static const String donationCampaignDetail = '/citizen/donations/detail';
 }
+

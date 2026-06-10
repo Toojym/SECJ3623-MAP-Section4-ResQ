@@ -8,6 +8,10 @@ class CampaignModel {
   final String purpose;
   final Map<String, double> allocations;
   final DateTime? createdAt;
+  /// Optional hero image URL set by government officer
+  final String? imageUrl;
+  /// 'active' or 'closed'
+  final String status;
 
   CampaignModel({
     required this.id,
@@ -17,7 +21,18 @@ class CampaignModel {
     required this.purpose,
     required this.allocations,
     this.createdAt,
+    this.imageUrl,
+    this.status = 'active',
   });
+
+  double get progressFraction {
+    if (targetAmount <= 0) return 0.0;
+    return (currentAmount / targetAmount).clamp(0.0, 1.0);
+  }
+
+  int get progressPercent => (progressFraction * 100).round();
+
+  bool get isClosed => status == 'closed';
 
   factory CampaignModel.fromMap(String id, Map<String, dynamic> data) {
     return CampaignModel(
@@ -31,7 +46,11 @@ class CampaignModel {
                 (key, value) => MapEntry(key, (value as num).toDouble()),
               ) ??
               {}),
-      createdAt: data['createdAt'] != null ? (data['createdAt'] as Timestamp).toDate() : null,
+      createdAt: data['createdAt'] != null
+          ? (data['createdAt'] as Timestamp).toDate()
+          : null,
+      imageUrl: data['imageUrl'] as String?,
+      status: data['status'] as String? ?? 'active',
     );
   }
 
@@ -42,7 +61,12 @@ class CampaignModel {
       'currentAmount': currentAmount,
       'purpose': purpose,
       'allocations': allocations,
-      'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
+      'createdAt': createdAt != null
+          ? Timestamp.fromDate(createdAt!)
+          : FieldValue.serverTimestamp(),
+      if (imageUrl != null) 'imageUrl': imageUrl,
+      'status': status,
     };
   }
 }
+

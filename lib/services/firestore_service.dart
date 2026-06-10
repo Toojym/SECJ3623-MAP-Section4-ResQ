@@ -421,6 +421,21 @@ class FirestoreService {
     });
   }
 
+  Future<void> updateCampaign(String campaignId, Map<String, dynamic> data) async {
+    await _db.collection('campaigns').doc(campaignId).update({
+      ...data,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> closeCampaign(String campaignId) async {
+    await _db.collection('campaigns').doc(campaignId).update({
+      'status': 'closed',
+      'closedAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   Stream<QuerySnapshot> streamActiveCampaigns() {
     return _db.collection('campaigns').snapshots();
   }
