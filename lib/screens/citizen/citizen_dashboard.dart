@@ -3575,4 +3575,844 @@ class _CallSimulationScreenState extends State<_CallSimulationScreen>
       ),
     );
   }
+
+  // ── AWANIS Chat Screen ─────────────────────────────────────────────────────
+
+  Widget _buildAwanisScreen() {
+    return _AwanisChatScreen();
+  }
+}
+
+// ── Standalone AWANIS Chat Widget ────────────────────────────────────────────
+
+class _AwanisChatScreen extends StatefulWidget {
+  @override
+  State<_AwanisChatScreen> createState() => _AwanisChatScreenState();
+}
+
+class _AwanisChatScreenState extends State<_AwanisChatScreen>
+    with SingleTickerProviderStateMixin {
+  final ScrollController _scrollController = ScrollController();
+  final TextEditingController _inputController = TextEditingController();
+  bool _showTyping = false;
+  bool _inputFocused = false;
+
+  /// Pre-seeded conversation messages
+  /// Each map: { 'sender': 'ai'|'user', 'text': '...', 'time': '...', 'chips': [...] }
+  final List<Map<String, dynamic>> _messages = [
+    {
+      'sender': 'ai',
+      'time': '9:02 AM',
+      'type': 'greeting',
+    },
+    {
+      'sender': 'user',
+      'text': 'Kawasan rumah saya sudah banjir. Macam mana nak hantar SOS?',
+      'time': '9:04 AM',
+    },
+    {
+      'sender': 'ai',
+      'time': '9:05 AM',
+      'type': 'sos_guide',
+    },
+    {
+      'sender': 'user',
+      'text': 'Adik saya masih di rumah. Macam mana nak tahu dia selamat?',
+      'time': '9:07 AM',
+    },
+    {
+      'sender': 'ai',
+      'time': '9:08 AM',
+      'type': 'family_safety',
+    },
+    {
+      'sender': 'user',
+      'text': 'Nombor kecemasan mana yang perlu saya hubungi untuk banjir?',
+      'time': '9:09 AM',
+    },
+    {
+      'sender': 'ai',
+      'time': '9:10 AM',
+      'type': 'emergency_numbers',
+    },
+    {
+      'sender': 'user',
+      'text': 'Di mana pusat pemindahan berhampiran Taman Melati, KL?',
+      'time': '9:12 AM',
+    },
+    {
+      'sender': 'ai',
+      'time': '9:13 AM',
+      'type': 'evac_centres',
+    },
+    {
+      'sender': 'user',
+      'text': 'Terima kasih AWANIS! Sangat membantu 🙏',
+      'time': '9:14 AM',
+    },
+    {
+      'sender': 'ai',
+      'time': '9:14 AM',
+      'type': 'farewell',
+    },
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _inputController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent + 200,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  void _handleSend() {
+    final text = _inputController.text.trim();
+    if (text.isEmpty) return;
+    setState(() {
+      _messages.add({'sender': 'user', 'text': text, 'time': _nowTime()});
+      _inputController.clear();
+      _showTyping = true;
+    });
+    _scrollToBottom();
+    Future.delayed(const Duration(milliseconds: 1800), () {
+      if (!mounted) return;
+      setState(() {
+        _showTyping = false;
+        _messages.add({
+          'sender': 'ai',
+          'time': _nowTime(),
+          'type': 'generic_reply',
+          'text': 'Terima kasih atas soalan anda. Saya sedang memproses maklumat terkini dan akan membantu anda sebaik mungkin. Jika ini kecemasan, sila tekan butang SOS merah di bawah. 💙',
+        });
+      });
+      _scrollToBottom();
+    });
+  }
+
+  String _nowTime() {
+    final now = DateTime.now();
+    final h = now.hour;
+    final m = now.minute.toString().padLeft(2, '0');
+    final period = h >= 12 ? 'PM' : 'AM';
+    final hour12 = h > 12 ? h - 12 : (h == 0 ? 12 : h);
+    return '$hour12:$m $period';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const aiPurple = Color(0xFF6366F1);
+    const chatBg = Color(0xFFF5F6FA);
+
+    return Column(
+      children: [
+        // ── Header banner
+        Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF1A1A2E), Color(0xFF2D2A6E)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF6366F1), Color(0xFF818CF8)],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF6366F1).withValues(alpha: 0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.smart_toy_rounded, color: Colors.white, size: 26),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'AWANIS',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 17,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Container(
+                          width: 7,
+                          height: 7,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF10B981),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          'Online · AI Pembantu Kecemasan SIGAP',
+                          style: GoogleFonts.inter(
+                            color: Colors.white60,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                ),
+                child: Text(
+                  'Automated Welfare & Alert\nNavigation Intelligence System',
+                  style: GoogleFonts.inter(fontSize: 8, color: Colors.white54),
+                  textAlign: TextAlign.right,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // ── Quick suggestion chips
+        Container(
+          color: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _sugChip('🌊 Status banjir', aiPurple),
+                const SizedBox(width: 8),
+                _sugChip('📢 Hantar SOS', Colors.red),
+                const SizedBox(width: 8),
+                _sugChip('👨‍👩‍👧 Keluarga saya', const Color(0xFF10B981)),
+                const SizedBox(width: 8),
+                _sugChip('📍 Pusat pemindahan', const Color(0xFFF59E0B)),
+                const SizedBox(width: 8),
+                _sugChip('☎️ Nombor kecemasan', AppColors.primary),
+              ],
+            ),
+          ),
+        ),
+
+        // ── Messages
+        Expanded(
+          child: Container(
+            color: chatBg,
+            child: ListView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              itemCount: _messages.length + (_showTyping ? 1 : 0),
+              itemBuilder: (ctx, i) {
+                if (_showTyping && i == _messages.length) {
+                  return _buildTypingIndicator();
+                }
+                final msg = _messages[i];
+                final isAi = msg['sender'] == 'ai';
+                return isAi
+                    ? _buildAiMessage(msg, aiPurple)
+                    : _buildUserMessage(msg);
+              },
+            ),
+          ),
+        ),
+
+        // ── Input bar
+        Container(
+          color: Colors.white,
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 10,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 12,
+          ),
+          child: Column(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F6FA),
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(
+                    color: _inputFocused ? aiPurple : const Color(0xFFE5E7EB),
+                    width: _inputFocused ? 1.5 : 1,
+                  ),
+                  boxShadow: _inputFocused
+                      ? [BoxShadow(color: aiPurple.withValues(alpha: 0.15), blurRadius: 8)]
+                      : [],
+                ),
+                child: Row(
+                  children: [
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Focus(
+                        onFocusChange: (f) => setState(() => _inputFocused = f),
+                        child: TextField(
+                          controller: _inputController,
+                          style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary),
+                          decoration: InputDecoration(
+                            hintText: 'Tanya AWANIS sesuatu...',
+                            hintStyle: GoogleFonts.inter(fontSize: 14, color: AppColors.textHint),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          onSubmitted: (_) => _handleSend(),
+                          maxLines: null,
+                          textInputAction: TextInputAction.send,
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: _handleSend,
+                      child: Container(
+                        margin: const EdgeInsets.all(6),
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF6366F1), Color(0xFF818CF8)],
+                          ),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: aiPurple.withValues(alpha: 0.35),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(Icons.send_rounded, color: Colors.white, size: 18),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '🔒 Perbualan anda selamat · Dikuasakan oleh AWANIS AI',
+                style: GoogleFonts.inter(fontSize: 10, color: AppColors.textHint),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _sugChip(String label, Color color) {
+    return GestureDetector(
+      onTap: () {
+        _inputController.text = label.replaceAll(RegExp(r'^[^\w]+'), '').trim();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: color),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUserMessage(Map<String, dynamic> msg) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 48, bottom: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF3B6DD4), Color(0xFF5B8DEF)],
+                ),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(18),
+                  topRight: Radius.circular(18),
+                  bottomLeft: Radius.circular(18),
+                  bottomRight: Radius.circular(4),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.25),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Text(
+                msg['text'] ?? '',
+                style: GoogleFonts.inter(fontSize: 14, color: Colors.white, height: 1.5),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              msg['time'] ?? '',
+              style: GoogleFonts.inter(fontSize: 10, color: AppColors.textHint),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAiMessage(Map<String, dynamic> msg, Color aiPurple) {
+    final type = msg['type'] ?? 'generic_reply';
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.only(right: 48, bottom: 16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              margin: const EdgeInsets.only(right: 8, bottom: 18),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF6366F1), Color(0xFF818CF8)],
+                ),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.smart_toy_rounded, color: Colors.white, size: 16),
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildAiBubbleContent(type, msg, aiPurple),
+                  const SizedBox(height: 4),
+                  Text(
+                    msg['time'] ?? '',
+                    style: GoogleFonts.inter(fontSize: 10, color: AppColors.textHint),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAiBubbleContent(String type, Map<String, dynamic> msg, Color aiPurple) {
+    switch (type) {
+      case 'greeting':
+        return _aiBubble(Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _tagChip('🌟 SIGAP AI Assistant', aiPurple),
+            const SizedBox(height: 8),
+            Text(
+              'Assalamualaikum! Selamat datang ke SIGAP. 👋\n\nSaya AWANIS — pembantu AI yang sedia membantu anda dalam situasi kecemasan banjir, kebakaran, perubatan & lebih lagi.',
+              style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary, height: 1.55),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                _actionPill('📢 Hantar SOS', aiPurple),
+                _actionPill('✅ Status Keluarga', const Color(0xFF10B981)),
+                _actionPill('🗺️ Peta Bencana', const Color(0xFFF59E0B)),
+                _actionPill('☎️ Pihak Berkuasa', AppColors.danger),
+              ],
+            ),
+          ],
+        ));
+
+      case 'sos_guide':
+        return _aiBubble(Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _tagChip('🌊 Panduan SOS Banjir', Colors.orange),
+            const SizedBox(height: 8),
+            Text(
+              'Jangan panik. Ikut langkah berikut:',
+              style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary),
+            ),
+            const SizedBox(height: 10),
+            _stepCard('1', 'Tekan butang SOS 🔴 di bawah dashboard anda.', Colors.orange),
+            const SizedBox(height: 6),
+            _stepCard('2', 'Pilih jenis kejadian: "Banjir 🌊"', aiPurple),
+            const SizedBox(height: 6),
+            _stepCard('3', 'Benarkan akses lokasi untuk pasukan penyelamat mengesan anda.', const Color(0xFF10B981)),
+            const SizedBox(height: 6),
+            _stepCard('4', 'Tekan "Hantar SOS". Laporan dihantar ke NADMA & sukarelawan terdekat serta-merta.', aiPurple),
+            const SizedBox(height: 10),
+            _alertStrip('⚠️ NADMA akan dihubungi secara automatik melalui sistem SIGAP.', Colors.orange),
+          ],
+        ));
+
+      case 'family_safety':
+        return _aiBubble(Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _tagChip('👨‍👩‍👧 Keselamatan Keluarga', const Color(0xFF10B981)),
+            const SizedBox(height: 8),
+            Text(
+              'Gunakan ciri "Keselamatan Keluarga" dalam dashboard untuk memantau status ahli keluarga secara masa nyata.',
+              style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary, height: 1.5),
+            ),
+            const SizedBox(height: 10),
+            _infoCard('📍 Status Ahli Keluarga', [
+              _cardRow('Ibu — Salmah bt Ali', '✅ Selamat', const Color(0xFF10B981)),
+              _cardRow('Bapa — Ramli bin Ahmad', '✅ Selamat', const Color(0xFF10B981)),
+              _cardRow('Adik — Haziq (17 thn)', '⚠️ Belum Dikemas Kini', Colors.orange),
+            ], aiPurple),
+            const SizedBox(height: 10),
+            Text(
+              'Adik anda belum mengemas kini statusnya. Saya cadangkan anda hubungi beliau segera.',
+              style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary, height: 1.5),
+            ),
+          ],
+        ));
+
+      case 'emergency_numbers':
+        return _aiBubble(Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _tagChip('☎️ Talian Kecemasan Malaysia', aiPurple),
+            const SizedBox(height: 8),
+            Text(
+              'Untuk bencana banjir & tanah runtuh, hubungi:',
+              style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary),
+            ),
+            const SizedBox(height: 10),
+            _infoCard('🌊 NADMA — Agensi Pengurusan Bencana Negara', [
+              _cardRow('Nombor Telefon', '03-8064 2400', aiPurple),
+              _cardRow('Perkhidmatan', 'Banjir, Tanah Runtuh', AppColors.textSecondary),
+            ], aiPurple),
+            const SizedBox(height: 8),
+            _infoCard('🚒 Bomba — Kebakaran & Penyelamatan', [
+              _cardRow('Talian Kecemasan', '994', const Color(0xFF10B981)),
+            ], const Color(0xFF10B981)),
+            const SizedBox(height: 8),
+            _infoCard('🚑 Ambulans & Polis', [
+              _cardRow('Nombor Kecemasan', '999', AppColors.danger),
+            ], AppColors.danger),
+            const SizedBox(height: 10),
+            _alertStrip('💡 SIGAP menghubungi pihak berkuasa yang betul secara automatik berdasarkan jenis SOS anda.', aiPurple),
+          ],
+        ));
+
+      case 'evac_centres':
+        return _aiBubble(Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _tagChip('📍 Pusat Pemindahan Berdekatan', Colors.orange),
+            const SizedBox(height: 8),
+            Text(
+              'Berdasarkan lokasi anda di Taman Melati, KL:',
+              style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary),
+            ),
+            const SizedBox(height: 10),
+            _infoCard('🏫 SK Taman Melati', [
+              _cardRow('Jarak', '1.2 km', const Color(0xFF10B981)),
+              _cardRow('Kapasiti', '320 / 500 orang', AppColors.textSecondary),
+              _cardRow('Status', '🟢 Buka', const Color(0xFF10B981)),
+            ], const Color(0xFF10B981)),
+            const SizedBox(height: 8),
+            _infoCard('🏟️ Dewan Komuniti Wangsa Maju', [
+              _cardRow('Jarak', '2.7 km', AppColors.textSecondary),
+              _cardRow('Kapasiti', '180 / 400 orang', AppColors.textSecondary),
+              _cardRow('Status', '🟢 Buka', const Color(0xFF10B981)),
+            ], aiPurple),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 6,
+              children: [
+                _actionPill('🗺️ Lihat di Peta', aiPurple),
+                _actionPill('🚗 Dapatkan Arah', const Color(0xFF10B981)),
+              ],
+            ),
+          ],
+        ));
+
+      case 'farewell':
+        return _aiBubble(Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Sama-sama! Keselamatan anda adalah keutamaan kami. 💙\n\nIngat — SIGAP sentiasa ada bersama anda 24/7. Jaga diri dan keluarga.',
+              style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary, height: 1.55),
+            ),
+            const SizedBox(height: 10),
+            _alertStrip('⚡ SIGAP Live Alert: Amaran Banjir Tahap 2 aktif di Gombak & Ampang. Sila berjaga-jaga.', Colors.orange),
+          ],
+        ));
+
+      default:
+        return _aiBubble(Text(
+          msg['text'] ?? 'Boleh saya bantu anda?',
+          style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary, height: 1.55),
+        ));
+    }
+  }
+
+  // ─── Helper bubble wrapper ───────────────────────────────────────────────
+
+  Widget _aiBubble(Widget child) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(4),
+          topRight: Radius.circular(18),
+          bottomLeft: Radius.circular(18),
+          bottomRight: Radius.circular(18),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: child,
+    );
+  }
+
+  Widget _tagChip(String label, Color color) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: color),
+      ),
+    );
+  }
+
+  Widget _stepCard(String num, String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 22,
+            height: 22,
+            decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(6)),
+            child: Center(
+              child: Text(num, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white)),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(text, style: GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary, height: 1.4)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _infoCard(String title, List<Widget> rows, Color accentColor) {
+    return Container(
+      decoration: BoxDecoration(
+        color: accentColor.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: accentColor.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+            child: Text(title,
+                style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13, color: accentColor)),
+          ),
+          const Divider(height: 1, color: Color(0xFFE5E7EB)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            child: Column(children: rows),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _cardRow(String label, String value, Color valueColor) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+          Text(value, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: valueColor)),
+        ],
+      ),
+    );
+  }
+
+  Widget _alertStrip(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Text(
+        text,
+        style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: color, height: 1.4),
+      ),
+    );
+  }
+
+  Widget _actionPill(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: color),
+      ),
+    );
+  }
+
+  Widget _buildTypingIndicator() {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.only(right: 80, bottom: 16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF6366F1), Color(0xFF818CF8)],
+                ),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.smart_toy_rounded, color: Colors.white, size: 16),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(4),
+                  topRight: Radius.circular(18),
+                  bottomLeft: Radius.circular(18),
+                  bottomRight: Radius.circular(18),
+                ),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2)),
+                ],
+              ),
+              child: const _TypingDots(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TypingDots extends StatefulWidget {
+  const _TypingDots();
+  @override
+  State<_TypingDots> createState() => _TypingDotsState();
+}
+
+class _TypingDotsState extends State<_TypingDots> with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 900))..repeat();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(3, (i) {
+        return AnimatedBuilder(
+          animation: _ctrl,
+          builder: (_, __) {
+            final offset = ((_ctrl.value * 3) - i).clamp(0.0, 1.0);
+            final bounce = (offset < 0.5 ? offset : 1.0 - offset) * 2;
+            return Container(
+              margin: const EdgeInsets.symmetric(horizontal: 2),
+              width: 7,
+              height: 7 + bounce * 5,
+              decoration: BoxDecoration(
+                color: const Color(0xFF6366F1).withValues(alpha: 0.5 + bounce * 0.5),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            );
+          },
+        );
+      }),
+    );
+  }
 }
