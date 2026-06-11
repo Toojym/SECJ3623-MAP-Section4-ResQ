@@ -2795,65 +2795,145 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                     subText = claim.rejectReason ?? 'Tuntutan ditolak';
                   }
 
-                  return GestureDetector(
-                    onTap: () => _showClaimDetailsDialog(claim),
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(20),
-                      decoration: _cardDecoration(),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Text(claim.type, 
-                                  style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              Text(statusText, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: statusColor)),
-                            ],
+                  // Return a Column: main card + optional action banner (separate, no gesture conflict)
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // ── Main claim card ──────────────────────────────
+                      GestureDetector(
+                        onTap: () => _showClaimDetailsDialog(claim),
+                        child: Container(
+                          margin: EdgeInsets.only(
+                            bottom: (claim.status == 'under_review' &&
+                                    claim.infoRequestReason != null &&
+                                    claim.infoRequestReason!.isNotEmpty)
+                                ? 0
+                                : 12,
                           ),
-                          const SizedBox(height: 16),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(6),
-                            child: LinearProgressIndicator(value: progress, minHeight: 10, backgroundColor: AppColors.divider, color: statusColor),
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Icon(
-                                claim.status == 'rejected' ? Icons.error_outline_rounded : Icons.info_outline_rounded,
-                                size: 16, 
-                                color: statusColor
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(subText, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
-                              )
-                            ],
-                          ),
-                          if (claim.status == 'submitted') ...[
-                            const SizedBox(height: 16),
-                            SizedBox(
-                              width: double.infinity,
-                              child: OutlinedButton.icon(
-                                onPressed: () => _confirmCancelClaim(claim.id),
-                                icon: const Icon(Icons.cancel_outlined, size: 16),
-                                label: const Text('Batal Tuntutan'),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: AppColors.danger,
-                                  side: const BorderSide(color: AppColors.danger),
-                                ),
-                              ),
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: (claim.status == 'under_review' && claim.infoRequestReason != null)
+                                  ? Colors.orange.withValues(alpha: 0.5)
+                                  : AppColors.divider,
+                              width: (claim.status == 'under_review' && claim.infoRequestReason != null) ? 1.5 : 1.0,
                             ),
-                          ]
-                        ],
+                            boxShadow: [BoxShadow(color: AppColors.divider, blurRadius: 8, offset: const Offset(0, 2))],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(claim.type,
+                                      style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  Text(statusText, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: statusColor)),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(6),
+                                child: LinearProgressIndicator(value: progress, minHeight: 10, backgroundColor: AppColors.divider, color: statusColor),
+                              ),
+                              const SizedBox(height: 16),
+                              Row(
+                                children: [
+                                  Icon(
+                                    claim.status == 'rejected' ? Icons.error_outline_rounded : Icons.info_outline_rounded,
+                                    size: 16,
+                                    color: statusColor,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(subText, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+                                  ),
+                                ],
+                              ),
+                              if (claim.status == 'submitted') ...[
+                                const SizedBox(height: 16),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: OutlinedButton.icon(
+                                    onPressed: () => _confirmCancelClaim(claim.id),
+                                    icon: const Icon(Icons.cancel_outlined, size: 16),
+                                    label: const Text('Batal Tuntutan'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: AppColors.danger,
+                                      side: const BorderSide(color: AppColors.danger),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
+
+                      // ── Action required banner (separate — no gesture conflict) ──
+                      if (claim.status == 'under_review' &&
+                          claim.infoRequestReason != null &&
+                          claim.infoRequestReason!.isNotEmpty) ...[
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withValues(alpha: 0.07),
+                            borderRadius: const BorderRadius.only(
+                              bottomLeft: Radius.circular(16),
+                              bottomRight: Radius.circular(16),
+                            ),
+                            border: Border.all(color: Colors.orange.withValues(alpha: 0.4)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.warning_amber_rounded, size: 14, color: Colors.orange),
+                                  const SizedBox(width: 6),
+                                  Text('⚠️  Tindakan Diperlukan',
+                                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.orange)),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                claim.infoRequestReason!,
+                                style: GoogleFonts.inter(fontSize: 12, color: AppColors.textPrimary, height: 1.4),
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
+                                  // ← This is now OUTSIDE the GestureDetector — no conflict
+                                  onPressed: () => _showUpdateEvidenceDialog(claim),
+                                  icon: const Icon(Icons.edit_note_rounded, size: 16),
+                                  label: const Text('Kemaskini Bukti & Maklumat'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.orange,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    elevation: 0,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ] else
+                        const SizedBox(height: 12), // spacing when no action banner
+                    ],
                   );
+
                 }),
                 if (docs.length > 3)
                   TextButton(
@@ -3065,206 +3145,346 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
     );
   }
 
-  void _showUpdateEvidenceDialog(ClaimModel claim) {
+  void _showUpdateEvidenceDialog(ClaimModel claim, {bool closeParent = false}) {
     final formKey = GlobalKey<FormState>();
     final damageCtrl = TextEditingController(text: claim.damageDescription);
-    File? selectedImage;
-    bool isUploading = false;
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      barrierDismissible: !isUploading,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setState) {
-          final isBase64 = claim.photoEvidence.startsWith('data:image');
-          final isUrl = claim.photoEvidence.startsWith('http');
-          
-          Widget currentImageWidget;
-          if (isUrl) {
-            currentImageWidget = Image.network(
-              claim.photoEvidence,
-              height: 120,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                height: 120,
-                color: Colors.grey[200],
-                child: const Icon(Icons.broken_image, color: Colors.grey),
-              ),
-            );
-          } else if (isBase64) {
-            try {
-              final base64String = claim.photoEvidence.split(',').last;
-              currentImageWidget = Image.memory(
-                base64Decode(base64String),
-                height: 120,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      isDismissible: true,
+      builder: (sheetCtx) {
+        File? selectedImage;
+        bool isUploading = false;
+
+        return StatefulBuilder(
+          builder: (_, setSheetState) {
+            // Build current evidence preview
+            Widget evidencePreview;
+            if (claim.photoEvidence.startsWith('http')) {
+              evidencePreview = Image.network(
+                claim.photoEvidence,
+                height: 140,
                 width: double.infinity,
                 fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _evidencePlaceholder('Gagal muat gambar'),
               );
-            } catch (_) {
-              currentImageWidget = Container(
-                height: 120,
-                color: Colors.grey[200],
-                child: const Icon(Icons.broken_image, color: Colors.grey),
-              );
+            } else if (claim.photoEvidence.startsWith('data:image')) {
+              try {
+                evidencePreview = Image.memory(
+                  base64Decode(claim.photoEvidence.split(',').last),
+                  height: 140,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                );
+              } catch (_) {
+                evidencePreview = _evidencePlaceholder('Gambar rosak');
+              }
+            } else {
+              evidencePreview = _evidencePlaceholder('Tiada gambar sedia ada');
             }
-          } else {
-            currentImageWidget = Container(
-              height: 120,
-              color: Colors.grey[200],
-              child: const Icon(Icons.insert_drive_file, color: Colors.grey),
-            );
-          }
 
-          return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Text('Kemaskini Tuntutan', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-            content: SingleChildScrollView(
-              child: Form(
-                key: formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Officer's reason banner
-                    if (claim.infoRequestReason != null && claim.infoRequestReason!.isNotEmpty) ...[
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+            return Padding(
+              // Shift up when keyboard appears
+              padding: EdgeInsets.only(bottom: MediaQuery.of(sheetCtx).viewInsets.bottom),
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+                  child: Form(
+                    key: formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Handle bar
+                        Center(
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(vertical: 12),
+                            width: 40,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: AppColors.divider,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+
+                        // Title
+                        Row(
                           children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.info_outline_rounded, size: 16, color: Colors.orange),
-                                const SizedBox(width: 6),
-                                Text('Sebab Pegawai Meminta Maklumat:',
-                                    style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.orange)),
-                              ],
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.edit_note_rounded, color: Colors.orange, size: 20),
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              claim.infoRequestReason!,
-                              style: GoogleFonts.inter(fontSize: 12, color: AppColors.textPrimary),
-                            ),
+                            const SizedBox(width: 12),
+                            Text('Kemaskini Tuntutan',
+                                style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
                           ],
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
+                        const SizedBox(height: 16),
 
-                    TextFormField(
-                      controller: damageCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Keterangan Kerosakan Baru',
-                        border: OutlineInputBorder(),
-                      ),
-                      maxLines: 3,
-                      validator: (value) => value == null || value.isEmpty ? 'Sila isi ruangan ini' : null,
-                    ),
-                    const SizedBox(height: 16),
+                        // Officer reason banner
+                        if (claim.infoRequestReason != null && claim.infoRequestReason!.isNotEmpty) ...[
+                          Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.orange.withValues(alpha: 0.35)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.warning_amber_rounded, size: 16, color: Colors.orange),
+                                    const SizedBox(width: 6),
+                                    Text('Permintaan Pegawai:',
+                                        style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.orange)),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Text(claim.infoRequestReason!,
+                                    style: GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary, height: 1.4)),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
 
-                    Text('Bukti Bergambar:', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-                    const SizedBox(height: 8),
-
-                    // Display selected or current image
-                    Container(
-                      height: 120,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: AppColors.divider),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: selectedImage != null
-                          ? Image.file(selectedImage!, fit: BoxFit.cover)
-                          : currentImageWidget,
-                    ),
-                    const SizedBox(height: 12),
-
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: isUploading ? null : () async {
-                          final ImagePicker picker = ImagePicker();
-                          final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
-                          if (image != null) {
-                            setState(() => selectedImage = File(image.path));
-                          }
-                        },
-                        icon: Icon(selectedImage != null ? Icons.check_circle_rounded : Icons.upload_rounded, 
-                          color: selectedImage != null ? AppColors.safe : AppColors.primary),
-                        label: Text(selectedImage != null ? 'Gambar Ditukar' : 'Pilih Gambar Baru (Opsional)'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: selectedImage != null ? AppColors.safe : AppColors.primary,
-                          side: BorderSide(color: selectedImage != null ? AppColors.safe : AppColors.primary),
+                        // Damage description field
+                        Text('Keterangan Kerosakan',
+                            style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: damageCtrl,
+                          maxLines: 3,
+                          enabled: !isUploading,
+                          decoration: InputDecoration(
+                            hintText: 'Terangkan kerosakan dengan lebih terperinci...',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(color: Colors.orange, width: 2),
+                            ),
+                            filled: true,
+                            fillColor: AppColors.surface,
+                          ),
+                          validator: (v) => (v == null || v.trim().isEmpty) ? 'Sila isi keterangan kerosakan' : null,
                         ),
-                      ),
+                        const SizedBox(height: 20),
+
+                        // Photo evidence
+                        Text('Bukti Bergambar',
+                            style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                        const SizedBox(height: 8),
+
+                        // Preview
+                        Container(
+                          height: 140,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: selectedImage != null ? AppColors.safe : AppColors.divider,
+                              width: selectedImage != null ? 2 : 1,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: selectedImage != null
+                              ? Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    Image.file(selectedImage!, fit: BoxFit.cover),
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.safe,
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(Icons.check_circle, color: Colors.white, size: 12),
+                                            const SizedBox(width: 4),
+                                            Text('Gambar Baru', style: GoogleFonts.inter(fontSize: 10, color: Colors.white, fontWeight: FontWeight.w600)),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : evidencePreview,
+                        ),
+                        const SizedBox(height: 10),
+
+                        // Pick image button
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: isUploading
+                                ? null
+                                : () async {
+                                    final picker = ImagePicker();
+                                    final XFile? img = await picker.pickImage(
+                                      source: ImageSource.gallery,
+                                      imageQuality: 75,
+                                    );
+                                    if (img != null) {
+                                      setSheetState(() => selectedImage = File(img.path));
+                                    }
+                                  },
+                            icon: Icon(
+                              selectedImage != null ? Icons.swap_horiz_rounded : Icons.add_photo_alternate_rounded,
+                              size: 18,
+                            ),
+                            label: Text(selectedImage != null ? 'Tukar Gambar' : 'Pilih Gambar Baru'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: selectedImage != null ? AppColors.safe : AppColors.primary,
+                              side: BorderSide(color: selectedImage != null ? AppColors.safe : AppColors.primary),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                          ),
+                        ),
+
+                        // Upload progress
+                        if (isUploading) ...[
+                          const SizedBox(height: 14),
+                          const LinearProgressIndicator(color: Colors.orange),
+                          const SizedBox(height: 6),
+                          Center(
+                            child: Text('Sedang memuat naik... sila tunggu',
+                                style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+                          ),
+                        ],
+
+                        const SizedBox(height: 24),
+
+                        // Submit button
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: isUploading
+                                ? null
+                                : () async {
+                                    if (!formKey.currentState!.validate()) return;
+
+                                    setSheetState(() => isUploading = true);
+
+                                    // Capture everything before await
+                                    final sheetNav = Navigator.of(sheetCtx);
+                                    final outerNav = Navigator.of(this.context);
+                                    final outerMsg = ScaffoldMessenger.of(this.context);
+                                    final authState = this.context.read<AuthBloc>().state;
+
+                                    try {
+                                      if (authState is AuthAuthenticated) {
+                                        String finalUrl = claim.photoEvidence;
+                                        if (selectedImage != null) {
+                                          finalUrl = await _firestoreService.uploadClaimEvidence(
+                                              selectedImage!, authState.uid);
+                                        }
+
+                                        await FirebaseFirestore.instance
+                                            .collection('claims')
+                                            .doc(claim.id)
+                                            .update({
+                                          'damageDescription': damageCtrl.text.trim(),
+                                          'photoEvidence': finalUrl,
+                                          'status': 'submitted',
+                                          'infoRequestReason': FieldValue.delete(),
+                                          'infoDeadline': FieldValue.delete(),
+                                          'citizenUpdatedAt': FieldValue.serverTimestamp(),
+                                          'updatedAt': FieldValue.serverTimestamp(),
+                                        });
+
+                                        // Close this sheet
+                                        if (sheetCtx.mounted) sheetNav.pop();
+                                        // Also close parent bottom sheet if needed
+                                        if (mounted && closeParent) outerNav.pop();
+                                        // Show success
+                                        if (mounted) {
+                                          outerMsg.showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                  '✅ Tuntutan dikemaskini dan dihantar semula kepada pegawai.'),
+                                              backgroundColor: AppColors.safe,
+                                              duration: Duration(seconds: 3),
+                                            ),
+                                          );
+                                        }
+                                      }
+                                    } catch (e) {
+                                      setSheetState(() => isUploading = false);
+                                      if (sheetCtx.mounted) {
+                                        ScaffoldMessenger.of(sheetCtx).showSnackBar(
+                                          SnackBar(
+                                            content: Text('Ralat: $e'),
+                                            backgroundColor: AppColors.danger,
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
+                            icon: isUploading
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                : const Icon(Icons.send_rounded, size: 18),
+                            label: Text(isUploading ? 'Menghantar...' : 'Hantar Kemaskini',
+                                style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 15)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              elevation: 0,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: isUploading ? null : () => Navigator.pop(ctx),
-                child: const Text('Batal'),
-              ),
-              ElevatedButton(
-                onPressed: isUploading ? null : () async {
-                  if (!formKey.currentState!.validate()) return;
-                  
-                  setState(() => isUploading = true);
-                  
-                  try {
-                    final authState = context.read<AuthBloc>().state;
-                    if (authState is AuthAuthenticated) {
-                      String finalImageUrl = claim.photoEvidence;
-                      if (selectedImage != null) {
-                        finalImageUrl = await _firestoreService.uploadClaimEvidence(selectedImage!, authState.uid);
-                      }
-                      
-                      await FirebaseFirestore.instance.collection('claims').doc(claim.id).update({
-                        'damageDescription': damageCtrl.text.trim(),
-                        'photoEvidence': finalImageUrl,
-                        'status': 'submitted',
-                        'infoRequestReason': FieldValue.delete(),
-                        'infoDeadline': FieldValue.delete(),
-                        'updatedAt': FieldValue.serverTimestamp(),
-                      });
-                      
-                      if (ctx.mounted && context.mounted) {
-                        Navigator.pop(ctx); // Close dialog
-                        Navigator.pop(context); // Close details sheet
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Tuntutan berjaya dikemaskini dan dihantar semula.'),
-                            backgroundColor: AppColors.safe,
-                          ),
-                        );
-                      }
-                    }
-                  } catch (e) {
-                    setState(() => isUploading = false);
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ralat: $e'), backgroundColor: AppColors.danger));
-                    }
-                  }
-                },
-                child: isUploading 
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
-                  : const Text('Hantar Kemaskini'),
-              ),
-            ],
-          );
-        }
+            );
+          },
+        );
+      },
+    ).then((_) => damageCtrl.dispose());
+  }
+
+  Widget _evidencePlaceholder(String msg) {
+    return Container(
+      height: 140,
+      color: Colors.grey[100],
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.image_not_supported_rounded, color: Colors.grey[400], size: 36),
+            const SizedBox(height: 6),
+            Text(msg, style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[500])),
+          ],
+        ),
       ),
     );
   }
+
 
   Widget _buildEmergencyAlerts() {
     return Column(
@@ -3735,7 +3955,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                               SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton.icon(
-                                  onPressed: () => _showUpdateEvidenceDialog(claim),
+                                   onPressed: () => _showUpdateEvidenceDialog(claim, closeParent: true),
                                   icon: const Icon(Icons.edit_note_rounded, color: Colors.white),
                                   label: const Text('Kemaskini Bukti & Maklumat'),
                                   style: ElevatedButton.styleFrom(

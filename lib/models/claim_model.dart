@@ -20,6 +20,7 @@ class ClaimModel {
   // New fields
   final DateTime? infoDeadline;
   final String? outOfZoneReason;
+  final DateTime? citizenUpdatedAt; // set when citizen resubmits after officer info request
 
   ClaimModel({
     required this.id,
@@ -39,6 +40,7 @@ class ClaimModel {
     this.createdAt,
     this.infoDeadline,
     this.outOfZoneReason,
+    this.citizenUpdatedAt,
   });
 
   factory ClaimModel.fromMap(String id, Map<String, dynamic> data) {
@@ -68,6 +70,9 @@ class ClaimModel {
           ? (data['infoDeadline'] as Timestamp).toDate()
           : null,
       outOfZoneReason: data['outOfZoneReason'],
+      citizenUpdatedAt: data['citizenUpdatedAt'] != null
+          ? (data['citizenUpdatedAt'] as Timestamp).toDate()
+          : null,
     );
   }
 
@@ -92,6 +97,7 @@ class ClaimModel {
       'infoDeadline':
           infoDeadline != null ? Timestamp.fromDate(infoDeadline!) : null,
       'outOfZoneReason': outOfZoneReason,
+      'citizenUpdatedAt': citizenUpdatedAt != null ? Timestamp.fromDate(citizenUpdatedAt!) : null,
     };
   }
 }

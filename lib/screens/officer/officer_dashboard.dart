@@ -3839,6 +3839,8 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
     final isOutOfZone = _isOutsideDeclaredZones(claim.location);
     final hasDuplicateIC = _duplicateICCache[claim.id] ?? false;
     final canApprove = validIC && !isUnderAge && !hasDuplicateIC && !isAutoRejected;
+    // True when citizen has resubmitted after an info request
+    final citizenResubmitted = claim.status == 'submitted' && claim.citizenUpdatedAt != null;
 
     // Deadline countdown
     String? deadlineText;
@@ -3858,12 +3860,16 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
         ? Colors.grey
         : isInfoRequested
             ? Colors.purple
-            : AppColors.warning;
+            : citizenResubmitted
+                ? AppColors.safe
+                : AppColors.warning;
     String statusLabel = isExpired
         ? 'Tamat Tempoh'
         : isInfoRequested
             ? 'Info Diminta'
-            : 'Menunggu';
+            : citizenResubmitted
+                ? 'Respons Diterima ✓'
+                : 'Menunggu';
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -3954,6 +3960,31 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
             const SizedBox(height: 8),
             _claimBadge('Di Luar Zon Bencana Diisytiharkan ⚠️',
                 Colors.amber[800]!),
+          ],
+          if (citizenResubmitted) ...[
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                  color: AppColors.safe.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                      color: AppColors.safe.withValues(alpha: 0.4))),
+              child: Row(children: [
+                const Icon(Icons.check_circle_rounded,
+                    color: AppColors.safe, size: 14),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                      'Pemohon telah menghantar semula bukti dan maklumat kemaskini. Sila semak bukti terbaru.',
+                      style: GoogleFonts.inter(
+                          fontSize: 11,
+                          color: AppColors.safe,
+                          fontWeight: FontWeight.w600)),
+                ),
+              ]),
+            ),
           ],
           const SizedBox(height: 8),
           // ── Claim type + location ──────────────────────────────
@@ -4056,34 +4087,74 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           ],
           // ── Photo evidence ─────────────────────────────────────
           const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
+          GestureDetector(
+            onTap: () => _showImageZoomDialog(claim.photoEvidence, claim.citizenName),
+            child: Container(
+              height: 110,
+              width: double.infinity,
+              decoration: BoxDecoration(
                 color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(8)),
-            child: Row(
-              children: [
-                const Icon(Icons.photo_library_rounded,
-                    size: 16, color: AppColors.primary),
-                const SizedBox(width: 8),
-                Expanded(
-                    child: Text(
-                        claim.photoEvidence.startsWith('data:image')
-                            ? 'Gambar dimuat naik'
-                            : claim.photoEvidence,
-                        style: GoogleFonts.inter(
-                            fontSize: 12, color: AppColors.textPrimary))),
-                TextButton(
-                  onPressed: () => _showImageZoomDialog(claim.photoEvidence, claim.citizenName),
-                  style: TextButton.styleFrom(
-                      minimumSize: Size.zero, padding: EdgeInsets.zero),
-                  child: Text('Lihat',
-                      style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primary)),
-                ),
-              ],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.divider),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Stack(
+                children: [
+                  // Image
+                  if (claim.photoEvidence.startsWith('http'))
+                    Image.network(
+                      claim.photoEvidence,
+                      width: double.infinity,
+                      height: 110,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Center(
+                        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                          const Icon(Icons.broken_image_rounded, color: Colors.grey, size: 32),
+                          const SizedBox(height: 4),
+                          Text('Gagal muat gambar', style: GoogleFonts.inter(fontSize: 11, color: Colors.grey)),
+                        ]),
+                      ),
+                    )
+                  else if (claim.photoEvidence.startsWith('data:image'))
+                    Builder(builder: (_) {
+                      try {
+                        return Image.memory(
+                          base64Decode(claim.photoEvidence.split(',').last),
+                          width: double.infinity,
+                          height: 110,
+                          fit: BoxFit.cover,
+                        );
+                      } catch (_) {
+                        return const Center(child: Icon(Icons.broken_image_rounded, color: Colors.grey, size: 32));
+                      }
+                    })
+                  else
+                    Center(
+                      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                        const Icon(Icons.insert_drive_file_rounded, color: Colors.grey, size: 32),
+                        const SizedBox(height: 4),
+                        Text('Tiada gambar', style: GoogleFonts.inter(fontSize: 11, color: Colors.grey)),
+                      ]),
+                    ),
+                  // "Tap to view" overlay
+                  Positioned(
+                    bottom: 0, left: 0, right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 5),
+                      color: Colors.black54,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.zoom_in_rounded, color: Colors.white, size: 14),
+                          const SizedBox(width: 4),
+                          Text('Ketik untuk perbesar',
+                              style: GoogleFonts.inter(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w500)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           // ── Action buttons ─────────────────────────────────────
