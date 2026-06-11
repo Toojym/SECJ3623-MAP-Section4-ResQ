@@ -68,6 +68,9 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
   // Whether photo review was confirmed in bulk panel
   bool _photoReviewConfirmed = false;
 
+  // Claim filtering state
+  String _selectedClaimStatusFilter = 'Semua';
+  String _selectedClaimZoneFilter = 'Semua';
 
   // Live SOS reports from Firestore (replaces _mockIncidents)
   List<SosReportModel> _activeReports = [];
@@ -2862,6 +2865,31 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           return bTime.compareTo(aTime); // descending
         });
 
+        // Extract unique active locations/zones from active claims list for filter dropdown
+        final claimLocations = claims
+            .map((doc) => (doc.data() as Map<String, dynamic>)['location'] as String? ?? '')
+            .where((loc) => loc.trim().isNotEmpty)
+            .toSet()
+            .toList();
+        claimLocations.sort();
+
+        // Apply filters (Zone and Status)
+        final filteredClaims = claims.where((doc) {
+          final claim = ClaimModel.fromMap(doc.id, doc.data() as Map<String, dynamic>);
+          
+          // 1. Status Filter
+          if (_selectedClaimStatusFilter != 'Semua') {
+            if (claim.status != _selectedClaimStatusFilter) return false;
+          }
+          
+          // 2. Zone/Location Filter
+          if (_selectedClaimZoneFilter != 'Semua') {
+            if (!_claimMatchesZone(claim.location, _selectedClaimZoneFilter)) return false;
+          }
+          
+          return true;
+        }).toList();
+
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -2878,16 +2906,108 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
             const SizedBox(height: 12),
             _bulkApprovalPanel(claims),
             const SizedBox(height: 16),
-            if (claims.isEmpty)
+            
+            // --- Filter controls ---
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[200]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.filter_list_rounded, size: 18, color: AppColors.primary),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Tapis Senarai Tuntutan',
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_selectedClaimStatusFilter != 'Semua' || _selectedClaimZoneFilter != 'Semua')
+                        TextButton(
+                          onPressed: () => setState(() {
+                            _selectedClaimStatusFilter = 'Semua';
+                            _selectedClaimZoneFilter = 'Semua';
+                          }),
+                          style: TextButton.styleFrom(
+                            minimumSize: Size.zero,
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          ),
+                          child: Text(
+                            'Set Semula',
+                            style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primary),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  // Dropdown Filter for Zone
+                  DropdownButtonFormField<String>(
+                    isExpanded: true,
+                    value: _selectedClaimZoneFilter,
+                    decoration: InputDecoration(
+                      labelText: 'Tapis Mengikut Zon Bencana',
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    items: [
+                      const DropdownMenuItem(value: 'Semua', child: Text('Semua Zon')),
+                      ...claimLocations.map((loc) => DropdownMenuItem(value: loc, child: Text(loc, overflow: TextOverflow.ellipsis))),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() => _selectedClaimZoneFilter = val);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  // Status chips
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildFilterChip('Semua', 'Semua', claims),
+                        const SizedBox(width: 8),
+                        _buildFilterChip('Baru', 'submitted', claims),
+                        const SizedBox(width: 8),
+                        _buildFilterChip('Dalam Semakan', 'under_review', claims),
+                        const SizedBox(width: 8),
+                        _buildFilterChip('Tamat Tempoh', 'expired', claims),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            if (filteredClaims.isEmpty)
               Padding(
                 padding: const EdgeInsets.all(32.0),
                 child: Center(
-                  child: Text('Tiada tuntutan untuk semakan buat masa ini.',
-                      style: GoogleFonts.inter(color: AppColors.textSecondary)),
+                  child: Text(
+                    claims.isEmpty 
+                        ? 'Tiada tuntutan untuk semakan buat masa ini.'
+                        : 'Tiada tuntutan sepadan dengan penapis.',
+                    style: GoogleFonts.inter(color: AppColors.textSecondary),
+                  ),
                 ),
               )
             else
-              ...claims.map((doc) {
+              ...filteredClaims.map((doc) {
                 final claim = ClaimModel.fromMap(
                     doc.id, doc.data() as Map<String, dynamic>);
                 return Padding(
@@ -2899,6 +3019,64 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildFilterChip(String label, String status, List<DocumentSnapshot> allClaims) {
+    // Count claims in this status matching the current zone filter
+    final count = allClaims.where((doc) {
+      final claim = ClaimModel.fromMap(doc.id, doc.data() as Map<String, dynamic>);
+      if (_selectedClaimZoneFilter != 'Semua' && !_claimMatchesZone(claim.location, _selectedClaimZoneFilter)) {
+        return false;
+      }
+      return status == 'Semua' || claim.status == status;
+    }).length;
+
+    final isSelected = _selectedClaimStatusFilter == status;
+    final color = isSelected ? AppColors.primary : AppColors.textSecondary;
+    final bgColor = isSelected ? AppColors.primary.withValues(alpha: 0.1) : Colors.white;
+    final borderColor = isSelected ? AppColors.primary : AppColors.divider;
+
+    return InkWell(
+      onTap: () => setState(() => _selectedClaimStatusFilter = status),
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: borderColor),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: color,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.primary : Colors.grey[200],
+                borderRadius: BorderRadius.circular(99),
+              ),
+              child: Text(
+                '$count',
+                style: GoogleFonts.inter(
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? Colors.white : AppColors.textPrimary,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
