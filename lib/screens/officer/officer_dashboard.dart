@@ -3311,7 +3311,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     activeColor: AppColors.primary,
                     controlAffinity: ListTileControlAffinity.leading,
                     title: Text(
-                      'Saya mengesahkan semua (100%) bukti gambar adalah sah dan secocok dengan kerosakan yang dilaporkan',
+                      'Saya mengesahkan bukti gambar bagi semua tuntutan terpilih telah disemak dan adalah sah',
                       style: GoogleFonts.inter(
                           fontSize: 12, fontWeight: FontWeight.w600),
                     ),
@@ -3446,7 +3446,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                       controlAffinity: ListTileControlAffinity.leading,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 8),
                       title: Text(
-                        'Saya mengesahkan semua (100%) bukti gambar adalah sah dan secocok dengan kerosakan yang dilaporkan',
+                        'Saya mengesahkan bukti gambar bagi tuntutan ini telah disemak dan adalah sah',
                         style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600),
                       ),
                       onChanged: (val) {
@@ -3614,56 +3614,103 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
     required Color color,
     required String hint,
   }) {
+    String selectedReason = 'Bukti Gambar Tidak Jelas / Ralat';
     final ctrl = TextEditingController();
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(title,
-            style: GoogleFonts.poppins(
-                fontSize: 16, fontWeight: FontWeight.w700, color: color)),
-        content: TextField(
-          controller: ctrl,
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle:
-                GoogleFonts.inter(fontSize: 13, color: AppColors.textHint),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-          maxLines: 3,
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text('Batal',
-                  style: GoogleFonts.inter(color: AppColors.textSecondary))),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: color),
-            onPressed: () {
-              if (ctrl.text.isEmpty) return;
-              Navigator.pop(ctx);
-              _firestoreService
-                  .updateClaimStatus(
-                claim.id,
-                status,
-                reason: ctrl.text.trim(),
-                officerId: _currentOfficerId(),
-              )
-                  .then((_) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text(status == 'rejected'
-                          ? 'Tuntutan ${claim.citizenName} ditolak.'
-                          : 'Permintaan maklumat tambahan dihantar kepada ${claim.citizenName}.'),
-                      backgroundColor: color));
-                }
-              });
-            },
-            child: Text(actionLabel,
-                style: GoogleFonts.inter(
-                    color: Colors.white, fontWeight: FontWeight.w600)),
-          ),
-        ],
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          final isOther = selectedReason == 'Lain-lain (Nyatakan)';
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Text(title,
+                style: GoogleFonts.poppins(
+                    fontSize: 16, fontWeight: FontWeight.w700, color: color)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Pilih sebab penolakan:',
+                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  value: selectedReason,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    isDense: true,
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'Bukti Gambar Tidak Jelas / Ralat', child: Text('Bukti Gambar Tidak Jelas / Ralat')),
+                    DropdownMenuItem(value: 'Tuntutan Bertindih (Duplicate IC)', child: Text('Tuntutan Bertindih (Duplicate IC)')),
+                    DropdownMenuItem(value: 'Alamat di Luar Zon Bencana', child: Text('Alamat di Luar Zon Bencana')),
+                    DropdownMenuItem(value: 'Bawah Umur & Tiada Wali Sah', child: Text('Bawah Umur & Tiada Wali Sah')),
+                    DropdownMenuItem(value: 'Kerosakan Tidak Memenuhi Syarat Kelayakan', child: Text('Kerosakan Tidak Memenuhi Syarat Kelayakan')),
+                    DropdownMenuItem(value: 'Lain-lain (Nyatakan)', child: Text('Lain-lain (Nyatakan)')),
+                  ],
+                  onChanged: (v) {
+                    if (v != null) {
+                      setDialogState(() {
+                        selectedReason = v;
+                      });
+                    }
+                  },
+                ),
+                if (isOther) ...[
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: ctrl,
+                    decoration: InputDecoration(
+                      hintText: 'Sila nyatakan sebab...',
+                      hintStyle: GoogleFonts.inter(fontSize: 13, color: AppColors.textHint),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    maxLines: 3,
+                  ),
+                ],
+              ],
+            ),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: Text('Batal',
+                      style: GoogleFonts.inter(color: AppColors.textSecondary))),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: color),
+                onPressed: () {
+                  final reasonText = isOther ? ctrl.text.trim() : selectedReason;
+                  if (isOther && reasonText.isEmpty) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
+                      content: Text('Sila nyatakan sebab penolakan.'),
+                      backgroundColor: AppColors.danger,
+                    ));
+                    return;
+                  }
+                  Navigator.pop(ctx);
+                  _firestoreService
+                      .updateClaimStatus(
+                    claim.id,
+                    status,
+                    reason: reasonText,
+                    officerId: _currentOfficerId(),
+                  )
+                      .then((_) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text(status == 'rejected'
+                              ? 'Tuntutan ${claim.citizenName} ditolak.'
+                              : 'Permintaan maklumat tambahan dihantar kepada ${claim.citizenName}.'),
+                          backgroundColor: color));
+                    }
+                  });
+                },
+                child: Text(actionLabel,
+                    style: GoogleFonts.inter(
+                        color: Colors.white, fontWeight: FontWeight.w600)),
+              ),
+            ],
+          );
+        }
       ),
     );
   }
@@ -4142,7 +4189,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                   controlAffinity: ListTileControlAffinity.leading,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 8),
                   title: Text(
-                    'Saya mengesahkan semua (100%) bukti gambar adalah sah dan secocok dengan kerosakan yang dilaporkan',
+                    'Saya mengesahkan bukti gambar bagi tuntutan ini telah disemak dan adalah sah',
                     style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600),
                   ),
                   onChanged: (val) {
