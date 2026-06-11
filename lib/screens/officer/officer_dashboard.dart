@@ -3670,11 +3670,11 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
 
   void _reviewClaim(ClaimModel claim, String actionType) {
     if (actionType == 'approve') {
+      bool isConfirmed = false;
       showDialog(
         context: context,
         builder: (ctx) => StatefulBuilder(
           builder: (ctx, setDialogState) {
-            bool isConfirmed = false;
             return AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               title: Row(
@@ -4259,6 +4259,18 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                                 ? AppColors.danger
                                 : Colors.purple[400])),
                   ],
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(Icons.hourglass_empty_rounded, size: 12, color: Colors.purple),
+                      const SizedBox(width: 4),
+                      Text('Menunggu respons daripada pemohon...',
+                          style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontStyle: FontStyle.italic,
+                              color: Colors.purple[700])),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -4312,19 +4324,21 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     child: const Text('Tolak', style: TextStyle(fontSize: 12)),
                   ),
                 ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => _reviewClaim(claim, 'info'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.warning,
-                      side: const BorderSide(color: AppColors.warning),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
+                if (!isInfoRequested) ...[
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => _reviewClaim(claim, 'info'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.warning,
+                        side: const BorderSide(color: AppColors.warning),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: const Text('Info', style: TextStyle(fontSize: 12)),
                     ),
-                    child: const Text('Info', style: TextStyle(fontSize: 12)),
                   ),
-                ),
+                ],
                 const SizedBox(width: 6),
                 Expanded(
                   child: ElevatedButton(

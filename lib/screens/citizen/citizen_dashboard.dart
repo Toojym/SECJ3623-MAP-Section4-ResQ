@@ -3065,7 +3065,206 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
     );
   }
 
+  void _showUpdateEvidenceDialog(ClaimModel claim) {
+    final formKey = GlobalKey<FormState>();
+    final damageCtrl = TextEditingController(text: claim.damageDescription);
+    File? selectedImage;
+    bool isUploading = false;
 
+    showDialog(
+      context: context,
+      barrierDismissible: !isUploading,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) {
+          final isBase64 = claim.photoEvidence.startsWith('data:image');
+          final isUrl = claim.photoEvidence.startsWith('http');
+          
+          Widget currentImageWidget;
+          if (isUrl) {
+            currentImageWidget = Image.network(
+              claim.photoEvidence,
+              height: 120,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                height: 120,
+                color: Colors.grey[200],
+                child: const Icon(Icons.broken_image, color: Colors.grey),
+              ),
+            );
+          } else if (isBase64) {
+            try {
+              final base64String = claim.photoEvidence.split(',').last;
+              currentImageWidget = Image.memory(
+                base64Decode(base64String),
+                height: 120,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              );
+            } catch (_) {
+              currentImageWidget = Container(
+                height: 120,
+                color: Colors.grey[200],
+                child: const Icon(Icons.broken_image, color: Colors.grey),
+              );
+            }
+          } else {
+            currentImageWidget = Container(
+              height: 120,
+              color: Colors.grey[200],
+              child: const Icon(Icons.insert_drive_file, color: Colors.grey),
+            );
+          }
+
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Text('Kemaskini Tuntutan', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+            content: SingleChildScrollView(
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Officer's reason banner
+                    if (claim.infoRequestReason != null && claim.infoRequestReason!.isNotEmpty) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.info_outline_rounded, size: 16, color: Colors.orange),
+                                const SizedBox(width: 6),
+                                Text('Sebab Pegawai Meminta Maklumat:',
+                                    style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.orange)),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              claim.infoRequestReason!,
+                              style: GoogleFonts.inter(fontSize: 12, color: AppColors.textPrimary),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
+                    TextFormField(
+                      controller: damageCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Keterangan Kerosakan Baru',
+                        border: OutlineInputBorder(),
+                      ),
+                      maxLines: 3,
+                      validator: (value) => value == null || value.isEmpty ? 'Sila isi ruangan ini' : null,
+                    ),
+                    const SizedBox(height: 16),
+
+                    Text('Bukti Bergambar:', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                    const SizedBox(height: 8),
+
+                    // Display selected or current image
+                    Container(
+                      height: 120,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: AppColors.divider),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: selectedImage != null
+                          ? Image.file(selectedImage!, fit: BoxFit.cover)
+                          : currentImageWidget,
+                    ),
+                    const SizedBox(height: 12),
+
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: isUploading ? null : () async {
+                          final ImagePicker picker = ImagePicker();
+                          final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+                          if (image != null) {
+                            setState(() => selectedImage = File(image.path));
+                          }
+                        },
+                        icon: Icon(selectedImage != null ? Icons.check_circle_rounded : Icons.upload_rounded, 
+                          color: selectedImage != null ? AppColors.safe : AppColors.primary),
+                        label: Text(selectedImage != null ? 'Gambar Ditukar' : 'Pilih Gambar Baru (Opsional)'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: selectedImage != null ? AppColors.safe : AppColors.primary,
+                          side: BorderSide(color: selectedImage != null ? AppColors.safe : AppColors.primary),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: isUploading ? null : () => Navigator.pop(ctx),
+                child: const Text('Batal'),
+              ),
+              ElevatedButton(
+                onPressed: isUploading ? null : () async {
+                  if (!formKey.currentState!.validate()) return;
+                  
+                  setState(() => isUploading = true);
+                  
+                  try {
+                    final authState = context.read<AuthBloc>().state;
+                    if (authState is AuthAuthenticated) {
+                      String finalImageUrl = claim.photoEvidence;
+                      if (selectedImage != null) {
+                        finalImageUrl = await _firestoreService.uploadClaimEvidence(selectedImage!, authState.uid);
+                      }
+                      
+                      await FirebaseFirestore.instance.collection('claims').doc(claim.id).update({
+                        'damageDescription': damageCtrl.text.trim(),
+                        'photoEvidence': finalImageUrl,
+                        'status': 'submitted',
+                        'infoRequestReason': FieldValue.delete(),
+                        'infoDeadline': FieldValue.delete(),
+                        'updatedAt': FieldValue.serverTimestamp(),
+                      });
+                      
+                      if (ctx.mounted && context.mounted) {
+                        Navigator.pop(ctx); // Close dialog
+                        Navigator.pop(context); // Close details sheet
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Tuntutan berjaya dikemaskini dan dihantar semula.'),
+                            backgroundColor: AppColors.safe,
+                          ),
+                        );
+                      }
+                    }
+                  } catch (e) {
+                    setState(() => isUploading = false);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ralat: $e'), backgroundColor: AppColors.danger));
+                    }
+                  }
+                },
+                child: isUploading 
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
+                  : const Text('Hantar Kemaskini'),
+              ),
+            ],
+          );
+        }
+      ),
+    );
+  }
 
   Widget _buildEmergencyAlerts() {
     return Column(
@@ -3530,6 +3729,20 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                                     Text(claim.infoRequestReason!,
                                         style: GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary)),
                                   ],
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
+                                  onPressed: () => _showUpdateEvidenceDialog(claim),
+                                  icon: const Icon(Icons.edit_note_rounded, color: Colors.white),
+                                  label: const Text('Kemaskini Bukti & Maklumat'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.purple,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  ),
                                 ),
                               ),
                             ] else ...[
