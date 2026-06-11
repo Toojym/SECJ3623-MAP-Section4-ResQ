@@ -83,5 +83,16 @@
   "passwordMismatch": "Kata laluan baru tidak sepadan!",
   "enterCurrentPassword": "Sila masukkan kata laluan semasa!",
   "wrongPasswordError": "Kata laluan semasa tidak betul. Cuba lagi.",
-  "weakPasswordError": "Kata laluan baru terlalu lemah (minimum 6 aksara)."
+  "weakPasswordError": "Kata laluan baru terlalu lemah (minimum 6 aksara).",
+  "navHome": "Utama",
+  "navMap": "Peta",
+  "navAwanis": "AWANIS",
+  "navClaims": "Tuntutan",
+  "navVolunteers": "Sukarelawan",
+  "navHistory": "Sejarah",
+  "navMissions": "Misi",
+  "navCrisis": "Krisis",
+  "navSquad": "Skuad",
+  "navLeaderboard": "Papan",
+  "navRewards": "Ganjaran"
 }

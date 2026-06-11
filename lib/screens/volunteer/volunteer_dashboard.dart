@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:geolocator/geolocator.dart';
@@ -2262,8 +2263,11 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
       }
       await _firestoreService.updateVolunteerTask(task.id, updates);
       if (mounted && newStatus == 'Selesai Tugas') {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tugasan selesai! +50 SIGAP Mata'), backgroundColor: AppColors.safe));
-        _loadProfile();
+        await _firestoreService.addVolunteerPoints(uid, 50);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tugasan selesai! +50 SIGAP Mata'), backgroundColor: AppColors.safe));
+          _loadProfile();
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -2433,11 +2437,11 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _navItem(Icons.home_rounded, 'Utama', 0),
-            _navItem(Icons.assignment_rounded, 'Misi', 1),
-            _navItem(Icons.map_rounded, 'Peta', 2),
-            _navItem(Icons.leaderboard_rounded, 'Papan', 3),
-            _navItem(Icons.card_giftcard_rounded, 'Ganjaran', 4),
+            _navItem(Icons.home_rounded, 'navHome'.tr(), 0),
+            _navItem(Icons.assignment_rounded, 'navMissions'.tr(), 1),
+            _navItem(Icons.map_rounded, 'navMap'.tr(), 2),
+            _navItem(Icons.leaderboard_rounded, 'navLeaderboard'.tr(), 3),
+            _navItem(Icons.card_giftcard_rounded, 'navRewards'.tr(), 4),
           ],
         ),
       ),

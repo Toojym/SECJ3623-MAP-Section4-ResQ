@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -181,11 +182,11 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _navItem(Icons.dashboard_rounded, 'Utama', 0),
-            _navItem(Icons.warning_amber_rounded, 'Krisis', 1),
-            _navItem(Icons.group_rounded, 'Skuad', 2),
-            _navItem(Icons.smart_toy_rounded, 'AWANIS', 3),
-            _navItem(Icons.receipt_long_rounded, 'Tuntutan', 4),
+            _navItem(Icons.dashboard_rounded, 'navHome'.tr(), 0),
+            _navItem(Icons.warning_amber_rounded, 'navCrisis'.tr(), 1),
+            _navItem(Icons.group_rounded, 'navSquad'.tr(), 2),
+            _navItem(Icons.smart_toy_rounded, 'navAwanis'.tr(), 3),
+            _navItem(Icons.receipt_long_rounded, 'navClaims'.tr(), 4),
           ],
         ),
       ),
@@ -3618,21 +3619,20 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                   'under_review',
                   reason: ctrl.text.trim(),
                   officerId: _currentOfficerId(),
+                  infoDeadline: deadline,
                 )
-                    .then((_) async {
-                  // Write deadline separately
-                  await FirebaseFirestore.instance
-                      .collection('claims')
-                      .doc(claim.id)
-                      .update({
-                    'infoDeadline':
-                        Timestamp.fromDate(deadline),
-                  });
+                    .then((_) {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                         content: Text(
                             'Permintaan maklumat dihantar. Tarikh akhir: $selectedDays hari.'),
                         backgroundColor: AppColors.warning));
+                  }
+                }).catchError((e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text('Ralat: $e'),
+                        backgroundColor: AppColors.danger));
                   }
                 });
               },
@@ -5603,13 +5603,20 @@ class _SquadDispatchDialogState extends State<_SquadDispatchDialog> {
             final messenger = ScaffoldMessenger.of(context);
             final navigator = Navigator.of(context);
 
-            await widget.onCreateTask(model.toMap());
-
-            if (mounted) {
-              navigator.pop();
-              messenger.showSnackBar(const SnackBar(
-                  content: Text('Skuad berjaya diagihkan!'),
-                  backgroundColor: AppColors.volunteerAccent));
+            try {
+              await widget.onCreateTask(model.toMap());
+              if (mounted) {
+                navigator.pop();
+                messenger.showSnackBar(const SnackBar(
+                    content: Text('Skuad berjaya diagihkan!'),
+                    backgroundColor: AppColors.volunteerAccent));
+              }
+            } catch (e) {
+              if (mounted) {
+                messenger.showSnackBar(SnackBar(
+                    content: Text('Gagal mengagihkan skuad: $e'),
+                    backgroundColor: AppColors.danger));
+              }
             }
           },
           child: Text('Agih Pasukan',

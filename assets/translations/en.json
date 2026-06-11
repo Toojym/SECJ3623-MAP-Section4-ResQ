@@ -83,5 +83,16 @@
   "passwordMismatch": "New passwords do not match!",
   "enterCurrentPassword": "Please enter your current password!",
   "wrongPasswordError": "Incorrect current password. Try again.",
-  "weakPasswordError": "New password is too weak (minimum 6 characters)."
+  "weakPasswordError": "New password is too weak (minimum 6 characters).",
+  "navHome": "Home",
+  "navMap": "Map",
+  "navAwanis": "AWANIS",
+  "navClaims": "Claims",
+  "navVolunteers": "Volunteers",
+  "navHistory": "History",
+  "navMissions": "Missions",
+  "navCrisis": "Crisis",
+  "navSquad": "Squad",
+  "navLeaderboard": "Board",
+  "navRewards": "Rewards"
 }

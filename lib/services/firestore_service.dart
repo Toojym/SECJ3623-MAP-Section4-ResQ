@@ -366,12 +366,14 @@ class FirestoreService {
     String status, {
     String? reason,
     String? officerId,
+    DateTime? infoDeadline,
   }) async {
     await _db.collection('claims').doc(claimId).update({
       'status': status,
       if (status == 'rejected' && reason != null) 'rejectReason': reason,
       if (status == 'under_review' && reason != null)
         'infoRequestReason': reason,
+      if (infoDeadline != null) 'infoDeadline': Timestamp.fromDate(infoDeadline),
       if (officerId != null) 'reviewedBy': officerId,
       'reviewedAt': FieldValue.serverTimestamp(),
       if (status == 'approved') ...{
@@ -727,5 +729,13 @@ class FirestoreService {
       'updatedAt': FieldValue.serverTimestamp(),
     });
     await batch.commit();
+  }
+
+  /// Add SIGAP Mata points to a volunteer's profile
+  Future<void> addVolunteerPoints(String uid, int points) async {
+    await _db.collection('volunteer_profiles').doc(uid).update({
+      'sigapMataPoints': FieldValue.increment(points),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
   }
 }

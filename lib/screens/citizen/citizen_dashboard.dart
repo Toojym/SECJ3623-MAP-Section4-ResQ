@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -421,11 +422,11 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _navItem(Icons.home_rounded, 'Utama', 0),
-            _navItem(Icons.map_rounded, 'Peta', 1),
+            _navItem(Icons.home_rounded, 'navHome'.tr(), 0),
+            _navItem(Icons.map_rounded, 'navMap'.tr(), 1),
             const SizedBox(width: 48), 
-            _navItem(Icons.smart_toy_rounded, 'AWANIS', 2),
-            _navItem(Icons.receipt_long_rounded, 'Tuntutan', 3),
+            _navItem(Icons.smart_toy_rounded, 'navAwanis'.tr(), 2),
+            _navItem(Icons.receipt_long_rounded, 'navClaims'.tr(), 3),
           ],
         ),
       ),
@@ -3146,6 +3147,9 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
   }
 
   void _showUpdateEvidenceDialog(ClaimModel claim, {bool closeParent = false}) {
+    if (closeParent) {
+      Navigator.of(context).pop();
+    }
     final formKey = GlobalKey<FormState>();
     final damageCtrl = TextEditingController(text: claim.damageDescription);
 
@@ -3413,8 +3417,6 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
 
                                         // Close this sheet
                                         if (sheetCtx.mounted) sheetNav.pop();
-                                        // Also close parent bottom sheet if needed
-                                        if (mounted && closeParent) outerNav.pop();
                                         // Show success
                                         if (mounted) {
                                           outerMsg.showSnackBar(
