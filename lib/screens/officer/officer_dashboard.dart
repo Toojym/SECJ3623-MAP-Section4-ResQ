@@ -1,6 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math' as math;
+import 'dart:typed_data';
+import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -3385,11 +3389,30 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           contentPadding: EdgeInsets.zero,
           insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
           title: Text(title, style: GoogleFonts.poppins(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-          content: InteractiveViewer(
-            panEnabled: true,
-            minScale: 0.5,
-            maxScale: 4.0,
-            child: Center(child: img),
+          content: Stack(
+            children: [
+              InteractiveViewer(
+                panEnabled: true,
+                minScale: 0.5,
+                maxScale: 4.0,
+                child: Center(child: img),
+              ),
+              Positioned(
+                bottom: 12,
+                right: 12,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.download_rounded, color: Colors.white),
+                    onPressed: () => _downloadEvidence(photoEvidence, title, ctx),
+                    tooltip: 'Muat Turun Gambar',
+                  ),
+                ),
+              ),
+            ],
           ),
           actions: [
             TextButton(
@@ -3400,6 +3423,66 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
         );
       },
     );
+  }
+
+  Future<void> _downloadEvidence(String photoEvidence, String title, BuildContext ctx) async {
+    // Show a loading indicator
+    showDialog(
+      context: ctx,
+      barrierDismissible: false,
+      builder: (loadingCtx) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Text('Menyimpan gambar...'),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      final isUrl = photoEvidence.startsWith('http');
+      final isBase64 = photoEvidence.startsWith('data:image');
+      List<int> bytes;
+      
+      if (isBase64) {
+        bytes = base64Decode(photoEvidence.split(',').last);
+      } else if (isUrl) {
+        final request = await HttpClient().getUrl(Uri.parse(photoEvidence));
+        final response = await request.close();
+        final bytesBuilder = BytesBuilder();
+        await for (final chunk in response) {
+          bytesBuilder.add(chunk);
+        }
+        bytes = bytesBuilder.takeBytes();
+      } else {
+        throw 'Format gambar tidak disokong.';
+      }
+      
+      final tempDir = await getTemporaryDirectory();
+      final extension = isBase64 && photoEvidence.contains('image/png') ? 'png' : 'jpg';
+      final fileName = 'bukti_${title.replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}.$extension';
+      final file = File('${tempDir.path}/$fileName');
+      await file.writeAsBytes(bytes);
+      
+      // Close the loading dialog
+      if (ctx.mounted) {
+        Navigator.pop(ctx);
+      }
+
+      // Share the file so the user can download/save it native style
+      await Share.shareXFiles([XFile(file.path)], text: 'Bukti Bergambar - $title');
+    } catch (e) {
+      // Close the loading dialog
+      if (ctx.mounted) {
+        Navigator.pop(ctx);
+        ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+          content: Text('Gagal menyimpan gambar: $e'),
+          backgroundColor: AppColors.danger,
+        ));
+      }
+    }
   }
 
   String? _currentOfficerId() {
