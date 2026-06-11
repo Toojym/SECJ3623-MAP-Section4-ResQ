@@ -20,7 +20,6 @@ import '../../services/authority_routing_service.dart';
 import '../../services/firestore_service.dart';
 
 import '../../widgets/common/sigap_app_bar.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class OfficerDashboard extends StatefulWidget {
   const OfficerDashboard({super.key});
@@ -3265,33 +3264,36 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                             size: 40, color: Colors.grey);
                       }
 
-                      return Container(
-                        decoration: BoxDecoration(
-                            border: Border.all(color: AppColors.divider),
-                            borderRadius: BorderRadius.circular(8)),
-                        clipBehavior: Clip.antiAlias,
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            imageWidget,
-                            Positioned(
-                              bottom: 0,
-                              left: 0,
-                              right: 0,
-                              child: Container(
-                                color: Colors.black.withValues(alpha: 0.6),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 4, vertical: 4),
-                                child: Text(
-                                  claim.citizenName,
-                                  style: const TextStyle(
-                                      color: Colors.white, fontSize: 10),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                      return GestureDetector(
+                        onTap: () => _showImageZoomDialog(claim.photoEvidence, claim.citizenName),
+                        child: Container(
+                          decoration: BoxDecoration(
+                              border: Border.all(color: AppColors.divider),
+                              borderRadius: BorderRadius.circular(8)),
+                          clipBehavior: Clip.antiAlias,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              imageWidget,
+                              Positioned(
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                child: Container(
+                                  color: Colors.black.withValues(alpha: 0.6),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 4, vertical: 4),
+                                  child: Text(
+                                    claim.citizenName,
+                                    style: const TextStyle(
+                                        color: Colors.white, fontSize: 10),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       );
                     },
@@ -3309,7 +3311,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     activeColor: AppColors.primary,
                     controlAffinity: ListTileControlAffinity.leading,
                     title: Text(
-                      'Saya mengesahkan sekurang-kurangnya 80% gambar adalah sah',
+                      'Saya mengesahkan semua (100%) bukti gambar adalah sah dan secocok dengan kerosakan yang dilaporkan',
                       style: GoogleFonts.inter(
                           fontSize: 12, fontWeight: FontWeight.w600),
                     ),
@@ -3352,6 +3354,54 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
     );
   }
 
+  void _showImageZoomDialog(String photoEvidence, String title) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        final isUrl = photoEvidence.startsWith('http');
+        final isBase64 = photoEvidence.startsWith('data:image');
+        Widget img;
+        if (isUrl) {
+          img = Image.network(
+            photoEvidence,
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => const Icon(
+                Icons.broken_image_rounded,
+                size: 80,
+                color: Colors.grey),
+          );
+        } else if (isBase64) {
+          try {
+            final base64String = photoEvidence.split(',').last;
+            img = Image.memory(base64Decode(base64String), fit: BoxFit.contain);
+          } catch (_) {
+            img = const Icon(Icons.broken_image_rounded, size: 80, color: Colors.grey);
+          }
+        } else {
+          img = const Icon(Icons.insert_drive_file_rounded, size: 80, color: Colors.grey);
+        }
+        return AlertDialog(
+          backgroundColor: Colors.black,
+          contentPadding: EdgeInsets.zero,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          title: Text(title, style: GoogleFonts.poppins(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+          content: InteractiveViewer(
+            panEnabled: true,
+            minScale: 0.5,
+            maxScale: 4.0,
+            child: Center(child: img),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Tutup', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   String? _currentOfficerId() {
     final state = context.read<AuthBloc>().state;
     return state is AuthAuthenticated ? state.uid : null;
@@ -3359,16 +3409,81 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
 
   void _reviewClaim(ClaimModel claim, String actionType) {
     if (actionType == 'approve') {
-      _firestoreService
-          .updateClaimStatus(claim.id, 'approved',
-              officerId: _currentOfficerId())
-          .then((_) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text('Tuntutan ${claim.citizenName} diluluskan.'),
-              backgroundColor: AppColors.safe));
-        }
-      });
+      showDialog(
+        context: context,
+        builder: (ctx) => StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            bool isConfirmed = false;
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Row(
+                children: [
+                  const Icon(Icons.verified_user_rounded, color: AppColors.safe),
+                  const SizedBox(width: 8),
+                  Text('Sahkan Kelulusan',
+                      style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary)),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Adakah anda pasti mahu meluluskan tuntutan bantuan oleh ${claim.citizenName}?',
+                      style: GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary)),
+                  const SizedBox(height: 16),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      border: Border.all(color: AppColors.divider),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: CheckboxListTile(
+                      value: isConfirmed,
+                      activeColor: AppColors.primary,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                      title: Text(
+                        'Saya mengesahkan semua (100%) bukti gambar adalah sah dan secocok dengan kerosakan yang dilaporkan',
+                        style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600),
+                      ),
+                      onChanged: (val) {
+                        setDialogState(() => isConfirmed = val ?? false);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: Text('Batal', style: GoogleFonts.inter(color: AppColors.textSecondary))),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.safe),
+                  onPressed: isConfirmed
+                      ? () {
+                          Navigator.pop(ctx);
+                          _firestoreService
+                              .updateClaimStatus(claim.id, 'approved',
+                                  officerId: _currentOfficerId())
+                              .then((_) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                  content: Text('Tuntutan ${claim.citizenName} diluluskan.'),
+                                  backgroundColor: AppColors.safe));
+                            }
+                          });
+                        }
+                      : null,
+                  child: Text('Ya, Lulus', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
+                ),
+              ],
+            );
+          }
+        ),
+      );
       return;
     } else if (actionType == 'info') {
       _showInfoRequestWithDeadlineDialog(claim);
@@ -3860,54 +3975,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                         style: GoogleFonts.inter(
                             fontSize: 12, color: AppColors.textPrimary))),
                 TextButton(
-                  onPressed: () async {
-                    if (claim.photoEvidence.startsWith('data:image')) {
-                      showDialog(
-                          context: context,
-                          builder: (ctx) {
-                            try {
-                              final base64String =
-                                  claim.photoEvidence.split(',').last;
-                              return AlertDialog(
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16)),
-                                title: Text('Bukti Bergambar',
-                                    style: GoogleFonts.poppins(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16)),
-                                content: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.memory(
-                                      base64Decode(base64String),
-                                      fit: BoxFit.contain),
-                                ),
-                                actions: [
-                                  TextButton(
-                                      onPressed: () => Navigator.pop(ctx),
-                                      child: const Text('Tutup'))
-                                ],
-                              );
-                            } catch (e) {
-                              return AlertDialog(
-                                  content:
-                                      const Text('Ralat memaparkan gambar.'),
-                                  actions: [
-                                    TextButton(
-                                        onPressed: () => Navigator.pop(ctx),
-                                        child: const Text('Tutup'))
-                                  ]);
-                            }
-                          });
-                    } else if (claim.photoEvidence.startsWith('http')) {
-                      final url = Uri.parse(claim.photoEvidence);
-                      if (await canLaunchUrl(url)) {
-                        await launchUrl(url);
-                      }
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                          content: Text('Tiada pautan gambar disediakan.')));
-                    }
-                  },
+                  onPressed: () => _showImageZoomDialog(claim.photoEvidence, claim.citizenName),
                   style: TextButton.styleFrom(
                       minimumSize: Size.zero, padding: EdgeInsets.zero),
                   child: Text('Lihat',
@@ -4021,9 +4089,10 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
 
   void _approveWithOutOfZoneDialog(ClaimModel claim) {
     String selectedReason = 'Berkaitan Bencana';
+    bool isConfirmed = false;
     showDialog(
       context: context,
-      builder: (ctx) => StatefulBuilder(builder: (ctx, setState) {
+      builder: (ctx) => StatefulBuilder(builder: (ctx, setDialogState) {
         return AlertDialog(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -4041,6 +4110,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                   style: GoogleFonts.inter(fontSize: 13)),
               const SizedBox(height: 14),
               DropdownButtonFormField<String>(
+                isExpanded: true,
                 value: selectedReason,
                 decoration: InputDecoration(
                     border: OutlineInputBorder(
@@ -4056,8 +4126,29 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                       value: 'Ralat Lokasi', child: Text('Ralat Lokasi')),
                 ],
                 onChanged: (v) {
-                  if (v != null) setState(() => selectedReason = v);
+                  if (v != null) setDialogState(() => selectedReason = v);
                 },
+              ),
+              const SizedBox(height: 16),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  border: Border.all(color: AppColors.divider),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: CheckboxListTile(
+                  value: isConfirmed,
+                  activeColor: AppColors.primary,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                  title: Text(
+                    'Saya mengesahkan semua (100%) bukti gambar adalah sah dan secocok dengan kerosakan yang dilaporkan',
+                    style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600),
+                  ),
+                  onChanged: (val) {
+                    setDialogState(() => isConfirmed = val ?? false);
+                  },
+                ),
               ),
             ],
           ),
@@ -4070,26 +4161,25 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.safe),
-              onPressed: () async {
-                Navigator.pop(ctx);
-                await _firestoreService.updateClaimStatus(
-                    claim.id, 'approved',
-                    officerId: _currentOfficerId());
-                await _firestoreService.updateClaimStatus(
-                    claim.id, 'approved',
-                    officerId: _currentOfficerId());
-                // Write outOfZoneReason separately
-                await FirebaseFirestore.instance
-                    .collection('claims')
-                    .doc(claim.id)
-                    .update({'outOfZoneReason': selectedReason});
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text(
-                          'Tuntutan ${claim.citizenName} diluluskan ($selectedReason).'),
-                      backgroundColor: AppColors.safe));
-                }
-              },
+              onPressed: isConfirmed
+                  ? () async {
+                      Navigator.pop(ctx);
+                      await _firestoreService.updateClaimStatus(
+                          claim.id, 'approved',
+                          officerId: _currentOfficerId());
+                      // Write outOfZoneReason separately
+                      await FirebaseFirestore.instance
+                          .collection('claims')
+                          .doc(claim.id)
+                          .update({'outOfZoneReason': selectedReason});
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text(
+                                'Tuntutan ${claim.citizenName} diluluskan ($selectedReason).'),
+                            backgroundColor: AppColors.safe));
+                      }
+                    }
+                  : null,
               child: Text('Lulus',
                   style: GoogleFonts.inter(
                       color: Colors.white, fontWeight: FontWeight.w600)),
