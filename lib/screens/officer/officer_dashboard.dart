@@ -3855,7 +3855,6 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                         backgroundColor: AppColors.warning));
                   }
                 });
-                ctrl.dispose();
               },
               child: Text('Hantar',
                   style: GoogleFonts.inter(
@@ -3864,7 +3863,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           ],
         );
       }),
-    );
+    ).then((_) => ctrl.dispose());
   }
 
   void _showClaimFeedbackDialog({
