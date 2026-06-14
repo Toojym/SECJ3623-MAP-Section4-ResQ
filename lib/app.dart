@@ -29,7 +29,7 @@ import 'models/campaign_model.dart';
 import 'services/auth_service.dart';
 import 'services/firestore_service.dart';
 import 'services/notification_service.dart';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 class SigapApp extends StatefulWidget {
   const SigapApp({super.key});
 
@@ -49,7 +49,11 @@ class _SigapAppState extends State<SigapApp> {
     _authBloc = AuthBloc(authService: _authService, firestoreService: _firestoreService)
       ..add(const AuthStarted());
 
-    // Save FCM token whenever user becomes authenticated
+    StreamSubscription<QuerySnapshot>? globalNotifSub;
+    final Set<String> knownNotifIds = {};
+    bool isFirstLoad = true;
+
+    // Save FCM token and listen to global notifications whenever user becomes authenticated
     _authBloc.stream.listen((state) async {
       if (state is AuthAuthenticated) {
         try {
@@ -60,6 +64,42 @@ class _SigapAppState extends State<SigapApp> {
         } catch (e) {
           debugPrint('[FCM] Token save failed: $e');
         }
+
+        // Start listening to global notifications if not already listening
+        if (globalNotifSub == null) {
+          globalNotifSub = _firestoreService.streamGlobalNotifications().listen((snapshot) {
+            if (isFirstLoad) {
+              isFirstLoad = false;
+              for (final doc in snapshot.docs) {
+                knownNotifIds.add(doc.id);
+              }
+              return;
+            }
+            
+            for (final change in snapshot.docChanges) {
+              if (change.type == DocumentChangeType.added) {
+                final doc = change.doc;
+                if (!knownNotifIds.contains(doc.id)) {
+                  knownNotifIds.add(doc.id);
+                  final data = doc.data() as Map<String, dynamic>;
+                  final title = data['title'] as String? ?? 'Notifikasi SIGAP';
+                  final message = data['message'] as String? ?? '';
+                  
+                  NotificationService.instance.showLocalNotification(
+                    title: title,
+                    body: message,
+                    id: doc.id.hashCode,
+                  );
+                }
+              }
+            }
+          });
+        }
+      } else if (state is AuthUnauthenticated) {
+        globalNotifSub?.cancel();
+        globalNotifSub = null;
+        knownNotifIds.clear();
+        isFirstLoad = true;
       }
     });
 

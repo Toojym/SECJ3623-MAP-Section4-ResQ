@@ -1,12 +1,10 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:share_plus/share_plus.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:printing/printing.dart';
 
 class PdfReportService {
-  static Future<File> generateReportPdf(String reportText, String reportTitle) async {
+  static Future<Uint8List> generateReportPdf(String reportText, String reportTitle) async {
     final pdf = pw.Document();
     
     // Add page
@@ -54,25 +52,20 @@ class PdfReportService {
       ),
     );
 
-    final directory = await getTemporaryDirectory();
-    final fileName = 'Laporan_AWANIS_${DateTime.now().millisecondsSinceEpoch}.pdf';
-    final filePath = '${directory.path}/$fileName';
-    final file = File(filePath);
-    await file.writeAsBytes(await pdf.save());
-    return file;
+    return await pdf.save();
   }
 
-  static Future<void> shareReport(File pdfFile) async {
-    await Share.shareXFiles(
-      [XFile(pdfFile.path)],
-      text: 'Laporan Insiden AI - SIGAP',
+  static Future<void> shareReport(Uint8List bytes, String filename) async {
+    await Printing.sharePdf(
+      bytes: bytes,
+      filename: filename,
     );
   }
 
-  static Future<void> downloadReport(File pdfFile) async {
+  static Future<void> downloadReport(Uint8List bytes, String filename) async {
     await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdfFile.readAsBytes(),
-      name: pdfFile.path.split('/').last,
+      onLayout: (PdfPageFormat format) async => bytes,
+      name: filename,
     );
   }
 }

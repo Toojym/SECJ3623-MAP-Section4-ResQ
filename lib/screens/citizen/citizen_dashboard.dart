@@ -222,6 +222,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
       builder: (context, state) {
         final name = state is AuthAuthenticated ? state.displayName : '';
         final uid = state is AuthAuthenticated ? state.uid : '';
+        final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
         return Stack(
           children: [
             Scaffold(
@@ -241,9 +242,9 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                 ],
               ),
               body: _buildBody(uid, name),
-              floatingActionButton: _buildSOSFab(),
-              floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-              bottomNavigationBar: _buildBottomAppBar(),
+              floatingActionButton: isKeyboardOpen ? null : _buildSOSFab(),
+              floatingActionButtonLocation: isKeyboardOpen ? null : FloatingActionButtonLocation.centerDocked,
+              bottomNavigationBar: isKeyboardOpen ? null : _buildBottomAppBar(),
             ),
             if (_isSirenActive)
               Positioned.fill(

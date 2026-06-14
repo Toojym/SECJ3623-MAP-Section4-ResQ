@@ -2780,9 +2780,6 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
               Expanded(
                 child: TextField(
                   controller: _awanisMsgCtrl,
-                  maxLines: null,
-                  keyboardType: TextInputType.multiline,
-                  textInputAction: TextInputAction.send,
                   decoration: InputDecoration(
                     hintText:'Tanya AWANIS (cth: Berapa SOS hari ini?)...'.tr(),
                     hintStyle: GoogleFonts.inter(color: AppColors.textHint, fontSize: 13),
@@ -2894,27 +2891,29 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                 onPressed: () => Navigator.of(context).pop(),
                 child: Text('Tutup'.tr(), style: GoogleFonts.inter(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
               ),
-              TextButton.icon(
+              ElevatedButton.icon(
                 onPressed: () async {
-                  final file = await PdfReportService.generateReportPdf(report, 'Laporan Insiden AI');
-                  await PdfReportService.shareReport(file);
+                  final bytes = await PdfReportService.generateReportPdf(report, 'Laporan Insiden AI');
+                  await PdfReportService.shareReport(bytes, 'Laporan_Insiden_AI.pdf');
                 },
                 icon: const Icon(Icons.share_rounded, size: 16),
                 label: Text('Kongsi'.tr()),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.primary,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
               ),
-              TextButton.icon(
+              ElevatedButton.icon(
                 onPressed: () async {
-                  final file = await PdfReportService.generateReportPdf(report, 'Laporan Insiden AI');
-                  await PdfReportService.downloadReport(file);
+                  final bytes = await PdfReportService.generateReportPdf(report, 'Laporan Insiden AI');
+                  await PdfReportService.downloadReport(bytes, 'Laporan_Insiden_AI.pdf');
                 },
                 icon: const Icon(Icons.download_rounded, size: 16),
                 label: Text('Muat Turun'.tr()),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.safe,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.safe,
+                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
               ),
