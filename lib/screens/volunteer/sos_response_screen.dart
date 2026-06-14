@@ -15,6 +15,7 @@ import '../../services/firestore_service.dart';
 import '../../services/location_service.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_routes.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 
 /// Full-screen detail view for a volunteer to review and respond to an SOS.
@@ -97,7 +98,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text('Detail Insiden',
+        title: Text('Detail Insiden'.tr(),
             style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -154,13 +155,13 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
         children: [
           Icon(Icons.search_off_rounded, size: 64, color: AppColors.textHint),
           const SizedBox(height: 16),
-          Text('Laporan tidak dijumpai',
+          Text('Laporan tidak dijumpai'.tr(),
               style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textSecondary)),
           const SizedBox(height: 8),
-          Text('Laporan SOS ini mungkin telah dibatalkan.',
+          Text('Laporan SOS ini mungkin telah dibatalkan.'.tr(),
               style: GoogleFonts.inter(
                   fontSize: 13, color: AppColors.textHint)),
         ],
@@ -314,7 +315,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
         _detailCard(
           icon: Icons.location_on_rounded,
           iconColor: AppColors.danger,
-          title: 'Lokasi Insiden',
+          title:'Lokasi Insiden'.tr(),
           children: [
             Text(report.address.isNotEmpty ? report.address : 'Tiada alamat',
                 style: GoogleFonts.inter(
@@ -333,7 +334,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
         _detailCard(
           icon: Icons.description_rounded,
           iconColor: AppColors.primary,
-          title: 'Penerangan',
+          title:'Penerangan'.tr(),
           children: [
             Text(
                 report.description.isNotEmpty
@@ -352,7 +353,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
           _detailCard(
             icon: Icons.assignment_turned_in_rounded,
             iconColor: AppColors.primary,
-            title: 'Spesifikasi Darurat',
+            title:'Spesifikasi Darurat'.tr(),
             children: [
               ...report.formattedSpecificDetails.entries.map((entry) {
                 return Padding(
@@ -383,7 +384,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
           _detailCard(
             icon: Icons.image_rounded,
             iconColor: Colors.teal,
-            title: 'Gambar Bukti Kecemasan',
+            title:'Gambar Bukti Kecemasan'.tr(),
             children: [
               const SizedBox(height: 8),
               ClipRRect(
@@ -406,7 +407,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
                         height: 100,
                         color: Colors.grey[100],
                         alignment: Alignment.center,
-                        child: Text('Gagal memuatkan gambar bukti.', style: GoogleFonts.inter(color: AppColors.textSecondary)),
+                        child: Text('Gagal memuatkan gambar bukti.'.tr(), style: GoogleFonts.inter(color: AppColors.textSecondary)),
                       );
                     }
                   } else {
@@ -420,7 +421,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
                           height: 100,
                           color: Colors.grey[100],
                           alignment: Alignment.center,
-                          child: Text('Gagal memuatkan gambar bukti.', style: GoogleFonts.inter(color: AppColors.textSecondary)),
+                          child: Text('Gagal memuatkan gambar bukti.'.tr(), style: GoogleFonts.inter(color: AppColors.textSecondary)),
                         );
                       },
                     );
@@ -437,7 +438,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
         _detailCard(
           icon: Icons.psychology_rounded,
           iconColor: AppColors.volunteerAccent,
-          title: 'Kemahiran Diperlukan',
+          title:'Kemahiran Diperlukan'.tr(),
           children: [
             Wrap(
               spacing: 8,
@@ -469,7 +470,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
         _detailCard(
           icon: Icons.person_rounded,
           iconColor: AppColors.safe,
-          title: 'Maklumat Pelapor',
+          title:'Maklumat Pelapor'.tr(),
           children: [
             _infoRow('Nama', report.reporterName),
             if (report.reporterPhone.isNotEmpty)
@@ -494,7 +495,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14)),
                 ),
-                child: Text('Tolak',
+                child: Text('Tolak'.tr(),
                     style: GoogleFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
@@ -521,7 +522,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
                         height: 20,
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: Colors.white))
-                    : Text('Terima Misi',
+                    : Text('Terima Misi'.tr(),
                         style: GoogleFonts.inter(
                             fontSize: 15, fontWeight: FontWeight.w700)),
               ),
@@ -611,7 +612,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
       builder: (ctx) => AlertDialog(
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Terima Misi?',
+        title: Text('Terima Misi?'.tr(),
             style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -650,7 +651,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Tidak',
+            child: Text('Tidak'.tr(),
                 style: TextStyle(color: AppColors.textSecondary)),
           ),
           ElevatedButton(
@@ -663,7 +664,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
               Navigator.pop(ctx);
               _acceptMission(report);
             },
-            child: Text('Ya, Terima',
+            child: Text('Ya, Terima'.tr(),
                 style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
           ),
         ],
@@ -734,7 +735,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Misi ditolak.'),
+            content: Text('Misi ditolak.'.tr()),
             backgroundColor: AppColors.textSecondary,
           ),
         );
@@ -826,7 +827,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
         Marker(
           markerId: const MarkerId('volunteer_loc'),
           position: LatLng(_volunteerPosition!.latitude, _volunteerPosition!.longitude),
-          infoWindow: const InfoWindow(title: 'Lokasi Anda (Skuad Penyelamat)'),
+          infoWindow: InfoWindow(title:'Lokasi Anda (Skuad Penyelamat)'.tr()),
           icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet),
         ),
       );
@@ -851,13 +852,13 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Misi Sedang Berlangsung',
+                    Text('Misi Sedang Berlangsung'.tr(),
                         style: GoogleFonts.poppins(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
                             color: AppColors.volunteerAccent)),
                     const SizedBox(height: 2),
-                    Text('Sila bergerak ke lokasi mangsa dengan berhati-hati.',
+                    Text('Sila bergerak ke lokasi mangsa dengan berhati-hati.'.tr(),
                         style: GoogleFonts.inter(
                             fontSize: 12, color: AppColors.textSecondary)),
                   ],
@@ -867,7 +868,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        Text('Peta Navigasi Misi',
+        Text('Peta Navigasi Misi'.tr(),
             style: GoogleFonts.poppins(
                 fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
         const SizedBox(height: 8),
@@ -903,7 +904,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
             children: [
               Column(
                 children: [
-                  Text('Jarak ke Mangsa',
+                  Text('Jarak ke Mangsa'.tr(),
                       style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary)),
                   const SizedBox(height: 4),
                   Text(distanceStr,
@@ -914,7 +915,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
               Container(width: 1.5, height: 36, color: AppColors.divider),
               Column(
                 children: [
-                  Text('Anggaran Masa Tiba',
+                  Text('Anggaran Masa Tiba'.tr(),
                       style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary)),
                   const SizedBox(height: 4),
                   Text(etaStr,
@@ -951,7 +952,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Bantuan Tambahan',
+                    Text('Bantuan Tambahan'.tr(),
                         style: GoogleFonts.inter(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -1017,13 +1018,13 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
         _detailCard(
           icon: Icons.info_outline_rounded,
           iconColor: urgencyColor,
-          title: 'Perincian Misi SOS',
+          title:'Perincian Misi SOS'.tr(),
           children: [
             _infoRow('Jenis Kecemasan', report.type),
             _infoRow('Alamat/Lokasi', report.address.isNotEmpty ? report.address : 'Koordinat Sahaja'),
             if (report.description.isNotEmpty) ...[
               const SizedBox(height: 8),
-              Text('Penerangan Mangsa:',
+              Text('Penerangan Mangsa:'.tr(),
                   style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
               const SizedBox(height: 4),
               Text(report.description,
@@ -1042,7 +1043,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Tidak dapat membuka panggilan telefon.'),
+                            content: Text('Tidak dapat membuka panggilan telefon.'.tr()),
                             backgroundColor: AppColors.danger,
                           ),
                         );
@@ -1050,7 +1051,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
                     }
                   },
                   icon: const Icon(Icons.call_rounded, size: 20),
-                  label: Text('Hubungi Mangsa', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                  label: Text('Hubungi Mangsa'.tr(), style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.safe,
                     foregroundColor: Colors.white,
@@ -1069,7 +1070,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
           _detailCard(
             icon: Icons.assignment_turned_in_rounded,
             iconColor: AppColors.primary,
-            title: 'Spesifikasi Darurat',
+            title:'Spesifikasi Darurat'.tr(),
             children: [
               ...report.formattedSpecificDetails.entries.map((entry) {
                 return Padding(
@@ -1099,7 +1100,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
           _detailCard(
             icon: Icons.image_rounded,
             iconColor: Colors.teal,
-            title: 'Gambar Bukti Kecemasan',
+            title:'Gambar Bukti Kecemasan'.tr(),
             children: [
               const SizedBox(height: 8),
               ClipRRect(
@@ -1122,7 +1123,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
                         height: 100,
                         color: Colors.grey[100],
                         alignment: Alignment.center,
-                        child: Text('Gagal memuatkan gambar bukti.', style: GoogleFonts.inter(color: AppColors.textSecondary)),
+                        child: Text('Gagal memuatkan gambar bukti.'.tr(), style: GoogleFonts.inter(color: AppColors.textSecondary)),
                       );
                     }
                   } else {
@@ -1136,7 +1137,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
                           height: 100,
                           color: Colors.grey[100],
                           alignment: Alignment.center,
-                          child: Text('Gagal memuatkan gambar bukti.', style: GoogleFonts.inter(color: AppColors.textSecondary)),
+                          child: Text('Gagal memuatkan gambar bukti.'.tr(), style: GoogleFonts.inter(color: AppColors.textSecondary)),
                         );
                       },
                     );
@@ -1150,7 +1151,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
         _detailCard(
           icon: Icons.person_rounded,
           iconColor: AppColors.safe,
-          title: 'Hubungi Mangsa',
+          title:'Hubungi Mangsa'.tr(),
           children: [
             _infoRow('Nama Mangsa', report.reporterName),
             if (report.reporterPhone.isNotEmpty)
@@ -1163,7 +1164,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
                   _showCallingSimulationOverlay(context, report.reporterName);
                 },
                 icon: const Icon(Icons.phone_rounded, size: 16),
-                label: const Text('Panggil Telefon Mangsa'),
+                label: Text('Panggil Telefon Mangsa'.tr()),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.safe,
                   foregroundColor: Colors.white,
@@ -1180,7 +1181,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
         _detailCard(
           icon: Icons.checklist_rounded,
           iconColor: Colors.purple,
-          title: 'Senarai Semak Misi',
+          title:'Senarai Semak Misi'.tr(),
           children: [
             const SizedBox(height: 8),
             Row(
@@ -1203,7 +1204,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
-                  child: Text('Buka Semak', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold)),
+                  child: Text('Buka Semak'.tr(), style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -1219,7 +1220,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
                     context.push(AppRoutes.missionCompletion, extra: report.id);
                   },
             icon: const Icon(Icons.check_circle_rounded, color: Colors.white),
-            label: const Text('SELESAIKAN MISI'),
+            label: Text('SELESAIKAN MISI'.tr()),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.safe,
               foregroundColor: Colors.white,

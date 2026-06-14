@@ -13,6 +13,7 @@ import '../../models/donation_model.dart';
 import '../../services/firestore_service.dart';
 import '../../services/receipt_service.dart';
 import '../../widgets/donation/campaign_progress_widgets.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class DonationCampaignDetailScreen extends StatefulWidget {
   final CampaignModel campaign;
@@ -123,7 +124,7 @@ class _DonationCampaignDetailScreenState
               children: [
                 const Icon(Icons.lock_rounded, size: 14, color: Colors.white),
                 const SizedBox(width: 6),
-                Text('Ditutup',
+                Text('Ditutup'.tr(),
                     style: GoogleFonts.inter(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -405,12 +406,12 @@ class _DonationCampaignDetailScreenState
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Belum Ada Sumbangan',
+                          Text('Belum Ada Sumbangan'.tr(),
                               style: GoogleFonts.inter(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   color: AppColors.textPrimary)),
-                          Text('Sumbangan anda akan dipaparkan di sini.',
+                          Text('Sumbangan anda akan dipaparkan di sini.'.tr(),
                               style: GoogleFonts.inter(
                                   fontSize: 12, color: AppColors.textSecondary)),
                         ],
@@ -476,7 +477,7 @@ class _DonationCampaignDetailScreenState
                         ),
                         trailing: TextButton(
                           onPressed: () => _showReceiptDialog(d),
-                          child: Text('Resit',
+                          child: Text('Resit'.tr(),
                               style: GoogleFonts.inter(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
@@ -514,7 +515,7 @@ class _DonationCampaignDetailScreenState
         child: ElevatedButton.icon(
           onPressed: () => _showDonationDialog(_campaign),
           icon: const Icon(Icons.favorite_rounded, size: 20),
-          label: Text('Derma Sekarang',
+          label: Text('Derma Sekarang'.tr(),
               style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700)),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,
@@ -613,7 +614,7 @@ class _DonationCampaignDetailScreenState
                 ),
                 const SizedBox(height: 20),
                 // Quick amount chips
-                Text('Jumlah Cepat',
+                Text('Jumlah Cepat'.tr(),
                     style: GoogleFonts.inter(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -643,7 +644,7 @@ class _DonationCampaignDetailScreenState
                 TextField(
                   controller: nameCtrl,
                   decoration: const InputDecoration(
-                    labelText: 'Nama Penderma',
+                    labelText:'Nama Penderma'.tr(),
                     prefixIcon: Icon(Icons.person_outline_rounded),
                   ),
                 ),
@@ -651,14 +652,14 @@ class _DonationCampaignDetailScreenState
                 TextField(
                   controller: amountCtrl,
                   decoration: const InputDecoration(
-                    labelText: 'Jumlah Derma (RM)',
-                    prefixText: 'RM ',
+                    labelText:'Jumlah Derma (RM)'.tr(),
+                    prefixText:'RM '.tr(),
                     prefixIcon: Icon(Icons.attach_money_rounded),
                   ),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 ),
                 const SizedBox(height: 12),
-                Text('Kaedah Pembayaran',
+                Text('Kaedah Pembayaran'.tr(),
                     style: GoogleFonts.inter(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -685,21 +686,21 @@ class _DonationCampaignDetailScreenState
                         .toList(),
                     onChanged: (_) {},
                     decoration: InputDecoration(
-                      labelText: 'Pilih Bank',
+                      labelText:'Pilih Bank'.tr(),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                 ] else ...[
                   const SizedBox(height: 12),
                   const TextField(
-                    decoration: InputDecoration(labelText: 'Nombor Kad'),
+                    decoration: InputDecoration(labelText:'Nombor Kad'.tr()),
                   ),
                   const SizedBox(height: 12),
                   Row(
                     children: const [
-                      Expanded(child: TextField(decoration: InputDecoration(labelText: 'Luput (MM/YY)'))),
+                      Expanded(child: TextField(decoration: InputDecoration(labelText:'Luput (MM/YY)'.tr()))),
                       SizedBox(width: 8),
-                      Expanded(child: TextField(decoration: InputDecoration(labelText: 'CVV'))),
+                      Expanded(child: TextField(decoration: InputDecoration(labelText:'CVV'.tr()))),
                     ],
                   ),
                 ],
@@ -715,12 +716,12 @@ class _DonationCampaignDetailScreenState
                             final donorName = nameCtrl.text.trim();
                             if (amount <= 0) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Sila masukkan jumlah yang sah.')));
+                                  const SnackBar(content: Text('Sila masukkan jumlah yang sah.'.tr())));
                               return;
                             }
                             if (donorName.isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Sila masukkan nama penderma.')));
+                                  const SnackBar(content: Text('Sila masukkan nama penderma.'.tr())));
                               return;
                             }
                             setModalState(() => isProcessing = true);
@@ -760,7 +761,7 @@ class _DonationCampaignDetailScreenState
                             height: 20,
                             child: CircularProgressIndicator(
                                 color: Colors.white, strokeWidth: 2))
-                        : Text('Bayar Sekarang',
+                        : Text('Bayar Sekarang'.tr(),
                             style: GoogleFonts.inter(
                                 fontSize: 15, fontWeight: FontWeight.w700)),
                   ),
@@ -784,7 +785,7 @@ class _DonationCampaignDetailScreenState
           children: [
             CircularProgressIndicator(),
             SizedBox(height: 16),
-            Text('Menjana resit PDF...'),
+            Text('Menjana resit PDF...'.tr()),
           ],
         ),
       ),
@@ -816,7 +817,7 @@ class _DonationCampaignDetailScreenState
                     size: 40, color: AppColors.primary),
               ),
               const SizedBox(height: 12),
-              Text('Sumbangan Berjaya!',
+              Text('Sumbangan Berjaya!'.tr(),
                   style: GoogleFonts.poppins(
                       fontSize: 16, fontWeight: FontWeight.w700)),
             ],
@@ -866,7 +867,7 @@ class _DonationCampaignDetailScreenState
               onPressed: () async =>
                   ReceiptService.shareReceipt(pdfFile, donation.receiptNo),
               icon: const Icon(Icons.share_rounded),
-              label: const Text('Kongsi PDF'),
+              label: Text('Kongsi PDF'.tr()),
             ),
             OutlinedButton.icon(
               onPressed: () async {
@@ -883,11 +884,11 @@ class _DonationCampaignDetailScreenState
                 }
               },
               icon: const Icon(Icons.download_rounded),
-              label: const Text('Muat Turun PDF'),
+              label: Text('Muat Turun PDF'.tr()),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Tutup'),
+              child: Text('Tutup'.tr()),
             ),
           ],
         ),

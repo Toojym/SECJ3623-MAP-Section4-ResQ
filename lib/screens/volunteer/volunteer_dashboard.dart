@@ -15,6 +15,7 @@ import '../../models/volunteer_task_model.dart';
 import '../../services/firestore_service.dart';
 import '../../services/location_service.dart';
 import '../../services/notification_service.dart';
+import '../../services/awanis_service.dart';
 import '../../widgets/common/sigap_app_bar.dart';
 
 
@@ -195,7 +196,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
         return Scaffold(
           backgroundColor: AppColors.background,
           appBar: SigapAppBar(
-            title: 'SIGAP',
+            title:'SIGAP'.tr(),
             showLogout: false,
             actions: [
               IconButton(
@@ -391,7 +392,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Status Ketersediaan', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                    Text('Status Ketersediaan'.tr(), style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
                     const SizedBox(height: 3),
                     Text(
                       _isActive ? 'Anda boleh dihubungi untuk misi' : 'Anda tidak tersedia buat masa ini',
@@ -446,10 +447,10 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Kepakaran Saya', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+            Text('Kepakaran Saya'.tr(), style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
             GestureDetector(
               onTap: () => context.push(AppRoutes.volunteerProfile),
-              child: Text('Kemaskini', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.volunteerAccent)),
+              child: Text('Kemaskini'.tr(), style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.volunteerAccent)),
             ),
           ],
         ),
@@ -485,7 +486,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                 children: [
                   const Icon(Icons.stars_rounded, color: Colors.amber, size: 20),
                   const SizedBox(width: 8),
-                  Text('SIGAP Mata', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                  Text('SIGAP Mata'.tr(), style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
                 ],
               ),
               Text('$_sigapMataPoints mata', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.volunteerAccent)),
@@ -551,7 +552,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                     children: [
                       const Icon(Icons.check_circle_outline_rounded, size: 36, color: AppColors.safe),
                       const SizedBox(height: 8),
-                      Text('Kawasan anda selamat buat masa ini.', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+                      Text('Kawasan anda selamat buat masa ini.'.tr(), style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
                     ],
                   ),
                 ),
@@ -640,7 +641,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
         _actionCard(Icons.history_rounded, 'Sejarah Misi', 'Rekod misi terdahulu', AppColors.primary, () {}),
         const SizedBox(height: 10),
         _actionCard(Icons.auto_awesome_rounded, 'Briefing AWANIS', 'Ringkasan pra-misi & sumber', const Color(0xFFEC4899),
-            () => _showComingSoonDialog('Briefing AWANIS AI', 'Ringkasan insiden, bilangan mangsa, sumber di lapangan')),
+            () => _requestAwanisBriefing()),
         const SizedBox(height: 10),
         _actionCard(Icons.leaderboard_rounded, 'Leaderboard', 'Peringkat sukarelawan terbaik', const Color(0xFF8B5CF6),
             () => setState(() => _currentIndex = 3)),
@@ -753,9 +754,9 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Misi Tersedia', style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+              Text('Misi Tersedia'.tr(), style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
               const SizedBox(height: 4),
-              Text('Terima misi SOS atau tugasan skuad di sini', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+              Text('Terima misi SOS atau tugasan skuad di sini'.tr(), style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
             ],
           ),
         ),
@@ -821,9 +822,9 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
               children: [
                 const Icon(Icons.check_circle_outline_rounded, size: 64, color: AppColors.safe),
                 const SizedBox(height: 16),
-                Text('Tiada Misi SOS Aktif', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                Text('Tiada Misi SOS Aktif'.tr(), style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
                 const SizedBox(height: 8),
-                Text('Kawasan anda selamat buat masa ini', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textHint)),
+                Text('Kawasan anda selamat buat masa ini'.tr(), style: GoogleFonts.inter(fontSize: 13, color: AppColors.textHint)),
               ],
             ),
           );
@@ -934,7 +935,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                       child: OutlinedButton(
                         onPressed: () => _declineSOSMission(report.id, report.type),
                         style: OutlinedButton.styleFrom(foregroundColor: AppColors.danger, side: const BorderSide(color: AppColors.danger), padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                        child: Text('Tolak', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
+                        child: Text('Tolak'.tr(), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -942,7 +943,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                       child: ElevatedButton(
                         onPressed: _isActive ? () => _acceptSOSMission(report.id, report.type) : null,
                         style: ElevatedButton.styleFrom(backgroundColor: urgencyColor, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                        child: Text('Terima Misi', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
+                        child: Text('Terima Misi'.tr(), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
                       ),
                     ),
                   ],
@@ -997,9 +998,9 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
               children: [
                 const Icon(Icons.group_off_rounded, size: 64, color: AppColors.textHint),
                 const SizedBox(height: 16),
-                Text('Belum Ditugaskan ke Skuad', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                Text('Belum Ditugaskan ke Skuad'.tr(), style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
                 const SizedBox(height: 8),
-                Text('Sila hubungi pegawai untuk ditugaskan ke skuad', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textHint)),
+                Text('Sila hubungi pegawai untuk ditugaskan ke skuad'.tr(), style: GoogleFonts.inter(fontSize: 13, color: AppColors.textHint)),
               ],
             ),
           );
@@ -1012,7 +1013,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
               children: [
                 const Icon(Icons.group_off_rounded, size: 64, color: AppColors.textHint),
                 const SizedBox(height: 16),
-                Text('Tiada Tugasan Skuad', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                Text('Tiada Tugasan Skuad'.tr(), style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
                 const SizedBox(height: 8),
                 Text('Tiada tugasan untuk skuad $_assignedSquad buat masa ini', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textHint)),
               ],
@@ -1103,7 +1104,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                       child: OutlinedButton(
                         onPressed: () => _declineSquadTask(task, uid),
                         style: OutlinedButton.styleFrom(foregroundColor: AppColors.danger, side: const BorderSide(color: AppColors.danger), padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                        child: Text('Tolak', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
+                        child: Text('Tolak'.tr(), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -1111,7 +1112,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                       child: ElevatedButton(
                         onPressed: _isActive ? () => _acceptSquadTask(task, uid) : null,
                         style: ElevatedButton.styleFrom(backgroundColor: AppColors.volunteerAccent, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                        child: Text('Terima Misi', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
+                        child: Text('Terima Misi'.tr(), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
                       ),
                     ),
                   ],
@@ -1126,7 +1127,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                         children: [
                           Icon(Icons.info_outline_rounded, size: 12, color: AppColors.warning),
                           const SizedBox(width: 6),
-                          Text('Aktifkan status ketersediaan untuk terima misi', style: GoogleFonts.inter(fontSize: 11, color: AppColors.warning)),
+                          Text('Aktifkan status ketersediaan untuk terima misi'.tr(), style: GoogleFonts.inter(fontSize: 11, color: AppColors.warning)),
                         ],
                       ),
                     ),
@@ -1152,9 +1153,9 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Peta & Kemajuan Misi', style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+              Text('Peta & Kemajuan Misi'.tr(), style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
               const SizedBox(height: 4),
-              Text('Lihat lokasi misi dan kemaskini kemajuan tugasan anda', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+              Text('Lihat lokasi misi dan kemaskini kemajuan tugasan anda'.tr(), style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
             ],
           ),
         ),
@@ -1203,7 +1204,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                   markerId: const MarkerId('my_location'),
                   position: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
                   icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-                  infoWindow: const InfoWindow(title: 'Lokasi Anda'),
+                  infoWindow: InfoWindow(title:'Lokasi Anda'.tr()),
                 ),
               );
             }
@@ -2006,28 +2007,28 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                     children: [
                       // Show all buttons, but disable ones that are before current step
                       _buildStatusButton(
-                        label: 'Menuju ke Lokasi',
+                        label:'Menuju ke Lokasi'.tr(),
                         isActive: currentStepIndex == 0,
                         isCompleted: currentStepIndex > 0,
                         onPressed: () => _updateSquadTaskProgress(task, 'Menuju ke Lokasi', uid),
                         color: priorityColor,
                       ),
                       _buildStatusButton(
-                        label: 'Tiba di Lokasi',
+                        label:'Tiba di Lokasi'.tr(),
                         isActive: currentStepIndex == 1,
                         isCompleted: currentStepIndex > 1,
                         onPressed: () => _updateSquadTaskProgress(task, 'Tiba di Lokasi', uid),
                         color: priorityColor,
                       ),
                       _buildStatusButton(
-                        label: 'Sedang Bertugas',
+                        label:'Sedang Bertugas'.tr(),
                         isActive: currentStepIndex == 2,
                         isCompleted: currentStepIndex > 2,
                         onPressed: () => _updateSquadTaskProgress(task, 'Sedang Bertugas', uid),
                         color: priorityColor,
                       ),
                       _buildStatusButton(
-                        label: 'Selesai Tugas',
+                        label:'Selesai Tugas'.tr(),
                         isActive: currentStepIndex == 3,
                         isCompleted: currentStepIndex > 3,
                         onPressed: () => _updateSquadTaskProgress(task, 'Selesai Tugas', uid),
@@ -2156,7 +2157,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
 
     if (!_isActive) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sila aktifkan status ketersediaan anda terlebih dahulu'), backgroundColor: AppColors.warning),
+        SnackBar(content: Text('Sila aktifkan status ketersediaan anda terlebih dahulu'.tr()), backgroundColor: AppColors.warning),
       );
       return;
     }
@@ -2202,7 +2203,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
 
     if (!_isActive) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sila aktifkan status ketersediaan anda terlebih dahulu'), backgroundColor: AppColors.warning),
+        SnackBar(content: Text('Sila aktifkan status ketersediaan anda terlebih dahulu'.tr()), backgroundColor: AppColors.warning),
       );
       return;
     }
@@ -2265,7 +2266,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
       if (mounted && newStatus == 'Selesai Tugas') {
         await _firestoreService.addVolunteerPoints(uid, 50);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tugasan selesai! +50 SIGAP Mata'), backgroundColor: AppColors.safe));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Tugasan selesai! +50 SIGAP Mata'.tr()), backgroundColor: AppColors.safe));
           _loadProfile();
         }
       }
@@ -2281,17 +2282,97 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
   // ============================================================
 
   Widget _buildLeaderboardPlaceholder() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.leaderboard_rounded, size: 64, color: AppColors.textHint),
-          const SizedBox(height: 16),
-          Text('Leaderboard Sukarelawan', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
-          const SizedBox(height: 8),
-          Text('Peringkat akan dimuatkan dengan data aktiviti sukarelawan', textAlign: TextAlign.center, style: GoogleFonts.inter(fontSize: 13, color: AppColors.textHint)),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Leaderboard'.tr(), style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+              const SizedBox(height: 4),
+              Text('Peringkat sukarelawan berdasarkan SIGAP Mata'.tr(), style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+            ],
+          ),
+        ),
+        Expanded(
+          child: StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance.collection('volunteer_profiles').orderBy('sigapMataPoints', descending: true).limit(20).snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return Center(child: Text('Tiada rekod sukarelawan.'.tr(), style: GoogleFonts.inter(color: AppColors.textSecondary)));
+              }
+
+              final docs = snapshot.data!.docs;
+              return ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: docs.length,
+                itemBuilder: (context, index) {
+                  final data = docs[index].data() as Map<String, dynamic>;
+                  final name = data['name'] as String? ?? 'Sukarelawan';
+                  final points = data['sigapMataPoints'] as int? ?? 0;
+                  final squad = data['assignedSquad'] as String? ?? '-';
+                  
+                  Color rankColor;
+                  if (index == 0) rankColor = Colors.amber;
+                  else if (index == 1) rankColor = Colors.grey.shade400;
+                  else if (index == 2) rankColor = Colors.orange.shade300;
+                  else rankColor = AppColors.textHint;
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
+                      ],
+                      border: index < 3 ? Border.all(color: rankColor, width: 2) : Border.all(color: AppColors.divider),
+                    ),
+                    child: Row(
+                      children: [
+                        Text(
+                          '#${index + 1}',
+                          style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: rankColor),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(name, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                              Text(squad, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppColors.volunteerAccent.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.stars_rounded, color: Colors.amber, size: 16),
+                              const SizedBox(width: 4),
+                              Text('$points', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.volunteerAccent)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -2299,9 +2380,9 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       children: [
-        Text('Pelepasan SIGAP Mata', style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+        Text('Pelepasan SIGAP Mata'.tr(), style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
         const SizedBox(height: 8),
-        Text('Tukarkan poin SIGAP Mata anda dengan sijil tersertifikasi', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+        Text('Tukarkan poin SIGAP Mata anda dengan sijil tersertifikasi'.tr(), style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
         const SizedBox(height: 24),
         Container(
           padding: const EdgeInsets.all(20),
@@ -2313,7 +2394,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                 children: [
                   const Icon(Icons.stars_rounded, color: Colors.amber, size: 24),
                   const SizedBox(width: 12),
-                  Text('Poin SIGAP Mata Anda', style: GoogleFonts.inter(fontSize: 13, color: Colors.white70, fontWeight: FontWeight.w500)),
+                  Text('Poin SIGAP Mata Anda'.tr(), style: GoogleFonts.inter(fontSize: 13, color: Colors.white70, fontWeight: FontWeight.w500)),
                 ],
               ),
               const SizedBox(height: 12),
@@ -2322,7 +2403,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
           ),
         ),
         const SizedBox(height: 24),
-        Text('Sijil Tersedia untuk Pelepasan', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+        Text('Sijil Tersedia untuk Pelepasan'.tr(), style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
         const SizedBox(height: 12),
         _certificateCard('Sijil NADMA\nSukarelawan Darurat', '500 SIGAP Mata', AppColors.primary, Icons.verified_user_rounded),
         const SizedBox(height: 12),
@@ -2340,7 +2421,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                 children: [
                   const Icon(Icons.lightbulb_rounded, size: 20, color: AppColors.safe),
                   const SizedBox(width: 12),
-                  Expanded(child: Text('Cara Mengumpul Poin', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary))),
+                  Expanded(child: Text('Cara Mengumpul Poin'.tr(), style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary))),
                 ],
               ),
               const SizedBox(height: 12),
@@ -2366,14 +2447,14 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
             title: Text('Tebus $title?', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 16)),
             content: Text('Anda memerlukan $cost. Adakah anda pasti ingin menebus sijil ini?', style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary)),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+              TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Batal'.tr())),
               ElevatedButton(
                 onPressed: () {
                   Navigator.pop(ctx);
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Sijil $title berjaya ditebus!'), backgroundColor: AppColors.safe));
                 },
                 style: ElevatedButton.styleFrom(backgroundColor: color),
-                child: const Text('Ya, Tebus'),
+                child: Text('Ya, Tebus'.tr()),
               ),
             ],
           ),
@@ -2474,29 +2555,62 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(title, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(message, style: GoogleFonts.inter(color: AppColors.textSecondary)),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(color: AppColors.warning.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-              child: Row(
-                children: [
-                  const Icon(Icons.schedule_rounded, size: 16, color: AppColors.warning),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text('Akan datang dalam masa terdekat', style: GoogleFonts.inter(fontSize: 12, color: AppColors.warning, fontWeight: FontWeight.w500))),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Tutup'))],
+        title: Text(title, style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        content: Text(message, style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('OK'.tr())),
+        ],
       ),
     );
+  }
+
+  void _requestAwanisBriefing() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(color: AppColors.volunteerAccent),
+            const SizedBox(height: 16),
+            Text('AWANIS sedang menganalisis laporan...'.tr(), style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      final summary = await AwanisService().getVolunteerBriefing();
+      if (mounted) {
+        Navigator.pop(context); // close loading
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Row(
+              children: [
+                const Icon(Icons.auto_awesome_rounded, color: Color(0xFFEC4899)),
+                const SizedBox(width: 8),
+                Expanded(child: Text('Pre-Mission Briefing'.tr(), style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18))),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Text(summary, style: GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary)),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: Text('OK'.tr())),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        _showComingSoonDialog('Ralat', 'Gagal mendapatkan maklumat AWANIS.');
+      }
+    }
   }
 
   Widget _buildSectionHeader(String title) {

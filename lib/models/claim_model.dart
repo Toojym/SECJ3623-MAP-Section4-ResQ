@@ -21,6 +21,10 @@ class ClaimModel {
   final DateTime? infoDeadline;
   final String? outOfZoneReason;
   final DateTime? citizenUpdatedAt; // set when citizen resubmits after officer info request
+  final String? bankName;
+  final String? bankAccountNumber;
+  final bool isKIR;
+  final bool agreedToPdpa;
 
   ClaimModel({
     required this.id,
@@ -41,6 +45,10 @@ class ClaimModel {
     this.infoDeadline,
     this.outOfZoneReason,
     this.citizenUpdatedAt,
+    this.bankName,
+    this.bankAccountNumber,
+    this.isKIR = false,
+    this.agreedToPdpa = false,
   });
 
   factory ClaimModel.fromMap(String id, Map<String, dynamic> data) {
@@ -73,6 +81,10 @@ class ClaimModel {
       citizenUpdatedAt: data['citizenUpdatedAt'] != null
           ? (data['citizenUpdatedAt'] as Timestamp).toDate()
           : null,
+      bankName: data['bankName'],
+      bankAccountNumber: data['bankAccountNumber'],
+      isKIR: data['isKIR'] ?? false,
+      agreedToPdpa: data['agreedToPdpa'] ?? false,
     );
   }
 
@@ -98,6 +110,10 @@ class ClaimModel {
           infoDeadline != null ? Timestamp.fromDate(infoDeadline!) : null,
       'outOfZoneReason': outOfZoneReason,
       'citizenUpdatedAt': citizenUpdatedAt != null ? Timestamp.fromDate(citizenUpdatedAt!) : null,
+      'bankName': bankName,
+      'bankAccountNumber': bankAccountNumber,
+      'isKIR': isKIR,
+      'agreedToPdpa': agreedToPdpa,
     };
   }
 }

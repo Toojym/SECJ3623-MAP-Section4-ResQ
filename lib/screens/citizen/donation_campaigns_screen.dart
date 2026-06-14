@@ -14,6 +14,7 @@ import '../../models/donation_model.dart';
 import '../../services/firestore_service.dart';
 import '../../widgets/donation/campaign_progress_widgets.dart';
 import 'donation_campaign_detail_screen.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class DonationCampaignsScreen extends StatefulWidget {
   const DonationCampaignsScreen({super.key});
@@ -176,7 +177,7 @@ class _DonationCampaignsScreenState extends State<DonationCampaignsScreen> {
           TextField(
             onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
             decoration: InputDecoration(
-              hintText: 'Cari kempen...',
+              hintText:'Cari kempen...'.tr(),
               prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textSecondary),
               filled: true,
               fillColor: Colors.white,
@@ -499,7 +500,7 @@ class _CampaignCard extends StatelessWidget {
                         child: OutlinedButton.icon(
                           onPressed: onTap,
                           icon: const Icon(Icons.info_outline_rounded, size: 16),
-                          label: const Text('Butiran'),
+                          label: Text('Butiran'.tr()),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AppColors.primary,
                             side: const BorderSide(color: AppColors.primary),
@@ -515,7 +516,7 @@ class _CampaignCard extends StatelessWidget {
                           child: ElevatedButton.icon(
                             onPressed: onDonate,
                             icon: const Icon(Icons.favorite_rounded, size: 16),
-                            label: const Text('Derma'),
+                            label: Text('Derma'.tr()),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               foregroundColor: Colors.white,

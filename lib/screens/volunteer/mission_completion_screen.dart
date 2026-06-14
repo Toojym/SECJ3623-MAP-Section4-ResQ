@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/firestore_service.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class MissionCompletionScreen extends StatefulWidget {
   final String sosDocId;
@@ -52,7 +53,7 @@ class _MissionCompletionScreenState extends State<MissionCompletionScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Misi diselesaikan dengan jaya!'),
+            content: Text('Misi diselesaikan dengan jaya!'.tr()),
             backgroundColor: AppColors.safe,
           ),
         );
@@ -111,7 +112,7 @@ class _MissionCompletionScreenState extends State<MissionCompletionScreen> {
                 controller: _victimsController,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
-                  hintText: 'Cth: 2',
+                  hintText:'Cth: 2'.tr(),
                   filled: true,
                   fillColor: Colors.white,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppColors.divider)),
@@ -167,7 +168,7 @@ class _MissionCompletionScreenState extends State<MissionCompletionScreen> {
                 controller: _notesController,
                 maxLines: 4,
                 decoration: InputDecoration(
-                  hintText: 'Cth: Mangsa telah diserahkan kepada pihak ambulans...',
+                  hintText:'Cth: Mangsa telah diserahkan kepada pihak ambulans...'.tr(),
                   filled: true,
                   fillColor: Colors.white,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppColors.divider)),
@@ -190,7 +191,7 @@ class _MissionCompletionScreenState extends State<MissionCompletionScreen> {
                   ),
                   child: _isSubmitting
                       ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : Text('Sahkan & Selesaikan Misi', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600)),
+                      : Text('Sahkan & Selesaikan Misi'.tr(), style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600)),
                 ),
               ),
             ],

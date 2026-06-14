@@ -557,7 +557,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
             decoration: BoxDecoration(
                 color: AppColors.volunteerAccent.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(99)),
-            child: Text('Sukarelawan',
+            child: Text('Sukarelawan'.tr(),
                 style: GoogleFonts.inter(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,

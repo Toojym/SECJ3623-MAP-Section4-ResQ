@@ -20,11 +20,15 @@ import '../../models/claim_model.dart';
 import '../../services/authority_routing_service.dart';
 import '../../services/firestore_service.dart';
 import '../../services/location_service.dart';
+import 'privacy_policy_screen.dart';
 import '../../services/notification_service.dart';
 import '../../widgets/common/sigap_app_bar.dart';
 import '../../widgets/common/sigap_button.dart';
 import 'donation_campaigns_screen.dart';
-
+import 'offline_guide_screen.dart';
+import 'faq_screen.dart';
+import 'awanis_chat_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 class SirenOverlay extends StatefulWidget {
   final VoidCallback onClose;
   const SirenOverlay({super.key, required this.onClose});
@@ -195,7 +199,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
             default:           statusLabel = status;
           }
           NotificationService.instance.showLocalNotification(
-            title: 'Kemaskini Tuntutan SIGAP',
+            title:'Kemaskini Tuntutan SIGAP'.tr(),
             body: 'Status tuntutan anda telah berubah kepada: $statusLabel',
             id: id.hashCode,
           );
@@ -612,7 +616,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Kemaskini Status Keselamatan', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: Text('Kemaskini Status Keselamatan'.tr(), style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -626,7 +630,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Tutup', style: GoogleFonts.inter(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+            child: Text('Tutup'.tr(), style: GoogleFonts.inter(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -836,7 +840,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                           ),
                           padding: const EdgeInsets.symmetric(vertical: 10),
                         ),
-                        child: const Text('Batal SOS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        child: Text('Batal SOS'.tr(), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -848,7 +852,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                           });
                         },
                         icon: const Icon(Icons.campaign_rounded, size: 16),
-                        label: const Text('Siren'),
+                        label: Text('Siren'.tr()),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.warning,
                           foregroundColor: Colors.white,
@@ -863,13 +867,10 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          _showCallingSimulationOverlay(
-                            context,
-                            report.responderName ?? 'Skuad Sukarelawan Berhampiran',
-                          );
+                          launchUrl(Uri.parse('tel:999'));
                         },
                         icon: const Icon(Icons.phone_rounded, size: 16),
-                        label: const Text('Hubungi'),
+                        label: Text('Hubungi'.tr()),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white,
@@ -1110,7 +1111,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
-                          child: const Text('Batal SOS', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                          child: Text('Batal SOS'.tr(), style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -1123,7 +1124,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                             });
                           },
                           icon: const Icon(Icons.campaign_rounded, size: 18),
-                          label: const Text('Siren'),
+                          label: Text('Siren'.tr()),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.warning,
                             foregroundColor: Colors.white,
@@ -1137,13 +1138,10 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                         child: ElevatedButton.icon(
                           onPressed: () {
                             Navigator.pop(ctx);
-                            _showCallingSimulationOverlay(
-                              context,
-                              report.responderName ?? 'Skuad Sukarelawan Berhampiran',
-                            );
+                            launchUrl(Uri.parse('tel:999'));
                           },
                           icon: const Icon(Icons.phone_rounded, size: 18),
-                          label: const Text('Hubungi'),
+                          label: Text('Hubungi'.tr()),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             foregroundColor: Colors.white,
@@ -1191,14 +1189,14 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
               children: [
                 const Icon(Icons.warning_amber_rounded, color: AppColors.warning),
                 const SizedBox(width: 8),
-                Text('Amaran Banjir Aktif', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.warning)),
+                Text('Amaran Banjir Aktif'.tr(), style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.warning)),
               ],
             ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Lokasi: Lembah Klang', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                Text('Lokasi: Lembah Klang'.tr(), style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
                 const SizedBox(height: 12),
                 Text(
                   'Paras air sungai di stesen utama telah melepasi paras bahaya. Penduduk di kawasan rendah dinasihatkan bersedia untuk berpindah dan patuhi arahan pihak berkuasa.',
@@ -1213,7 +1211,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                       const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.warning),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text('Dikemaskini: 10 minit lepas', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.warning)),
+                        child: Text('Dikemaskini: 10 minit lepas'.tr(), style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.warning)),
                       ),
                     ],
                   ),
@@ -1223,7 +1221,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: Text('Tutup', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                child: Text('Tutup'.tr(), style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -1234,7 +1232,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                   Navigator.pop(ctx);
                   setState(() => _currentIndex = 1); // Go to Map tab
                 },
-                child: Text('Lihat Peta', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                child: Text('Lihat Peta'.tr(), style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
               ),
             ],
           ),
@@ -1301,9 +1299,9 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
           children: [
             Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
             const SizedBox(height: 24),
-            Text('Pilih Jenis Kecemasan', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+            Text('Pilih Jenis Kecemasan'.tr(), style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
             const SizedBox(height: 8),
-            Text('Laporan SOS akan dihantar kepada sukarelawan berdekatan.',
+            Text('Laporan SOS akan dihantar kepada sukarelawan berdekatan.'.tr(),
                 style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
             const SizedBox(height: 24),
             Wrap(
@@ -1323,7 +1321,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
             _buildCancelActiveSOSButton(),
             const SizedBox(height: 12),
             SigapButton(
-              label: 'Batal',
+              label:'Batal'.tr(),
               onPressed: () => Navigator.pop(ctx),
               variant: SigapButtonVariant.outlined,
             ),
@@ -1396,6 +1394,8 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
     final missingNameCtrl = TextEditingController();
     final missingAgeCtrl = TextEditingController();
     final lastSeenClothesCtrl = TextEditingController();
+    
+    bool agreedPDPA = false;
 
     showModalBottomSheet(
       context: context,
@@ -1455,7 +1455,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                       controller: descCtrl,
                       maxLines: 3,
                       decoration: InputDecoration(
-                        hintText: 'Huraikan keadaan kecemasan anda...',
+                        hintText:'Huraikan keadaan kecemasan anda...'.tr(),
                         hintStyle: GoogleFonts.inter(fontSize: 13, color: AppColors.textHint),
                         filled: true,
                         fillColor: AppColors.background,
@@ -1505,7 +1505,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                           const SizedBox(height: 12),
                           if (type == 'Banjir') ...[
                             _buildDropdownField(
-                              label: 'Anggaran Paras Air',
+                              label:'Anggaran Paras Air'.tr(),
                               value: waterLevel,
                               items: ['Bawah Lutut', 'Paras Pinggang', 'Paras Dada', 'Melepasi Bumbung'],
                               onChanged: (val) {
@@ -1516,7 +1516,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                             ),
                             const SizedBox(height: 12),
                             _buildDropdownField(
-                              label: 'Jumlah Mangsa Terperangkap',
+                              label:'Jumlah Mangsa Terperangkap'.tr(),
                               value: trappedPeople,
                               items: ['Tiada', '1 orang', '2 orang', '3 orang', '4 orang', '5+ orang'],
                               onChanged: (val) {
@@ -1527,7 +1527,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                             ),
                             const SizedBox(height: 12),
                             _buildSwitchField(
-                              label: 'Memerlukan Bot Penyelamat?',
+                              label:'Memerlukan Bot Penyelamat?'.tr(),
                               value: needBoat,
                               onChanged: (val) {
                                 setModalState(() {
@@ -1537,7 +1537,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                             ),
                           ] else if (type == 'Tanah Runtuh') ...[
                             _buildSwitchField(
-                              label: 'Laluan/Akses Utama Terhalang?',
+                              label:'Laluan/Akses Utama Terhalang?'.tr(),
                               value: accessBlocked,
                               onChanged: (val) {
                                 setModalState(() {
@@ -1547,7 +1547,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                             ),
                             const SizedBox(height: 12),
                             _buildSwitchField(
-                              label: 'Pergerakan Tanah Masih Aktif?',
+                              label:'Pergerakan Tanah Masih Aktif?'.tr(),
                               value: stillActive,
                               onChanged: (val) {
                                 setModalState(() {
@@ -1557,7 +1557,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                             ),
                           ] else if (type == 'Kebakaran') ...[
                             _buildDropdownField(
-                              label: 'Jenis Kebakaran',
+                              label:'Jenis Kebakaran'.tr(),
                               value: fireType,
                               items: ['Rumah Kediaman', 'Hutan / Belukar', 'Litar Pintas', 'Bahan Kimia / Gas'],
                               onChanged: (val) {
@@ -1568,7 +1568,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                             ),
                             const SizedBox(height: 12),
                             _buildDropdownField(
-                              label: 'Ada Mangsa Terperangkap?',
+                              label:'Ada Mangsa Terperangkap?'.tr(),
                               value: fireTrappedPeople,
                               items: ['Tiada', '1 orang', '2 orang', '3 orang', '4 orang', '5+ orang'],
                               onChanged: (val) {
@@ -1579,7 +1579,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                             ),
                           ] else if (type == 'Perubatan') ...[
                             _buildDropdownField(
-                              label: 'Keadaan/Kondisi Mangsa',
+                              label:'Keadaan/Kondisi Mangsa'.tr(),
                               value: victimCondition,
                               items: ['Sedar & Bernafas', 'Pengsan / Tiada Respon', 'Pendarahan Teruk', 'Sakit Dada / Sesak Nafas'],
                               onChanged: (val) {
@@ -1590,7 +1590,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                             ),
                             const SizedBox(height: 12),
                             _buildDropdownField(
-                              label: 'Kumpulan Umur Mangsa',
+                              label:'Kumpulan Umur Mangsa'.tr(),
                               value: ageGroup,
                               items: ['Kanak-kanak / Bayi', 'Dewasa', 'Warga Emas'],
                               onChanged: (val) {
@@ -1601,19 +1601,19 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                             ),
                           ] else if (type == 'Orang Hilang') ...[
                             _buildTextField(
-                              label: 'Nama Penuh Orang Hilang',
+                              label:'Nama Penuh Orang Hilang'.tr(),
                               controller: missingNameCtrl,
                               hint: 'Masukkan nama mangsa...',
                             ),
                             const SizedBox(height: 12),
                             _buildTextField(
-                              label: 'Anggaran Umur',
+                              label:'Anggaran Umur'.tr(),
                               controller: missingAgeCtrl,
                               hint: 'Contoh: 12 tahun, 70 tahun...',
                             ),
                             const SizedBox(height: 12),
                             _buildTextField(
-                              label: 'Pakaian Terakhir Dilihat',
+                              label:'Pakaian Terakhir Dilihat'.tr(),
                               controller: lastSeenClothesCtrl,
                               hint: 'Contoh: Baju T biru, seluar hitam...',
                             ),
@@ -1624,7 +1624,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                     const SizedBox(height: 16),
 
                     // Image Picker Section
-                    Text('Gambar Bukti (Pilihan)',
+                    Text('Gambar Bukti (Pilihan)'.tr(),
                         style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
                     const SizedBox(height: 8),
                     if (pickedSOSImage == null)
@@ -1658,7 +1658,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                                   children: [
                                     const Icon(Icons.camera_alt_rounded, color: AppColors.primary, size: 20),
                                     const SizedBox(width: 8),
-                                    Text('Kamera', style: GoogleFonts.inter(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w600)),
+                                    Text('Kamera'.tr(), style: GoogleFonts.inter(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w600)),
                                   ],
                                 ),
                               ),
@@ -1693,7 +1693,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                                   children: [
                                     const Icon(Icons.photo_library_rounded, color: AppColors.primary, size: 20),
                                     const SizedBox(width: 8),
-                                    Text('Galeri', style: GoogleFonts.inter(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w600)),
+                                    Text('Galeri'.tr(), style: GoogleFonts.inter(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w600)),
                                   ],
                                 ),
                               ),
@@ -1741,16 +1741,37 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                       children: [
                         const Icon(Icons.gps_fixed_rounded, size: 14, color: AppColors.textSecondary),
                         const SizedBox(width: 6),
-                        Text('Lokasi GPS akan dikesan secara automatik',
+                        Text('Lokasi GPS akan dikesan secara automatik'.tr(),
                             style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary)),
                       ],
+                    ),
+                    const SizedBox(height: 16),
+                    CheckboxListTile(
+                      value: agreedPDPA,
+                      onChanged: (val) {
+                        setModalState(() => agreedPDPA = val ?? false);
+                      },
+                      title: Row(
+                        children: [
+                          Expanded(child: Text('Saya bersetuju berkongsi lokasi GPS ini bagi tujuan menyelamat mengikut Dasar Privasi & PDPA.'.tr(), style: GoogleFonts.inter(fontSize: 12))),
+                          IconButton(
+                            icon: const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.primary),
+                            onPressed: () {
+                              Navigator.push(context, MaterialPageRoute(builder: (context) => const PrivacyPolicyScreen()));
+                            },
+                          ),
+                        ],
+                      ),
+                      controlAffinity: ListTileControlAffinity.leading,
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
                     ),
                     const SizedBox(height: 24),
                     Row(
                       children: [
                         Expanded(
                           child: SigapButton(
-                            label: 'Batal',
+                            label:'Batal'.tr(),
                             onPressed: () => Navigator.pop(ctx),
                             variant: SigapButtonVariant.outlined,
                           ),
@@ -1763,6 +1784,10 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                             onPressed: _isSubmittingSOS
                                 ? null
                                 : () async {
+                                    if (!agreedPDPA) {
+                                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Anda perlu bersetuju dengan Dasar Privasi & PDPA sebelum menghantar SOS.'.tr())));
+                                      return;
+                                    }
                                     setModalState(() {
                                       _isSubmittingSOS = true;
                                     });
@@ -1996,7 +2021,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
             const SizedBox(height: 12),
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: Text('Tutup', style: GoogleFonts.inter(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+              child: Text('Tutup'.tr(), style: GoogleFonts.inter(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
             ),
             const SizedBox(height: 8),
           ],
@@ -2011,13 +2036,13 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Batal Tuntutan?', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-        content: Text('Adakah anda pasti mahu membatalkan tuntutan ini? Tindakan ini tidak boleh dibalikkan.',
+        title: Text('Batal Tuntutan?'.tr(), style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        content: Text('Adakah anda pasti mahu membatalkan tuntutan ini? Tindakan ini tidak boleh dibalikkan.'.tr(),
             style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Tidak', style: GoogleFonts.inter(color: AppColors.textSecondary)),
+            child: Text('Tidak'.tr(), style: GoogleFonts.inter(color: AppColors.textSecondary)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -2031,7 +2056,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Tuntutan telah dibatalkan.', style: GoogleFonts.inter()),
+                      content: Text('Tuntutan telah dibatalkan.'.tr(), style: GoogleFonts.inter()),
                       backgroundColor: AppColors.safe,
                     ),
                   );
@@ -2044,7 +2069,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                 }
               }
             },
-            child: Text('Ya, Batal', style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: Colors.white)),
+            child: Text('Ya, Batal'.tr(), style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: Colors.white)),
           ),
         ],
       ),
@@ -2116,7 +2141,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                             color: AppColors.danger,
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Text('Batalkan',
+                          child: Text('Batalkan'.tr(),
                               style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white)),
                         ),
                       ),
@@ -2151,13 +2176,13 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Laporan SOS ini akan dibatalkan dan dibuang dari papan tugas sukarelawan.',
+            Text('Laporan SOS ini akan dibatalkan dan dibuang dari papan tugas sukarelawan.'.tr(),
                 style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
             const SizedBox(height: 16),
             TextField(
               controller: reasonCtrl,
               decoration: InputDecoration(
-                hintText: 'Sebab pembatalan (pilihan)',
+                hintText:'Sebab pembatalan (pilihan)'.tr(),
                 hintStyle: GoogleFonts.inter(fontSize: 13, color: AppColors.textHint),
                 filled: true,
                 fillColor: AppColors.background,
@@ -2172,7 +2197,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Tidak', style: TextStyle(color: AppColors.textSecondary)),
+            child: Text('Tidak'.tr(), style: TextStyle(color: AppColors.textSecondary)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -2191,7 +2216,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('SOS berjaya dibatalkan.'),
+                      content: Text('SOS berjaya dibatalkan.'.tr()),
                       backgroundColor: AppColors.safe,
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -2209,7 +2234,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                 }
               }
             },
-            child: Text('Ya, Batalkan', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            child: Text('Ya, Batalkan'.tr(), style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -2279,26 +2304,26 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
               Marker(
                 markerId: const MarkerId('shelter_1'),
                 position: const LatLng(3.1550, 101.7100),
-                infoWindow: const InfoWindow(title: 'PPS Dewan Komuniti Ampang', snippet: 'Kapasiti: 150/300 orang | Status: Aktif'),
+                infoWindow: const InfoWindow(title:'PPS Dewan Komuniti Ampang'.tr(), snippet: 'Kapasiti: 150/300 orang | Status: Aktif'),
                 icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
               ),
               Marker(
                 markerId: const MarkerId('shelter_2'),
                 position: const LatLng(3.2000, 101.6800),
-                infoWindow: const InfoWindow(title: 'PPS SK Selayang', snippet: 'Kapasiti: 80/200 orang | Status: Aktif'),
+                infoWindow: const InfoWindow(title:'PPS SK Selayang'.tr(), snippet: 'Kapasiti: 80/200 orang | Status: Aktif'),
                 icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
               ),
               // Relief Trucks
               Marker(
                 markerId: const MarkerId('truck_1'),
                 position: const LatLng(3.1450, 101.6950),
-                infoWindow: const InfoWindow(title: 'Trak Bantuan Makanan APM', snippet: 'Status: Bergerak ke PPS Ampang'),
+                infoWindow: const InfoWindow(title:'Trak Bantuan Makanan APM'.tr(), snippet: 'Status: Bergerak ke PPS Ampang'),
                 icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
               ),
               Marker(
                 markerId: const MarkerId('truck_2'),
                 position: const LatLng(3.1800, 101.6700),
-                infoWindow: const InfoWindow(title: 'Lori Logistik SIGAP', snippet: 'Status: Mengedar selimut & khemah'),
+                infoWindow: const InfoWindow(title:'Lori Logistik SIGAP'.tr(), snippet: 'Status: Mengedar selimut & khemah'),
                 icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
               ),
             };
@@ -2416,7 +2441,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                             children: [
                               Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.greenAccent, shape: BoxShape.circle)),
                               const SizedBox(width: 6),
-                              Text('Peta Masa Nyata', style: GoogleFonts.inter(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w600)),
+                              Text('Peta Masa Nyata'.tr(), style: GoogleFonts.inter(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w600)),
                             ],
                           ),
                         ),
@@ -2468,7 +2493,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
   }
 
   Widget _buildAwanisScreen() {
-    return _AwanisChatScreen();
+    return AwanisChatScreen();
   }
 
   Widget _buildFamilySafetyTracker(String uid) {
@@ -2487,7 +2512,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                 padding: const EdgeInsets.all(20),
                 decoration: _cardDecoration(),
                 child: Center(
-                  child: Text('Sila kemaskini profil untuk menambah ahli keluarga.', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+                  child: Text('Sila kemaskini profil untuk menambah ahli keluarga.'.tr(), style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
                 ),
               );
             }
@@ -2500,7 +2525,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                 padding: const EdgeInsets.all(20),
                 decoration: _cardDecoration(),
                 child: Center(
-                  child: Text('Tiada rekod ahli keluarga.', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+                  child: Text('Tiada rekod ahli keluarga.'.tr(), style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
                 ),
               );
             }
@@ -2617,13 +2642,13 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Dewan Komuniti Ampang', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                        Text('Dewan Komuniti Ampang'.tr(), style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
                         const SizedBox(height: 6),
                         Row(
                           children: [
                             const Icon(Icons.location_on_rounded, size: 14, color: AppColors.textSecondary),
                             const SizedBox(width: 6),
-                            Text('1.2 km dari anda', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+                            Text('1.2 km dari anda'.tr(), style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
                           ],
                         ),
                       ],
@@ -2632,7 +2657,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(color: AppColors.warningLight, borderRadius: BorderRadius.circular(8)),
-                    child: Text('Kapasiti 75%', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.warning)),
+                    child: Text('Kapasiti 75%'.tr(), style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.warning)),
                   ),
                 ],
               ),
@@ -2651,7 +2676,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                 child: ElevatedButton.icon(
                   onPressed: () {},
                   icon: const Icon(Icons.navigation_rounded, size: 18),
-                  label: const Text('Navigasi Ke Pusat'),
+                  label: Text('Navigasi Ke Pusat'.tr()),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
@@ -2699,7 +2724,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                 padding: const EdgeInsets.all(20),
                 decoration: _cardDecoration(),
                 child: Center(
-                  child: Text('Tiada tuntutan setakat ini.',
+                  child: Text('Tiada tuntutan setakat ini.'.tr(),
                       style: GoogleFonts.inter(color: AppColors.textSecondary)),
                 ),
               );
@@ -2760,7 +2785,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                     padding: const EdgeInsets.all(20),
                     decoration: _cardDecoration(),
                     child: Center(
-                      child: Text('Tiada tuntutan untuk status ini.',
+                      child: Text('Tiada tuntutan untuk status ini.'.tr(),
                           style: GoogleFonts.inter(color: AppColors.textSecondary)),
                     ),
                   )
@@ -2864,7 +2889,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                                   child: OutlinedButton.icon(
                                     onPressed: () => _confirmCancelClaim(claim.id),
                                     icon: const Icon(Icons.cancel_outlined, size: 16),
-                                    label: const Text('Batal Tuntutan'),
+                                    label: Text('Batal Tuntutan'.tr()),
                                     style: OutlinedButton.styleFrom(
                                       foregroundColor: AppColors.danger,
                                       side: const BorderSide(color: AppColors.danger),
@@ -2899,7 +2924,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                                 children: [
                                   const Icon(Icons.warning_amber_rounded, size: 14, color: Colors.orange),
                                   const SizedBox(width: 6),
-                                  Text('⚠️  Tindakan Diperlukan',
+                                  Text('⚠️  Tindakan Diperlukan'.tr(),
                                       style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.orange)),
                                 ],
                               ),
@@ -2917,7 +2942,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                                   // ← This is now OUTSIDE the GestureDetector — no conflict
                                   onPressed: () => _showUpdateEvidenceDialog(claim),
                                   icon: const Icon(Icons.edit_note_rounded, size: 16),
-                                  label: const Text('Kemaskini Bukti & Maklumat'),
+                                  label: Text('Kemaskini Bukti & Maklumat'.tr()),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.orange,
                                     foregroundColor: Colors.white,
@@ -2960,9 +2985,16 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
     final icCtrl = TextEditingController();
     final householdCtrl = TextEditingController(text: '1');
     final damageCtrl = TextEditingController();
+    final bankNameCtrl = TextEditingController();
+    final bankAccCtrl = TextEditingController();
     
     File? selectedImage;
     bool isUploading = false;
+    
+    // Compliance Checkboxes
+    bool isKIR = false;
+    bool isTruthful = false;
+    bool agreedPDPA = false;
     
     final List<String> mockLocations = [
       'Taman Mutiara Rini, Johor Bahru, Johor',
@@ -2981,7 +3013,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
         builder: (context, setState) {
           return AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Text('Mohon Tuntutan Baru', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+            title: Text('Mohon Tuntutan Baru'.tr(), style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
             content: SingleChildScrollView(
               child: Form(
                 key: _formKey,
@@ -2990,7 +3022,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                   children: [
                     TextFormField(
                       controller: icCtrl,
-                      decoration: const InputDecoration(labelText: 'No. Kad Pengenalan (IC)', hintText: 'xxxxxx-xx-xxxx'),
+                      decoration: const InputDecoration(labelText:'No. Kad Pengenalan (IC)'.tr(), hintText:'xxxxxx-xx-xxxx'.tr()),
                       keyboardType: TextInputType.number,
                       validator: (value) => value == null || value.isEmpty ? 'Sila isi ruangan ini' : null,
                       onChanged: (value) {
@@ -3016,14 +3048,14 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: householdCtrl,
-                      decoration: const InputDecoration(labelText: 'Saiz Isi Rumah (Bilangan)'),
+                      decoration: const InputDecoration(labelText:'Saiz Isi Rumah (Bilangan)'.tr()),
                       keyboardType: TextInputType.number,
                       validator: (value) => value == null || value.isEmpty ? 'Sila isi ruangan ini' : null,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: typeCtrl,
-                      decoration: const InputDecoration(labelText: 'Jenis Bantuan (Cth: Makanan, Membaiki Rumah)'),
+                      decoration: const InputDecoration(labelText:'Jenis Bantuan (Cth: Makanan, Membaiki Rumah)'.tr()),
                       validator: (value) => value == null || value.isEmpty ? 'Sila isi ruangan ini' : null,
                     ),
                     const SizedBox(height: 12),
@@ -3049,7 +3081,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                         return TextFormField(
                           controller: textEditingController,
                           focusNode: focusNode,
-                          decoration: const InputDecoration(labelText: 'Lokasi / Zon Bencana', hintText: 'Mula menaip untuk carian...'),
+                          decoration: const InputDecoration(labelText:'Lokasi / Zon Bencana'.tr(), hintText:'Mula menaip untuk carian...'.tr()),
                           validator: (value) => value == null || value.isEmpty ? 'Sila isi ruangan ini' : null,
                         );
                       },
@@ -3057,7 +3089,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: damageCtrl,
-                      decoration: const InputDecoration(labelText: 'Keterangan Kerosakan'),
+                      decoration: const InputDecoration(labelText:'Keterangan Kerosakan'.tr()),
                       maxLines: 3,
                       validator: (value) => value == null || value.isEmpty ? 'Sila isi ruangan ini' : null,
                     ),
@@ -3084,8 +3116,63 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                     if (selectedImage == null)
                       Padding(
                         padding: const EdgeInsets.only(top: 8.0),
-                        child: Text('Sila muat naik gambar bukti kerosakan.', style: GoogleFonts.inter(fontSize: 12, color: AppColors.danger)),
+                        child: Text('Sila muat naik gambar bukti kerosakan.'.tr(), style: GoogleFonts.inter(fontSize: 12, color: AppColors.danger)),
                       ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: bankNameCtrl,
+                      decoration: const InputDecoration(labelText:'Nama Bank (EFT BWI)'.tr(), hintText:'Cth: Maybank'.tr()),
+                      validator: (value) => value == null || value.isEmpty ? 'Sila isi ruangan ini' : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: bankAccCtrl,
+                      decoration: const InputDecoration(labelText:'No. Akaun Bank'.tr()),
+                      keyboardType: TextInputType.number,
+                      validator: (value) => value == null || value.isEmpty ? 'Sila isi ruangan ini' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    // Compliance Declarations
+                    CheckboxListTile(
+                      value: agreedPDPA,
+                      onChanged: (val) {
+                        setState(() => agreedPDPA = val ?? false);
+                      },
+                      title: Row(
+                        children: [
+                          Expanded(child: Text('Saya bersetuju dengan Dasar Privasi & PDPA.'.tr(), style: GoogleFonts.inter(fontSize: 12))),
+                          IconButton(
+                            icon: const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.primary),
+                            onPressed: () {
+                              Navigator.push(context, MaterialPageRoute(builder: (context) => const PrivacyPolicyScreen()));
+                            },
+                          ),
+                        ],
+                      ),
+                      controlAffinity: ListTileControlAffinity.leading,
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                    ),
+                    CheckboxListTile(
+                      value: isKIR,
+                      onChanged: (val) {
+                        setState(() => isKIR = val ?? false);
+                      },
+                      title: Text('Saya mengesahkan bahawa saya adalah Ketua Isi Rumah (KIR) dan ini adalah satu-satunya tuntutan bagi kediaman ini.'.tr(), style: GoogleFonts.inter(fontSize: 12)),
+                      controlAffinity: ListTileControlAffinity.leading,
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                    ),
+                    CheckboxListTile(
+                      value: isTruthful,
+                      onChanged: (val) {
+                        setState(() => isTruthful = val ?? false);
+                      },
+                      title: Text('Saya mengesahkan semua maklumat adalah benar. Maklumat palsu boleh didakwa di bawah Akta SPRM 2009.'.tr(), style: GoogleFonts.inter(fontSize: 12)),
+                      controlAffinity: ListTileControlAffinity.leading,
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                    ),
                   ],
                 ),
               ),
@@ -3093,19 +3180,33 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
             actions: [
               TextButton(
                 onPressed: isUploading ? null : () => Navigator.pop(ctx),
-                child: const Text('Batal'),
+                child: Text('Batal'.tr()),
               ),
               ElevatedButton(
                 onPressed: isUploading ? null : () async {
                   if (!_formKey.currentState!.validate()) return;
                   if (selectedImage == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sila muat naik gambar bukti.')));
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sila muat naik gambar bukti.'.tr())));
+                    return;
+                  }
+                  if (!agreedPDPA || !isKIR || !isTruthful) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sila tandakan semua kotak pengesahan dan persetujuan.'.tr())));
                     return;
                   }
                   
                   setState(() => isUploading = true);
                   
                   try {
+                    // Duplicate Check for BWI (1 claim per IC)
+                    final existingClaims = await FirebaseFirestore.instance.collection('claims').where('icNumber', isEqualTo: icCtrl.text).get();
+                    if (existingClaims.docs.isNotEmpty) {
+                      setState(() => isUploading = false);
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Nombor IC ini telah mendaftar tuntutan. Hanya satu tuntutan dibenarkan per KIR.'.tr())));
+                      }
+                      return;
+                    }
+
                     final authState = context.read<AuthBloc>().state;
                     if (authState is AuthAuthenticated) {
                       String imageUrl = await _firestoreService.uploadClaimEvidence(selectedImage!, authState.uid);
@@ -3121,11 +3222,15 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                         photoEvidence: imageUrl,
                         location: locationCtrl.text,
                         status: 'submitted',
+                        bankName: bankNameCtrl.text,
+                        bankAccountNumber: bankAccCtrl.text,
+                        isKIR: isKIR,
+                        agreedToPdpa: agreedPDPA,
                       );
                       await _firestoreService.submitClaim(claim.toMap());
                       if (mounted) Navigator.pop(ctx);
                       if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tuntutan berjaya dihantar.')));
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tuntutan berjaya dihantar.'.tr())));
                       }
                     }
                   } catch (e) {
@@ -3137,7 +3242,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                 },
                 child: isUploading 
                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
-                  : const Text('Hantar Tuntutan'),
+                  : Text('Hantar Tuntutan'.tr()),
               ),
             ],
           );
@@ -3230,7 +3335,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                               child: const Icon(Icons.edit_note_rounded, color: Colors.orange, size: 20),
                             ),
                             const SizedBox(width: 12),
-                            Text('Kemaskini Tuntutan',
+                            Text('Kemaskini Tuntutan'.tr(),
                                 style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
                           ],
                         ),
@@ -3252,7 +3357,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                                   children: [
                                     const Icon(Icons.warning_amber_rounded, size: 16, color: Colors.orange),
                                     const SizedBox(width: 6),
-                                    Text('Permintaan Pegawai:',
+                                    Text('Permintaan Pegawai:'.tr(),
                                         style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.orange)),
                                   ],
                                 ),
@@ -3266,7 +3371,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                         ],
 
                         // Damage description field
-                        Text('Keterangan Kerosakan',
+                        Text('Keterangan Kerosakan'.tr(),
                             style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
                         const SizedBox(height: 8),
                         TextFormField(
@@ -3274,7 +3379,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                           maxLines: 3,
                           enabled: !isUploading,
                           decoration: InputDecoration(
-                            hintText: 'Terangkan kerosakan dengan lebih terperinci...',
+                            hintText:'Terangkan kerosakan dengan lebih terperinci...'.tr(),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
@@ -3288,7 +3393,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                         const SizedBox(height: 20),
 
                         // Photo evidence
-                        Text('Bukti Bergambar',
+                        Text('Bukti Bergambar'.tr(),
                             style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
                         const SizedBox(height: 8),
 
@@ -3323,7 +3428,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                                           children: [
                                             const Icon(Icons.check_circle, color: Colors.white, size: 12),
                                             const SizedBox(width: 4),
-                                            Text('Gambar Baru', style: GoogleFonts.inter(fontSize: 10, color: Colors.white, fontWeight: FontWeight.w600)),
+                                            Text('Gambar Baru'.tr(), style: GoogleFonts.inter(fontSize: 10, color: Colors.white, fontWeight: FontWeight.w600)),
                                           ],
                                         ),
                                       ),
@@ -3370,7 +3475,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                           const LinearProgressIndicator(color: Colors.orange),
                           const SizedBox(height: 6),
                           Center(
-                            child: Text('Sedang memuat naik... sila tunggu',
+                            child: Text('Sedang memuat naik... sila tunggu'.tr(),
                                 style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
                           ),
                         ],
@@ -3530,15 +3635,22 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader('Kit Bantuan Offline', actionLabel: 'Muat Turun', onAction: () {}),
+        _buildSectionHeader('Kit Bantuan Offline & FAQ', actionLabel: 'Lihat Panduan', onAction: () {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const OfflineGuideScreen()));
+        }),
         const SizedBox(height: 16),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
-              _toolkitCard(Icons.medical_services_rounded, 'Panduan CPR', Colors.red),
-              _toolkitCard(Icons.water_rounded, 'Banjir Darurat', Colors.blue),
-              _toolkitCard(Icons.local_fire_department_rounded, 'Kebakaran', Colors.orange),
+              GestureDetector(
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OfflineGuideScreen())),
+                child: _toolkitCard(Icons.medical_services_rounded, 'Panduan Kecemasan', Colors.red),
+              ),
+              GestureDetector(
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FAQScreen())),
+                child: _toolkitCard(Icons.help_center_rounded, 'Pusat Bantuan / FAQ', Colors.blue),
+              ),
               _toolkitCard(Icons.backpack_rounded, 'Beg Kecemasan', Colors.green),
             ],
           ),
@@ -3568,7 +3680,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
             children: [
               const Icon(Icons.offline_pin_rounded, size: 12, color: AppColors.safe),
               const SizedBox(width: 4),
-              Text('Tersedia', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w500, color: AppColors.textSecondary)),
+              Text('Tersedia'.tr(), style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w500, color: AppColors.textSecondary)),
             ],
           )
         ],
@@ -3679,18 +3791,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
     );
   }
 
-  // ─── Call Simulation Overlay ─────────────────────────────────────────────────
 
-  void _showCallingSimulationOverlay(BuildContext context, String calleeName) {
-    Navigator.of(context).push(
-      PageRouteBuilder(
-        opaque: false,
-        barrierColor: Colors.black87,
-        pageBuilder: (ctx, anim, _) => _CallSimulationScreen(calleeName: calleeName),
-        transitionsBuilder: (ctx, anim, _, child) => FadeTransition(opacity: anim, child: child),
-      ),
-    );
-  }
   void _showClaimDetailsDialog(ClaimModel claim) {
     Widget imageWidget = const SizedBox();
     if (claim.photoEvidence.isNotEmpty) {
@@ -3852,7 +3953,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
-                                  child: Text('Tuntutan Anda Diluluskan!',
+                                  child: Text('Tuntutan Anda Diluluskan!'.tr(),
                                       style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.safe)),
                                 ),
                               ],
@@ -3894,9 +3995,9 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('Talian Bantuan SIGAP',
+                                  Text('Talian Bantuan SIGAP'.tr(),
                                       style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary)),
-                                  Text('1-800-88-SIGAP (74427)  •  Isnin–Jumaat, 8pg–5ptg',
+                                  Text('1-800-88-SIGAP (74427)  •  Isnin–Jumaat, 8pg–5ptg'.tr(),
                                       style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary)),
                                 ],
                               ),
@@ -3923,7 +4024,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                               children: [
                                 const Icon(Icons.manage_search_rounded, size: 20, color: Colors.purple),
                                 const SizedBox(width: 10),
-                                Text('Tuntutan Sedang Disemak',
+                                Text('Tuntutan Sedang Disemak'.tr(),
                                     style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.purple)),
                               ],
                             ),
@@ -3943,7 +4044,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                                       children: [
                                         const Icon(Icons.warning_amber_rounded, size: 16, color: Colors.orange),
                                         const SizedBox(width: 6),
-                                        Text('Pegawai Meminta Maklumat Tambahan',
+                                        Text('Pegawai Meminta Maklumat Tambahan'.tr(),
                                             style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.orange)),
                                       ],
                                     ),
@@ -3959,7 +4060,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                                 child: ElevatedButton.icon(
                                    onPressed: () => _showUpdateEvidenceDialog(claim, closeParent: true),
                                   icon: const Icon(Icons.edit_note_rounded, color: Colors.white),
-                                  label: const Text('Kemaskini Bukti & Maklumat'),
+                                  label: Text('Kemaskini Bukti & Maklumat'.tr()),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.purple,
                                     foregroundColor: Colors.white,
@@ -3969,7 +4070,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                               ),
                             ] else ...[
                               const SizedBox(height: 8),
-                              Text('Pegawai sedang menyemak bukti yang anda hantar. Tiada tindakan diperlukan buat masa ini.',
+                              Text('Pegawai sedang menyemak bukti yang anda hantar. Tiada tindakan diperlukan buat masa ini.'.tr(),
                                   style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
                             ],
                           ],
@@ -3994,7 +4095,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                               children: [
                                 const Icon(Icons.cancel_rounded, size: 20, color: AppColors.danger),
                                 const SizedBox(width: 10),
-                                Text('Sebab Penolakan',
+                                Text('Sebab Penolakan'.tr(),
                                     style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.danger)),
                               ],
                             ),
@@ -4002,7 +4103,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                             Text(claim.rejectReason ?? 'Maklumat tidak lengkap atau tidak memenuhi syarat.',
                                 style: GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary)),
                             const SizedBox(height: 12),
-                            Text('Anda boleh memfailkan tuntutan baru dengan maklumat yang lebih lengkap.',
+                            Text('Anda boleh memfailkan tuntutan baru dengan maklumat yang lebih lengkap.'.tr(),
                                 style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary, fontStyle: FontStyle.italic)),
                           ],
                         ),
@@ -4021,7 +4122,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Maklumat Tuntutan',
+                          Text('Maklumat Tuntutan'.tr(),
                               style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
                           const SizedBox(height: 12),
                           _detailRow('No. IC', claim.icNumber),
@@ -4052,7 +4153,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           elevation: 0,
                         ),
-                        child: Text('Tutup', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+                        child: Text('Tutup'.tr(), style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -4178,1409 +4279,4 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
       ),
     );
   }
-
 }
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// Call Simulation Screen
-// ═══════════════════════════════════════════════════════════════════════════════
-
-class _CallSimulationScreen extends StatefulWidget {
-  final String calleeName;
-  const _CallSimulationScreen({required this.calleeName});
-
-  @override
-  State<_CallSimulationScreen> createState() => _CallSimulationScreenState();
-}
-
-class _CallSimulationScreenState extends State<_CallSimulationScreen>
-    with TickerProviderStateMixin {
-  late AnimationController _pulseCtrl;
-  late AnimationController _waveCtrl;
-  late Timer _statusTimer;
-  String _callStatus = 'Menghubungi...';
-  int _secondsElapsed = 0;
-  final AudioPlayer _audioPlayer = AudioPlayer();
-
-  @override
-  void initState() {
-    super.initState();
-    _pulseCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))
-      ..repeat(reverse: true);
-    _waveCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1800))
-      ..repeat();
-
-    _audioPlayer.setReleaseMode(ReleaseMode.loop);
-    _audioPlayer.play(AssetSource('sounds/phone_calling.mp3'));
-
-    // Simulate call connecting after 3 seconds
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        setState(() => _callStatus = 'Bersambung...');
-      }
-    });
-    Future.delayed(const Duration(seconds: 4), () {
-      if (mounted) {
-        _audioPlayer.stop();
-        setState(() => _callStatus = 'Dalam Talian');
-      }
-    });
-
-    _statusTimer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (mounted && _callStatus == 'Dalam Talian') {
-        setState(() => _secondsElapsed++);
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _pulseCtrl.dispose();
-    _waveCtrl.dispose();
-    _statusTimer.cancel();
-    _audioPlayer.stop();
-    _audioPlayer.dispose();
-    super.dispose();
-  }
-
-  String get _elapsedFormatted {
-    final m = (_secondsElapsed ~/ 60).toString().padLeft(2, '0');
-    final s = (_secondsElapsed % 60).toString().padLeft(2, '0');
-    return '$m:$s';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0A0F1E),
-      body: SafeArea(
-        child: Stack(
-          children: [
-            // Radial background pulses
-            ...List.generate(3, (i) {
-              return Center(
-                child: AnimatedBuilder(
-                  animation: _waveCtrl,
-                  builder: (_, __) {
-                    final progress = (_waveCtrl.value + i * 0.33) % 1.0;
-                    return Container(
-                      width: 80 + 200 * progress,
-                      height: 80 + 200 * progress,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: const Color(0xFF3B82F6).withValues(alpha: (1.0 - progress) * 0.4),
-                          width: 1.5,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              );
-            }),
-
-            // Main content
-            Column(
-              children: [
-                const Spacer(),
-                // Satellite icon
-                AnimatedBuilder(
-                  animation: _pulseCtrl,
-                  builder: (_, __) {
-                    return Container(
-                      padding: const EdgeInsets.all(28),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: const Color(0xFF1E3A5F).withValues(alpha: 0.8 + _pulseCtrl.value * 0.2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF3B82F6).withValues(alpha: 0.4 + _pulseCtrl.value * 0.3),
-                            blurRadius: 30 + _pulseCtrl.value * 20,
-                            spreadRadius: 4,
-                          ),
-                        ],
-                      ),
-                      child: const Icon(Icons.satellite_alt_rounded, size: 64, color: Colors.white),
-                    );
-                  },
-                ),
-                const SizedBox(height: 32),
-                Text(
-                  'SIGAP SATELIT',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF3B82F6),
-                    letterSpacing: 3,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  widget.calleeName,
-                  style: GoogleFonts.poppins(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _callStatus == 'Dalam Talian' ? _elapsedFormatted : _callStatus,
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: _callStatus == 'Dalam Talian'
-                        ? const Color(0xFF4ADE80)
-                        : Colors.white54,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const Spacer(),
-                // End call button
-                GestureDetector(
-                  onTap: () => Navigator.of(context).pop(),
-                  child: Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: const Color(0xFFEF4444),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFEF4444).withValues(alpha: 0.4),
-                          blurRadius: 20,
-                          spreadRadius: 4,
-                        ),
-                      ],
-                    ),
-                    child: const Icon(Icons.call_end_rounded, color: Colors.white, size: 32),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Tamatkan Panggilan',
-                  style: GoogleFonts.inter(fontSize: 12, color: Colors.white38),
-                ),
-                const SizedBox(height: 48),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Standalone AWANIS Chat Widget ────────────────────────────────────────────
-
-class _AwanisChatScreen extends StatefulWidget {
-  @override
-  State<_AwanisChatScreen> createState() => _AwanisChatScreenState();
-}
-
-class _AwanisChatScreenState extends State<_AwanisChatScreen>
-    with SingleTickerProviderStateMixin {
-  final ScrollController _scrollController = ScrollController();
-  final TextEditingController _inputController = TextEditingController();
-
-  bool _showTyping = false;
-  bool _inputFocused = false;
-  bool _demoRunning = false;
-  bool _guidedDemoActive = false;
-  int _guidedDemoStep = 0;
-
-  final List<Map<String, dynamic>> _messages = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _messages.addAll([
-      {
-        'sender': 'ai',
-        'type': 'greeting',
-        'time': '9:02 AM',
-      },
-      {
-        'sender': 'user',
-        'text': 'Kawasan rumah saya sudah banjir. Macam mana nak hantar SOS?',
-        'time': '9:04 AM',
-      },
-      {
-        'sender': 'ai',
-        'type': 'sos_guide',
-        'time': '9:05 AM',
-      },
-    ]);
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    _inputController.dispose();
-    super.dispose();
-  }
-
-  void _scrollToBottom() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent + 300,
-          duration: const Duration(milliseconds: 450),
-          curve: Curves.easeOut,
-        );
-      }
-    });
-  }
-
-
-
-  void _startInteractiveDemo() {
-    setState(() {
-      _messages.clear();
-      _messages.add({
-        'sender': 'ai',
-        'type': 'greeting',
-        'time': _nowTime(),
-      });
-      _guidedDemoActive = true;
-      _guidedDemoStep = 0;
-      _demoRunning = false;
-    });
-    _scrollToBottom();
-  }
-
-  void _startInteractiveDemoWithPreset(String userText, String aiReplyType) {
-    setState(() {
-      _messages.clear();
-      _messages.add({
-        'sender': 'ai',
-        'type': 'greeting',
-        'time': _nowTime(),
-      });
-      _guidedDemoActive = true;
-      _demoRunning = false;
-      
-      if (aiReplyType == 'sos_guide') _guidedDemoStep = 1;
-      else if (aiReplyType == 'family_safety') _guidedDemoStep = 2;
-      else if (aiReplyType == 'emergency_numbers') _guidedDemoStep = 3;
-      else if (aiReplyType == 'evac_centres') _guidedDemoStep = 4;
-      else if (aiReplyType == 'farewell') _guidedDemoStep = 5;
-    });
-    _scrollToBottom();
-
-    Future.delayed(const Duration(milliseconds: 600), () {
-      _sendPresetMessage(userText, aiReplyType);
-    });
-  }
-
-  void _sendPresetMessage(String userText, String aiReplyType) {
-    if (_showTyping) return;
-    setState(() {
-      _guidedDemoActive = true;
-      _messages.add({
-        'sender': 'user',
-        'text': userText,
-        'time': _nowTime(),
-      });
-      _showTyping = true;
-      
-      if (aiReplyType == 'sos_guide') _guidedDemoStep = 1;
-      else if (aiReplyType == 'family_safety') _guidedDemoStep = 2;
-      else if (aiReplyType == 'emergency_numbers') _guidedDemoStep = 3;
-      else if (aiReplyType == 'evac_centres') _guidedDemoStep = 4;
-      else if (aiReplyType == 'farewell') _guidedDemoStep = 5;
-    });
-    _scrollToBottom();
-
-    Future.delayed(const Duration(milliseconds: 1400), () {
-      if (!mounted) return;
-      setState(() {
-        _showTyping = false;
-        _messages.add({
-          'sender': 'ai',
-          'type': aiReplyType,
-          'time': _nowTime(),
-        });
-      });
-      _scrollToBottom();
-    });
-  }
-
-  void _sendGuidedStep(String userText, String aiReplyType) {
-    if (_showTyping) return;
-    setState(() {
-      _messages.add({
-        'sender': 'user',
-        'text': userText,
-        'time': _nowTime(),
-      });
-      _showTyping = true;
-      _guidedDemoStep++;
-    });
-    _scrollToBottom();
-
-    Future.delayed(const Duration(milliseconds: 1400), () {
-      if (!mounted) return;
-      setState(() {
-        _showTyping = false;
-        _messages.add({
-          'sender': 'ai',
-          'type': aiReplyType,
-          'time': _nowTime(),
-        });
-      });
-      _scrollToBottom();
-    });
-  }
-
-  void _handleSend() {
-    final text = _inputController.text.trim();
-    if (text.isEmpty) return;
-    setState(() {
-      _messages.add({'sender': 'user', 'text': text, 'time': _nowTime()});
-      _inputController.clear();
-      _showTyping = true;
-    });
-    _scrollToBottom();
-
-    final lowerText = text.toLowerCase();
-    String type = 'generic_reply';
-    String? replyText;
-
-    if (lowerText.contains('sos') || lowerText.contains('hantar sos') || lowerText.contains('banjir')) {
-      type = 'sos_guide';
-      if (_guidedDemoActive && _guidedDemoStep == 0) {
-        setState(() => _guidedDemoStep = 1);
-      }
-    } else if (lowerText.contains('keluarga') || lowerText.contains('adik') || lowerText.contains('selamat')) {
-      type = 'family_safety';
-      if (_guidedDemoActive && _guidedDemoStep == 1) {
-        setState(() => _guidedDemoStep = 2);
-      }
-    } else if (lowerText.contains('nombor') || lowerText.contains('talian') || lowerText.contains('kecemasan') || lowerText.contains('bomba') || lowerText.contains('nadma')) {
-      type = 'emergency_numbers';
-      if (_guidedDemoActive && _guidedDemoStep == 2) {
-        setState(() => _guidedDemoStep = 3);
-      }
-    } else if (lowerText.contains('pusat') || lowerText.contains('pemindahan') || lowerText.contains('taman melati')) {
-      type = 'evac_centres';
-      if (_guidedDemoActive && _guidedDemoStep == 3) {
-        setState(() => _guidedDemoStep = 4);
-      }
-    } else if (lowerText.contains('terima kasih') || lowerText.contains('thank you') || lowerText.contains('tq')) {
-      type = 'farewell';
-      if (_guidedDemoActive && _guidedDemoStep == 4) {
-        setState(() => _guidedDemoStep = 5);
-      }
-    } else {
-      replyText = 'Terima kasih atas soalan anda. Sila gunakan menu pilihan di atas atau taip soalan spesifik mengenai kecemasan banjir, keselamatan keluarga, talian kecemasan, atau lokasi pusat pemindahan untuk mendapatkan panduan dari saya. 💙';
-    }
-
-    Future.delayed(const Duration(milliseconds: 1400), () {
-      if (!mounted) return;
-      setState(() {
-        _showTyping = false;
-        _messages.add({
-          'sender': 'ai',
-          'time': _nowTime(),
-          'type': type,
-          if (replyText != null) 'text': replyText,
-        });
-      });
-      _scrollToBottom();
-    });
-  }
-
-  void _resetDemo() {
-    setState(() {
-      _messages.clear();
-      _showTyping = false;
-      _demoRunning = false;
-      _guidedDemoActive = false;
-      _guidedDemoStep = 0;
-    });
-  }
-
-  String _nowTime() {
-    final now = DateTime.now();
-    final h = now.hour;
-    final m = now.minute.toString().padLeft(2, '0');
-    final period = h >= 12 ? 'PM' : 'AM';
-    final hour12 = h > 12 ? h - 12 : (h == 0 ? 12 : h);
-    return '$hour12:$m $period';
-  }
-
-  Widget _buildGuidedDemoHelper() {
-    if (!_guidedDemoActive) return const SizedBox.shrink();
-
-    String btnText = '';
-    String userQuestion = '';
-    String aiReplyType = '';
-
-    switch (_guidedDemoStep) {
-      case 0:
-        btnText = 'Tanya Cara Hantar SOS 📢';
-        userQuestion = 'Kawasan rumah saya sudah banjir. Macam mana nak hantar SOS?';
-        aiReplyType = 'sos_guide';
-        break;
-      case 1:
-        btnText = 'Tanya Status Keluarga 👨‍👩‍👧';
-        userQuestion = 'Adik saya masih di rumah. Macam mana nak tahu dia selamat?';
-        aiReplyType = 'family_safety';
-        break;
-      case 2:
-        btnText = 'Tanya Talian Kecemasan ☎️';
-        userQuestion = 'Nombor kecemasan mana yang perlu saya hubungi untuk banjir?';
-        aiReplyType = 'emergency_numbers';
-        break;
-      case 3:
-        btnText = 'Cari Pusat Pemindahan 📍';
-        userQuestion = 'Di mana pusat pemindahan berhampiran Taman Melati, KL?';
-        aiReplyType = 'evac_centres';
-        break;
-      case 4:
-        btnText = 'Katakan Terima Kasih 🙏';
-        userQuestion = 'Terima kasih AWANIS! Sangat membantu 🙏';
-        aiReplyType = 'farewell';
-        break;
-      default:
-        btnText = 'Tamat Demo (Reset) 🔄';
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E1B4B),
-        border: Border(
-          top: BorderSide(color: const Color(0xFF4338CA).withValues(alpha: 0.5), width: 1.5),
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        bottom: false,
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF818CF8),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        _guidedDemoStep <= 4 ? 'DEMO TERBIMBING (LANGKAH ${_guidedDemoStep + 1}/5)' : 'DEMO SELESAI',
-                        style: GoogleFonts.inter(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          color: const Color(0xFF818CF8),
-                          letterSpacing: 1,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    _guidedDemoStep <= 4
-                        ? 'Klik butang di sebelah untuk menghantar soalan.'
-                        : 'Tahniah! Anda telah selesai mencuba demo AWANIS.',
-                    style: GoogleFonts.inter(fontSize: 11, color: Colors.white70),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            ElevatedButton(
-              onPressed: () {
-                if (_guidedDemoStep <= 4) {
-                  _sendGuidedStep(userQuestion, aiReplyType);
-                } else {
-                  _resetDemo();
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4F46E5),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                elevation: 0,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(btnText, style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600)),
-                  const SizedBox(width: 4),
-                  Icon(
-                    _guidedDemoStep <= 4 ? Icons.arrow_forward_rounded : Icons.refresh_rounded,
-                    size: 14,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    const aiPurple = Color(0xFF6366F1);
-    const chatBg = Color(0xFFF5F6FA);
-    final isEmpty = _messages.isEmpty && !_showTyping;
-
-    return Column(
-      children: [
-
-
-        // ── Quick chips (only when not running demo)
-        if (!_demoRunning)
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _sugChip('🔄 Reset', Colors.grey[700]!, () {
-                    _resetDemo();
-                  }),
-                  const SizedBox(width: 8),
-                  _sugChip('🌊 Status banjir', aiPurple, () {
-                    _sendPresetMessage(
-                      "Apakah status banjir terkini?",
-                      "flood_status_reply",
-                    );
-                  }),
-                  const SizedBox(width: 8),
-                  _sugChip('📢 Hantar SOS', Colors.red, () {
-                    _sendPresetMessage(
-                      "Kawasan rumah saya sudah banjir. Macam mana nak hantar SOS?",
-                      "sos_guide",
-                    );
-                  }),
-                  const SizedBox(width: 8),
-                  _sugChip('👨‍👩‍👧 Keluarga saya', const Color(0xFF10B981), () {
-                    _sendPresetMessage(
-                      "Adik saya masih di rumah. Macam mana nak tahu dia selamat?",
-                      "family_safety",
-                    );
-                  }),
-                  const SizedBox(width: 8),
-                  _sugChip('📍 Pusat pemindahan', const Color(0xFFF59E0B), () {
-                    _sendPresetMessage(
-                      "Di mana pusat pemindahan berhampiran Taman Melati, KL?",
-                      "evac_centres",
-                    );
-                  }),
-                  const SizedBox(width: 8),
-                  _sugChip('☎️ Nombor kecemasan', AppColors.primary, () {
-                    _sendPresetMessage(
-                      "Nombor kecemasan mana yang perlu saya hubungi untuk banjir?",
-                      "emergency_numbers",
-                    );
-                  }),
-                  const SizedBox(width: 8),
-                  _sugChip('😊 Terima Kasih', const Color(0xFF818CF8), () {
-                    _sendPresetMessage(
-                      "Terima kasih AWANIS! Sangat membantu 🙏",
-                      "farewell",
-                    );
-                  }),
-                ],
-              ),
-            ),
-          ),
-
-        // ── Messages area
-        Expanded(
-          child: Container(
-            color: chatBg,
-            child: isEmpty
-                ? _buildWelcomeState()
-                : ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                    itemCount: _messages.length + (_showTyping ? 1 : 0),
-                    itemBuilder: (ctx, i) {
-                      if (_showTyping && i == _messages.length) {
-                        return _buildTypingIndicator();
-                      }
-                      final msg = _messages[i];
-                      final isAi = msg['sender'] == 'ai';
-                      return isAi
-                          ? _buildAiMessage(msg, aiPurple)
-                          : _buildUserMessage(msg);
-                    },
-                  ),
-          ),
-        ),
-        _buildGuidedDemoHelper(),
-
-        // ── Input bar
-        Container(
-          color: Colors.white,
-          padding: EdgeInsets.only(
-            left: 16, right: 16, top: 10,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 12,
-          ),
-          child: Column(
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF5F6FA),
-                  borderRadius: BorderRadius.circular(28),
-                  border: Border.all(
-                    color: _inputFocused ? aiPurple : const Color(0xFFE5E7EB),
-                    width: _inputFocused ? 1.5 : 1,
-                  ),
-                  boxShadow: _inputFocused
-                      ? [BoxShadow(color: aiPurple.withValues(alpha: 0.15), blurRadius: 8)]
-                      : [],
-                ),
-                child: Row(
-                  children: [
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Focus(
-                        onFocusChange: (f) => setState(() => _inputFocused = f),
-                        child: TextField(
-                          controller: _inputController,
-                          style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary),
-                          decoration: InputDecoration(
-                            hintText: 'Tanya AWANIS sesuatu...',
-                            hintStyle: GoogleFonts.inter(fontSize: 14, color: AppColors.textHint),
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                          onSubmitted: (_) => _handleSend(),
-                          maxLines: null,
-                          textInputAction: TextInputAction.send,
-                        ),
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: _handleSend,
-                      child: Container(
-                        margin: const EdgeInsets.all(6),
-                        width: 40, height: 40,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF6366F1), Color(0xFF818CF8)],
-                          ),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: aiPurple.withValues(alpha: 0.35),
-                              blurRadius: 8, offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(Icons.send_rounded, color: Colors.white, size: 18),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text('🔒 Perbualan anda selamat · Dikuasakan oleh AWANIS AI',
-                  style: GoogleFonts.inter(fontSize: 10, color: AppColors.textHint)),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ── Welcome / empty state with demo button ───────────────────────────────
-
-  Widget _buildWelcomeState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Glow avatar
-            Container(
-              width: 88, height: 88,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF6366F1), Color(0xFF818CF8)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF6366F1).withValues(alpha: 0.35),
-                    blurRadius: 28,
-                    spreadRadius: 4,
-                  ),
-                ],
-              ),
-              child: const Icon(Icons.smart_toy_rounded, color: Colors.white, size: 44),
-            ),
-            const SizedBox(height: 20),
-            Text('AWANIS',
-                style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w800, fontSize: 24,
-                    color: AppColors.textPrimary, letterSpacing: 1)),
-            const SizedBox(height: 6),
-            Text('Automated Welfare & Alert Navigation\nIntelligence System',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary, height: 1.5)),
-            const SizedBox(height: 24),
-
-            // Feature pills
-            Wrap(
-              spacing: 8, runSpacing: 8,
-              alignment: WrapAlignment.center,
-              children: [
-                _featurePill('📢 Panduan SOS', const Color(0xFFEF4444), () {
-                  _startInteractiveDemoWithPreset(
-                    "Kawasan rumah saya sudah banjir. Macam mana nak hantar SOS?",
-                    "sos_guide",
-                  );
-                }),
-                _featurePill('👨‍👩‍👧 Keselamatan Keluarga', const Color(0xFF10B981), () {
-                  _startInteractiveDemoWithPreset(
-                    "Adik saya masih di rumah. Macam mana nak tahu dia selamat?",
-                    "family_safety",
-                  );
-                }),
-                _featurePill('📍 Pusat Pemindahan', const Color(0xFFF59E0B), () {
-                  _startInteractiveDemoWithPreset(
-                    "Di mana pusat pemindahan berhampiran Taman Melati, KL?",
-                    "evac_centres",
-                  );
-                }),
-                _featurePill('☎️ Talian Kecemasan', const Color(0xFF6366F1), () {
-                  _startInteractiveDemoWithPreset(
-                    "Nombor kecemasan mana yang perlu saya hubungi untuk banjir?",
-                    "emergency_numbers",
-                  );
-                }),
-              ],
-            ),
-            const SizedBox(height: 32),
-
-            // Demo button — main CTA
-            GestureDetector(
-              onTap: _startInteractiveDemo,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF6366F1), Color(0xFF818CF8)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF6366F1).withValues(alpha: 0.4),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.play_circle_rounded, color: Colors.white, size: 24),
-                    const SizedBox(width: 10),
-                    Text('Cuba Demo AWANIS',
-                        style: GoogleFonts.poppins(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 15)),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text('Lihat bagaimana AWANIS membantu anda\nsemasa banjir — langkah demi langkah',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(fontSize: 12, color: AppColors.textHint, height: 1.5)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _featurePill(String label, Color color, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withValues(alpha: 0.3)),
-        ),
-        child: Text(label,
-            style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
-      ),
-    );
-  }
-
-  Widget _sugChip(String label, Color color, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withValues(alpha: 0.3)),
-        ),
-        child: Text(label,
-            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
-      ),
-    );
-  }
-
-  // ── Message bubble builders ───────────────────────────────────────────────
-
-  Widget _buildUserMessage(Map<String, dynamic> msg) {
-    return Align(
-      alignment: Alignment.centerRight,
-      child: Padding(
-        padding: const EdgeInsets.only(left: 56, bottom: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                    colors: [Color(0xFF3B6DD4), Color(0xFF5B8DEF)]),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(18),
-                  topRight: Radius.circular(18),
-                  bottomLeft: Radius.circular(18),
-                  bottomRight: Radius.circular(4),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.25),
-                    blurRadius: 8, offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Text(msg['text'] ?? '',
-                  style: GoogleFonts.inter(fontSize: 14, color: Colors.white, height: 1.5)),
-            ),
-            const SizedBox(height: 4),
-            Text(msg['time'] ?? '',
-                style: GoogleFonts.inter(fontSize: 10, color: AppColors.textHint)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAiMessage(Map<String, dynamic> msg, Color aiPurple) {
-    final type = msg['type'] ?? 'generic_reply';
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Padding(
-        padding: const EdgeInsets.only(right: 56, bottom: 16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Container(
-              width: 32, height: 32,
-              margin: const EdgeInsets.only(right: 8, bottom: 18),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                    colors: [Color(0xFF6366F1), Color(0xFF818CF8)]),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.smart_toy_rounded, color: Colors.white, size: 16),
-            ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildAiBubbleContent(type, msg, aiPurple),
-                  const SizedBox(height: 4),
-                  Text(msg['time'] ?? '',
-                      style: GoogleFonts.inter(fontSize: 10, color: AppColors.textHint)),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAiBubbleContent(String type, Map<String, dynamic> msg, Color aiPurple) {
-    switch (type) {
-      case 'greeting':
-        return _aiBubble(Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _tagChip('🌟 SIGAP AI Assistant', aiPurple),
-            const SizedBox(height: 8),
-            Text(
-              'Assalamualaikum! Selamat datang ke SIGAP. 👋\n\nSaya AWANIS — pembantu AI yang sedia membantu anda dalam situasi kecemasan banjir, kebakaran, perubatan & lebih lagi.',
-              style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary, height: 1.55),
-            ),
-            const SizedBox(height: 12),
-            Wrap(spacing: 6, runSpacing: 6, children: [
-              _actionPill('📢 Hantar SOS', aiPurple, () {
-                _sendPresetMessage(
-                  "Kawasan rumah saya sudah banjir. Macam mana nak hantar SOS?",
-                  "sos_guide",
-                );
-              }),
-              _actionPill('✅ Status Keluarga', const Color(0xFF10B981), () {
-                _sendPresetMessage(
-                  "Adik saya masih di rumah. Macam mana nak tahu dia selamat?",
-                  "family_safety",
-                );
-              }),
-              _actionPill('🗺️ Peta Bencana', const Color(0xFFF59E0B), () {
-                _sendPresetMessage(
-                  "Di mana pusat pemindahan berhampiran Taman Melati, KL?",
-                  "evac_centres",
-                );
-              }),
-              _actionPill('☎️ Pihak Berkuasa', AppColors.danger, () {
-                _sendPresetMessage(
-                  "Nombor kecemasan mana yang perlu saya hubungi untuk banjir?",
-                  "emergency_numbers",
-                );
-              }),
-            ]),
-          ],
-        ));
-
-      case 'sos_guide':
-        return _aiBubble(Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _tagChip('🌊 Panduan SOS Banjir', Colors.orange),
-            const SizedBox(height: 8),
-            Text('Jangan panik. Ikut langkah berikut:',
-                style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary)),
-            const SizedBox(height: 10),
-            _stepCard('1', 'Tekan butang SOS 🔴 di bawah dashboard anda.', Colors.orange),
-            const SizedBox(height: 6),
-            _stepCard('2', 'Pilih jenis kejadian: "Banjir 🌊"', aiPurple),
-            const SizedBox(height: 6),
-            _stepCard('3', 'Benarkan akses lokasi supaya pasukan penyelamat mengesan anda.', const Color(0xFF10B981)),
-            const SizedBox(height: 6),
-            _stepCard('4', 'Tekan "Hantar SOS". Laporan terus dihantar ke NADMA & sukarelawan terdekat.', aiPurple),
-            const SizedBox(height: 10),
-            _alertStrip('⚠️ NADMA akan dihubungi secara automatik melalui sistem SIGAP.', Colors.orange),
-          ],
-        ));
-
-      case 'family_safety':
-        return _aiBubble(Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _tagChip('👨‍👩‍👧 Keselamatan Keluarga', const Color(0xFF10B981)),
-            const SizedBox(height: 8),
-            Text(
-              'Gunakan ciri "Keselamatan Keluarga" dalam dashboard untuk memantau status ahli keluarga secara masa nyata.',
-              style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary, height: 1.5),
-            ),
-            const SizedBox(height: 10),
-            _infoCard('📍 Status Ahli Keluarga', [
-              _cardRow('Ibu — Salmah bt Ali', '✅ Selamat', const Color(0xFF10B981)),
-              _cardRow('Bapa — Ramli bin Ahmad', '✅ Selamat', const Color(0xFF10B981)),
-              _cardRow('Adik — Haziq (17 thn)', '⚠️ Belum Dikemas Kini', Colors.orange),
-            ], aiPurple),
-            const SizedBox(height: 10),
-            Text(
-              'Adik anda belum mengemas kini statusnya. Saya cadangkan anda hubungi beliau segera.',
-              style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary, height: 1.5),
-            ),
-            const SizedBox(height: 10),
-            Wrap(spacing: 6, children: [
-              _actionPill('📞 Hubungi Adik', const Color(0xFF10B981), () {
-                _sendPresetMessage(
-                  "Hubungi adik saya Haziq",
-                  "contact_brother_reply",
-                );
-              }),
-              _actionPill('🤝 Hantar Sukarelawan', aiPurple, () {
-                _sendPresetMessage(
-                  "Minta sukarelawan bantu adik saya",
-                  "volunteer_brother_reply",
-                );
-              }),
-            ]),
-          ],
-        ));
-
-      case 'contact_brother_reply':
-        return _aiBubble(Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _tagChip('📞 Sambungan Telefon', const Color(0xFF10B981)),
-            const SizedBox(height: 8),
-            Text(
-              'Menyambungkan panggilan ke Haziq (012-3456789)... Sila pastikan talian selular anda aktif. Sekiranya tidak dijawab, anda boleh memohon tinjauan sukarelawan.',
-              style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary, height: 1.55),
-            ),
-          ],
-        ));
-
-      case 'volunteer_brother_reply':
-        return _aiBubble(Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _tagChip('🤝 Tindak Balas Sukarelawan', aiPurple),
-            const SizedBox(height: 8),
-            Text(
-              'Permohonan tinjauan sukarelawan berjaya dihantar! Sukarelawan terdekat (Zulhilmi) telah ditugaskan untuk menyemak keadaan adik anda di Taman Melati. Anda akan menerima notifikasi status segera.',
-              style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary, height: 1.55),
-            ),
-          ],
-        ));
-
-      case 'emergency_numbers':
-        return _aiBubble(Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _tagChip('☎️ Talian Kecemasan Malaysia', aiPurple),
-            const SizedBox(height: 8),
-            Text('Untuk bencana banjir & tanah runtuh, hubungi:',
-                style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary)),
-            const SizedBox(height: 10),
-            _infoCard('🌊 NADMA — Agensi Pengurusan Bencana Negara', [
-              _cardRow('Nombor Telefon', '03-8064 2400', aiPurple),
-              _cardRow('Perkhidmatan', 'Banjir, Tanah Runtuh', AppColors.textSecondary),
-            ], aiPurple),
-            const SizedBox(height: 8),
-            _infoCard('🚒 Bomba — Kebakaran & Penyelamatan', [
-              _cardRow('Talian Kecemasan', '994', const Color(0xFF10B981)),
-            ], const Color(0xFF10B981)),
-            const SizedBox(height: 8),
-            _infoCard('🚑 Ambulans & Polis', [
-              _cardRow('Nombor Kecemasan', '999', AppColors.danger),
-            ], AppColors.danger),
-            const SizedBox(height: 10),
-            _alertStrip('💡 SIGAP menghubungi pihak berkuasa yang betul secara automatik berdasarkan jenis SOS anda.', aiPurple),
-          ],
-        ));
-
-      case 'evac_centres':
-        return _aiBubble(Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _tagChip('📍 Pusat Pemindahan Berdekatan', Colors.orange),
-            const SizedBox(height: 8),
-            Text('Berdasarkan lokasi anda di Taman Melati, KL:',
-                style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary)),
-            const SizedBox(height: 10),
-            _infoCard('🏫 SK Taman Melati', [
-              _cardRow('Jarak', '1.2 km', const Color(0xFF10B981)),
-              _cardRow('Kapasiti', '320 / 500 orang', AppColors.textSecondary),
-              _cardRow('Status', '🟢 Buka', const Color(0xFF10B981)),
-            ], const Color(0xFF10B981)),
-            const SizedBox(height: 8),
-            _infoCard('🏟️ Dewan Komuniti Wangsa Maju', [
-              _cardRow('Jarak', '2.7 km', AppColors.textSecondary),
-              _cardRow('Kapasiti', '180 / 400 orang', AppColors.textSecondary),
-              _cardRow('Status', '🟢 Buka', const Color(0xFF10B981)),
-            ], aiPurple),
-            const SizedBox(height: 10),
-            Wrap(spacing: 6, children: [
-              _actionPill('🗺️ Lihat di Peta', aiPurple, () {
-                _sendPresetMessage(
-                  "Lihat pusat pemindahan di peta",
-                  "show_map_reply",
-                );
-              }),
-              _actionPill('🚗 Dapatkan Arah', const Color(0xFF10B981), () {
-                _sendPresetMessage(
-                  "Dapatkan arah pemanduan",
-                  "show_directions_reply",
-                );
-              }),
-            ]),
-          ],
-        ));
-
-      case 'show_map_reply':
-        return _aiBubble(Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _tagChip('🗺️ Peta Bencana', Colors.orange),
-            const SizedBox(height: 8),
-            Text(
-              'Paparan peta telah dikemas kini dengan pin lokasi bagi SK Taman Melati (1.2 km) dan Dewan Komuniti Wangsa Maju (2.7 km). Sila rujuk panel Peta di dashboard.',
-              style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary, height: 1.55),
-            ),
-          ],
-        ));
-
-      case 'show_directions_reply':
-        return _aiBubble(Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _tagChip('🚗 Navigasi Arah', const Color(0xFF10B981)),
-            const SizedBox(height: 8),
-            Text(
-              'Menyediakan laluan terpantas ke SK Taman Melati (1.2 km) melalui Jalan Melati Utama. Laluan ini dilaporkan bebas daripada air banjir bertakung buat masa ini.',
-              style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary, height: 1.55),
-            ),
-          ],
-        ));
-
-      case 'farewell':
-        return _aiBubble(Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Sama-sama! Keselamatan anda adalah keutamaan kami. 💙\n\nIngat — SIGAP sentiasa ada bersama anda 24/7. Jaga diri dan keluarga.',
-              style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary, height: 1.55),
-            ),
-            const SizedBox(height: 10),
-            _alertStrip('⚡ SIGAP Live Alert: Amaran Banjir Tahap 2 aktif di Gombak & Ampang. Sila berjaga-jaga.', Colors.orange),
-          ],
-        ));
-
-      default:
-        return _aiBubble(Text(
-          msg['text'] ?? 'Boleh saya bantu anda?',
-          style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary, height: 1.55),
-        ));
-    }
-  }
-
-  // ── Shared UI helpers ─────────────────────────────────────────────────────
-
-  Widget _aiBubble(Widget child) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(4),
-          topRight: Radius.circular(18),
-          bottomLeft: Radius.circular(18),
-          bottomRight: Radius.circular(18),
-        ),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 10, offset: const Offset(0, 3)),
-        ],
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
-      child: child,
-    );
-  }
-
-  Widget _tagChip(String label, Color color) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: color)),
-    );
-  }
-
-  Widget _stepCard(String num, String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 22, height: 22,
-            decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(6)),
-            child: Center(child: Text(num,
-                style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white))),
-          ),
-          const SizedBox(width: 10),
-          Expanded(child: Text(text,
-              style: GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary, height: 1.4))),
-        ],
-      ),
-    );
-  }
-
-  Widget _infoCard(String title, List<Widget> rows, Color accentColor) {
-    return Container(
-      decoration: BoxDecoration(
-        color: accentColor.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: accentColor.withValues(alpha: 0.25)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
-            child: Text(title,
-                style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13, color: accentColor)),
-          ),
-          const Divider(height: 1, color: Color(0xFFE5E7EB)),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            child: Column(children: rows),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _cardRow(String label, String value, Color valueColor) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
-          Text(value,
-              style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: valueColor)),
-        ],
-      ),
-    );
-  }
-
-  Widget _alertStrip(String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Text(text,
-          style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: color, height: 1.4)),
-    );
-  }
-
-  Widget _actionPill(String label, Color color, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withValues(alpha: 0.35)),
-        ),
-        child: Text(label,
-            style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: color)),
-      ),
-    );
-  }
-
-  Widget _buildTypingIndicator() {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Padding(
-        padding: const EdgeInsets.only(right: 80, bottom: 16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Container(
-              width: 32, height: 32,
-              margin: const EdgeInsets.only(right: 8),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                    colors: [Color(0xFF6366F1), Color(0xFF818CF8)]),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.smart_toy_rounded, color: Colors.white, size: 16),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(4),
-                  topRight: Radius.circular(18),
-                  bottomLeft: Radius.circular(18),
-                  bottomRight: Radius.circular(18),
-                ),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2)),
-                ],
-              ),
-              child: const _TypingDots(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Animated typing dots ──────────────────────────────────────────────────────
-
-class _TypingDots extends StatefulWidget {
-  const _TypingDots();
-  @override
-  State<_TypingDots> createState() => _TypingDotsState();
-}
-
-class _TypingDotsState extends State<_TypingDots> with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 900))..repeat();
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: List.generate(3, (i) {
-        return AnimatedBuilder(
-          animation: _ctrl,
-          builder: (_, __) {
-            final offset = ((_ctrl.value * 3) - i).clamp(0.0, 1.0);
-            final bounce = (offset < 0.5 ? offset : 1.0 - offset) * 2;
-            return Container(
-              margin: const EdgeInsets.symmetric(horizontal: 2),
-              width: 7,
-              height: 7 + bounce * 5,
-              decoration: BoxDecoration(
-                color: const Color(0xFF6366F1).withValues(alpha: 0.5 + bounce * 0.5),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            );
-          },
-        );
-      }),
-    );
-  }
-}
-

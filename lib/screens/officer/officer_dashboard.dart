@@ -23,6 +23,7 @@ import '../../models/volunteer_task_model.dart';
 import '../../models/volunteer_profile_model.dart';
 import '../../services/authority_routing_service.dart';
 import '../../services/firestore_service.dart';
+import '../../services/awanis_service.dart';
 
 import '../../widgets/common/sigap_app_bar.dart';
 
@@ -78,6 +79,10 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
 
   StreamSubscription<QuerySnapshot>? _volunteersSubscription;
   List<VolunteerProfileModel> _activeVolunteers = [];
+
+  final List<Map<String, dynamic>> _awanisOfficerMessages = [];
+  bool _isAwanisLoading = false;
+  final TextEditingController _awanisMsgCtrl = TextEditingController();
 
   void _listenToActiveVolunteers() {
     _volunteersSubscription?.cancel();
@@ -263,7 +268,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppColors.divider),
                 ),
-                child: Text('Tiada kempen aktif',
+                child: Text('Tiada kempen aktif'.tr(),
                     style: GoogleFonts.inter(color: AppColors.textSecondary)),
               );
             }
@@ -302,7 +307,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           child: ElevatedButton.icon(
             onPressed: _createCampaignDialog,
             icon: const Icon(Icons.add_rounded, size: 18),
-            label: const Text('Cipta Kempen Baru'),
+            label: Text('Cipta Kempen Baru'.tr()),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
@@ -423,7 +428,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                Text('Heatmap Krisis',
+                Text('Heatmap Krisis'.tr(),
                     style: GoogleFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
@@ -478,7 +483,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                                 decoration: InputDecoration(
                                     border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(8)),
-                                    labelText: 'Jenis Bencana',
+                                    labelText:'Jenis Bencana'.tr(),
                                     contentPadding: const EdgeInsets.symmetric(
                                         horizontal: 12, vertical: 8)),
                                 items: [
@@ -500,8 +505,8 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                               TextField(
                                 controller: _disasterNameController,
                                 decoration: InputDecoration(
-                                    labelText: 'Nama / Butiran Zon',
-                                    hintText: 'Contoh: Banjir Kilat Seksyen 7',
+                                    labelText:'Nama / Butiran Zon'.tr(),
+                                    hintText:'Contoh: Banjir Kilat Seksyen 7'.tr(),
                                     border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(8)),
                                     contentPadding: const EdgeInsets.symmetric(
@@ -522,7 +527,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                                         _disasterNameController.clear();
                                       });
                                     },
-                                    child: const Text('Batal'),
+                                    child: Text('Batal'.tr()),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -537,7 +542,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                                             : _confirmDisasterZone,
                                     style: ElevatedButton.styleFrom(
                                         backgroundColor: AppColors.danger),
-                                    child: const Text('Teruskan',
+                                    child: Text('Teruskan'.tr(),
                                         style: TextStyle(color: Colors.white)),
                                   ),
                                 ),
@@ -548,7 +553,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                       : ElevatedButton.icon(
                           onPressed: _declareDisasterZone,
                           icon: const Icon(Icons.campaign_rounded, size: 18),
-                          label: const Text('Isytihar Darurat (Zon Bencana)'),
+                          label: Text('Isytihar Darurat (Zon Bencana)'.tr()),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.danger,
                             foregroundColor: Colors.white,
@@ -565,7 +570,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     child: Row(
                       children: [
                         _buildFilterDropdown(
-                          label: 'Tahap',
+                          label:'Tahap'.tr(),
                           value: _filterUrgency,
                           items: [
                             'Semua',
@@ -578,7 +583,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                         ),
                         const SizedBox(width: 8),
                         _buildFilterDropdown(
-                          label: 'Jenis',
+                          label:'Jenis'.tr(),
                           value: _filterType,
                           items: [
                             'Semua',
@@ -592,7 +597,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                         ),
                         const SizedBox(width: 8),
                         _buildFilterDropdown(
-                          label: 'Masa',
+                          label:'Masa'.tr(),
                           value: _filterDuration,
                           items: [
                             'Semua',
@@ -658,7 +663,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                                       color: AppColors.danger,
                                       shape: BoxShape.circle)),
                               const SizedBox(width: 6),
-                              Text('Siaran Langsung',
+                              Text('Siaran Langsung'.tr(),
                                   style: GoogleFonts.inter(
                                       fontSize: 11,
                                       color: Colors.white,
@@ -753,7 +758,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
             const Icon(Icons.warning_rounded,
                 color: AppColors.danger, size: 18),
             const SizedBox(width: 8),
-            Text('Gagal memuatkan laporan Firestore',
+            Text('Gagal memuatkan laporan Firestore'.tr(),
                 style: GoogleFonts.inter(
                     fontWeight: FontWeight.w600,
                     color: AppColors.danger,
@@ -766,7 +771,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                   fontSize: 12, color: AppColors.textSecondary)),
           const SizedBox(height: 12),
           // Fallback: show mock data
-          Text('Menunjukkan data ujian sementara:',
+          Text('Menunjukkan data ujian sementara:'.tr(),
               style: GoogleFonts.inter(
                   fontSize: 11,
                   color: AppColors.textHint,
@@ -789,7 +794,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
               const Icon(Icons.check_circle_outline_rounded,
                   size: 48, color: AppColors.safe),
               const SizedBox(height: 12),
-              Text('Tiada insiden aktif ditemui.',
+              Text('Tiada insiden aktif ditemui.'.tr(),
                   style: GoogleFonts.inter(color: AppColors.textSecondary)),
             ],
           ),
@@ -851,7 +856,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                                       fontSize: 13,
                                       color: AppColors.textPrimary)),
                               const SizedBox(height: 2),
-                              Text('Zon Darurat Aktif',
+                              Text('Zon Darurat Aktif'.tr(),
                                   style: GoogleFonts.inter(
                                       fontSize: 12,
                                       color: AppColors.textSecondary)),
@@ -864,7 +869,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                           decoration: BoxDecoration(
                               color: AppColors.danger.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(99)),
-                          child: Text('AKTIF',
+                          child: Text('AKTIF'.tr(),
                               style: GoogleFonts.inter(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
@@ -1067,7 +1072,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           children: [
             const Icon(Icons.warning_amber_rounded, color: AppColors.danger),
             const SizedBox(width: 8),
-            Text('Isytihar Zon Darurat',
+            Text('Isytihar Zon Darurat'.tr(),
                 style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -1081,7 +1086,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: Text('Batal',
+              child: Text('Batal'.tr(),
                   style: GoogleFonts.inter(color: AppColors.textSecondary))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
@@ -1115,7 +1120,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                 }
               });
             },
-            child: Text('Sah & Hantar',
+            child: Text('Sah & Hantar'.tr(),
                 style: GoogleFonts.inter(
                     color: Colors.white, fontWeight: FontWeight.w600)),
           ),
@@ -1164,7 +1169,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           children: [
             const Icon(Icons.podcasts_rounded, color: AppColors.safe, size: 40),
             const SizedBox(height: 12),
-            Text('Amaran Darurat Dihantar!',
+            Text('Amaran Darurat Dihantar!'.tr(),
                 style: GoogleFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
@@ -1180,7 +1185,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Tutup',
+            child: Text('Tutup'.tr(),
                 style: GoogleFonts.inter(
                     color: Colors.white, fontWeight: FontWeight.w600)),
           ),
@@ -1212,7 +1217,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Selesaikan Insiden?',
+        title: Text('Selesaikan Insiden?'.tr(),
             style:
                 GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600)),
         content: Text(
@@ -1221,13 +1226,13 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Batal',
+            child: Text('Batal'.tr(),
                 style: GoogleFonts.inter(color: AppColors.textSecondary)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.safe),
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text('Ya, Selesai',
+            child: Text('Ya, Selesai'.tr(),
                 style: GoogleFonts.inter(
                     color: Colors.white, fontWeight: FontWeight.w600)),
           ),
@@ -1297,7 +1302,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                 ),
                 const SizedBox(height: 16),
                 if (report.description.isNotEmpty) ...[
-                  Text('Keterangan',
+                  Text('Keterangan'.tr(),
                       style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -1317,7 +1322,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                   const SizedBox(height: 16),
                 ],
                 if (report.imageUrl != null && report.imageUrl!.isNotEmpty) ...[
-                  Text('Gambar Bukti Kecemasan',
+                  Text('Gambar Bukti Kecemasan'.tr(),
                       style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -1357,7 +1362,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                 // Show dispatch section if status is active
                 if (report.status == SosReportModel.statusActive) ...[
                   const Divider(height: 32),
-                  Text('Agih Skuad Bantuan (Manual Dispatch)',
+                  Text('Agih Skuad Bantuan (Manual Dispatch)'.tr(),
                       style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -1387,13 +1392,13 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     items: const [
                       DropdownMenuItem(
                           value: 'Skuad Alpha',
-                          child: Text('Skuad Alpha (Penyelamat)')),
+                          child: Text('Skuad Alpha (Penyelamat)'.tr())),
                       DropdownMenuItem(
                           value: 'Skuad Delta',
-                          child: Text('Skuad Delta (Perubatan)')),
+                          child: Text('Skuad Delta (Perubatan)'.tr())),
                       DropdownMenuItem(
                           value: 'Skuad Charlie',
-                          child: Text('Skuad Charlie (Logistik)')),
+                          child: Text('Skuad Charlie (Logistik)'.tr())),
                     ],
                     onChanged: (val) {
                       if (val != null) {
@@ -1433,7 +1438,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                       },
                       icon: const Icon(Icons.send_rounded,
                           size: 18, color: Colors.white),
-                      label: const Text('Hantar Skuad Sekarang',
+                      label: Text('Hantar Skuad Sekarang'.tr(),
                           style: TextStyle(color: Colors.white)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.officerAccent,
@@ -1450,7 +1455,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                 // Show responder details & backup warnings if status is responded
                 if (report.status == SosReportModel.statusResponded) ...[
                   const Divider(height: 32),
-                  Text('Maklumat Respon / Menyelamat',
+                  Text('Maklumat Respon / Menyelamat'.tr(),
                       style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -1544,7 +1549,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         padding: const EdgeInsets.symmetric(vertical: 14)),
-                    child: const Text('Tutup',
+                    child: Text('Tutup'.tr(),
                         style: TextStyle(color: Colors.white)),
                   ),
                 ),
@@ -1591,7 +1596,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Sejarah Insiden Selesai',
+            Text('Sejarah Insiden Selesai'.tr(),
                 style: GoogleFonts.poppins(
                     fontSize: 18, fontWeight: FontWeight.w700)),
             const SizedBox(height: 16),
@@ -1607,7 +1612,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                   final docs = snapshot.data?.docs ?? [];
                   if (docs.isEmpty) {
                     return Center(
-                        child: Text('Tiada sejarah insiden ditemui.',
+                        child: Text('Tiada sejarah insiden ditemui.'.tr(),
                             style: GoogleFonts.inter(
                                 color: AppColors.textSecondary)));
                   }
@@ -1835,7 +1840,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     },
                     icon: const Icon(Icons.check_circle_outline_rounded,
                         size: 18),
-                    label: const Text('Selesaikan Insiden'),
+                    label: Text('Selesaikan Insiden'.tr()),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.safe,
                       side: const BorderSide(color: AppColors.safe),
@@ -1857,7 +1862,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Text('Penugasan Skuad',
+        Text('Penugasan Skuad'.tr(),
             style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -1868,7 +1873,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           child: ElevatedButton.icon(
             onPressed: _assignVolunteerDialog,
             icon: const Icon(Icons.group_add_rounded, size: 18),
-            label: const Text('Agih Skuad (Assign Squad)'),
+            label: Text('Agih Skuad (Assign Squad)'.tr()),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.volunteerAccent,
               foregroundColor: Colors.white,
@@ -1894,7 +1899,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     color: AppColors.surface,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: AppColors.divider)),
-                child: Text('Tiada skuad ditugaskan.',
+                child: Text('Tiada skuad ditugaskan.'.tr(),
                     style: GoogleFonts.inter(color: AppColors.textSecondary)),
               );
             }
@@ -1940,7 +1945,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
       builder: (ctx) => StatefulBuilder(builder: (context, setDialogState) {
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text('Tugaskan Skuad kepada Sukarelawan',
+          title: Text('Tugaskan Skuad kepada Sukarelawan'.tr(),
               style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -1954,15 +1959,15 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                   decoration: InputDecoration(
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8)),
-                      labelText: 'Pilih Skuad'),
+                      labelText:'Pilih Skuad'.tr()),
                   value: selectedSquad,
                   items: const [
-                    DropdownMenuItem(value: 'Skuad Alpha (Penyelamat)', child: Text('Skuad Alpha (Penyelamat)')),
-                    DropdownMenuItem(value: 'Skuad Bravo (Pembersihan)', child: Text('Skuad Bravo (Pembersihan)')),
-                    DropdownMenuItem(value: 'Skuad Charlie (Logistik)', child: Text('Skuad Charlie (Logistik)')),
-                    DropdownMenuItem(value: 'Skuad Delta (Perubatan)', child: Text('Skuad Delta (Perubatan)')),
-                    DropdownMenuItem(value: 'Skuad Echo (Dapur Jalanan)', child: Text('Skuad Echo (Dapur Jalanan)')),
-                    DropdownMenuItem(value: 'Skuad Foxtrot (Komunikasi)', child: Text('Skuad Foxtrot (Komunikasi)')),
+                    DropdownMenuItem(value: 'Skuad Alpha (Penyelamat)', child: Text('Skuad Alpha (Penyelamat)'.tr())),
+                    DropdownMenuItem(value: 'Skuad Bravo (Pembersihan)', child: Text('Skuad Bravo (Pembersihan)'.tr())),
+                    DropdownMenuItem(value: 'Skuad Charlie (Logistik)', child: Text('Skuad Charlie (Logistik)'.tr())),
+                    DropdownMenuItem(value: 'Skuad Delta (Perubatan)', child: Text('Skuad Delta (Perubatan)'.tr())),
+                    DropdownMenuItem(value: 'Skuad Echo (Dapur Jalanan)', child: Text('Skuad Echo (Dapur Jalanan)'.tr())),
+                    DropdownMenuItem(value: 'Skuad Foxtrot (Komunikasi)', child: Text('Skuad Foxtrot (Komunikasi)'.tr())),
                   ],
                   onChanged: (v) {
                     if (v != null) setDialogState(() => selectedSquad = v);
@@ -1973,7 +1978,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(8)),
-                    child: Text('Tiada sukarelawan yang belum ditugaskan.',
+                    child: Text('Tiada sukarelawan yang belum ditugaskan.'.tr(),
                         style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
                   )
                 else
@@ -2019,7 +2024,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                           ),
-                          child: Text('Tugaskan', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white)),
+                          child: Text('Tugaskan'.tr(), style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white)),
                         ),
                       ],
                     ),
@@ -2030,7 +2035,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: Text('Tutup', style: GoogleFonts.inter(color: AppColors.textSecondary))),
+                child: Text('Tutup'.tr(), style: GoogleFonts.inter(color: AppColors.textSecondary))),
           ],
         );
       }),
@@ -2060,7 +2065,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
             children: [
               const CircularProgressIndicator(color: AppColors.volunteerAccent),
               const SizedBox(height: 16),
-              Text('Memuatkan zon aktif...',
+              Text('Memuatkan zon aktif...'.tr(),
                   style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
             ],
           ),
@@ -2196,7 +2201,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
         return AlertDialog(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text('Tukar Lokasi Skuad',
+          title: Text('Tukar Lokasi Skuad'.tr(),
               style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -2213,7 +2218,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                   decoration: InputDecoration(
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8)),
-                      labelText: 'Lokasi Baharu'),
+                      labelText:'Lokasi Baharu'.tr()),
                   value: newZone,
                   items: zones
                       .map((z) => DropdownMenuItem(
@@ -2231,7 +2236,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: Text('Batal',
+                child: Text('Batal'.tr(),
                     style: GoogleFonts.inter(color: AppColors.textSecondary))),
             ElevatedButton(
               style:
@@ -2254,7 +2259,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                           '${task.squadName} diarahkan ke lokasi baharu.')));
                 }
               },
-              child: Text('Ubah Lokasi',
+              child: Text('Ubah Lokasi'.tr(),
                   style: GoogleFonts.inter(
                       color: Colors.white, fontWeight: FontWeight.w600)),
             ),
@@ -2267,7 +2272,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
   void _showSquadTrackMapDialog(VolunteerTaskModel task) {
     if (task.currentLat == null || task.currentLng == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Lokasi skuad belum disegerakkan oleh GPS.'),
+        content: Text('Lokasi skuad belum disegerakkan oleh GPS.'.tr()),
       ));
       return;
     }
@@ -2332,7 +2337,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Tutup',
+            child: Text('Tutup'.tr(),
                 style: GoogleFonts.inter(color: AppColors.textSecondary)),
           )
         ],
@@ -2463,7 +2468,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
             ],
           ),
           const SizedBox(height: 16),
-          Text('Tugasan Semasa:',
+          Text('Tugasan Semasa:'.tr(),
               style: GoogleFonts.inter(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -2487,7 +2492,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                 child: OutlinedButton.icon(
                   onPressed: () => _redirectVolunteerDialog(task),
                   icon: const Icon(Icons.alt_route_rounded, size: 14),
-                  label: const Text('Tukar Lokasi',
+                  label: Text('Tukar Lokasi'.tr(),
                       style: TextStyle(fontSize: 11)),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.danger,
@@ -2503,7 +2508,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                 child: OutlinedButton.icon(
                   onPressed: () => _showSquadTrackMapDialog(task),
                   icon: const Icon(Icons.map_rounded, size: 14),
-                  label: const Text('Kesan Peta',
+                  label: Text('Kesan Peta'.tr(),
                       style: TextStyle(fontSize: 11)),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.primary,
@@ -2531,7 +2536,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                   const Icon(Icons.verified_rounded,
                       color: AppColors.safe, size: 16),
                   const SizedBox(width: 6),
-                  Text('Tugasan Selesai',
+                  Text('Tugasan Selesai'.tr(),
                       style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
@@ -2552,7 +2557,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                   const Icon(Icons.hourglass_empty_rounded,
                       color: AppColors.volunteerAccent, size: 16),
                   const SizedBox(width: 6),
-                  Text('Menunggu kemas kini sukarelawan...',
+                  Text('Menunggu kemas kini sukarelawan...'.tr(),
                       style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -2587,43 +2592,296 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
 
   // ─── AWANIS TAB ───────────────────────────────────────────────────
   Widget _buildAwanisTab() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFF6B4EE6).withValues(alpha: 0.05),
-            Colors.white
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          color: AppColors.surface,
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: const Color(0xFF6B4EE6).withValues(alpha: 0.1), shape: BoxShape.circle),
+                child: const Icon(Icons.smart_toy_rounded, color: Color(0xFF6B4EE6), size: 24),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('AWANIS'.tr(), style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF6B4EE6))),
+                    Text('Pembantu Analitik & Pelaporan'.tr(), style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+                  ],
+                ),
+              ),
+              ElevatedButton.icon(
+                onPressed: _generateIncidentSummary,
+                icon: const Icon(Icons.picture_as_pdf_rounded, size: 16),
+                label: Text('Jana Laporan'.tr()),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ],
+          ),
+        ),
+        _buildOfficerQuickAccessChips(),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: _awanisOfficerMessages.length,
+            itemBuilder: (context, index) {
+              final msg = _awanisOfficerMessages[index];
+              final isBot = msg['isBot'] as bool;
+              return _buildChatBubble(msg['text'] as String, isBot);
+            },
+          ),
+        ),
+        if (_isAwanisLoading)
+          const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: CircularProgressIndicator(color: Color(0xFF6B4EE6)),
+          ),
+        _buildAwanisInput(),
+      ],
+    );
+  }
+
+  Widget _buildChatBubble(String text, bool isBot) {
+    return Align(
+      alignment: isBot ? Alignment.centerLeft : Alignment.centerRight,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+        decoration: BoxDecoration(
+          color: isBot ? Colors.white : AppColors.officerAccent,
+          borderRadius: BorderRadius.circular(16),
+          border: isBot ? Border.all(color: AppColors.divider) : null,
+          boxShadow: [
+            BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 5, offset: const Offset(0, 2)),
           ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
+        ),
+        child: Text(
+          text,
+          style: GoogleFonts.inter(
+            color: isBot ? AppColors.textPrimary : Colors.white,
+            fontSize: 13,
+            height: 1.4,
+          ),
         ),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+    );
+  }
+
+  Widget _buildOfficerQuickAccessChips() {
+    final quickQuestions = [
+      {
+        'icon': '📊', 
+        'label': 'Statistik SOS', 
+        'query': 'Berapa banyak SOS yang belum diselesaikan hari ini?',
+        'color': AppColors.danger,
+      },
+      {
+        'icon': '👥', 
+        'label': 'Jumlah Mangsa', 
+        'query': 'Berapa jumlah mangsa di kawasan Gombak?',
+        'color': AppColors.safe,
+      },
+      {
+        'icon': '🛡️', 
+        'label': 'Status Skuad', 
+        'query': 'Berapa ramai sukarelawan aktif sekarang?',
+        'color': AppColors.officerAccent,
+      },
+      {
+        'icon': '💰', 
+        'label': 'Tuntutan BWI', 
+        'query': 'Berapa jumlah dana tuntutan yang telah diluluskan?',
+        'color': AppColors.warning,
+      },
+    ];
+
+    return Container(
+      color: AppColors.surface,
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          children: quickQuestions.map((q) {
+            final color = q['color'] as Color;
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => _sendOfficerQuickQuery(q['query'] as String),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: color.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(q['icon'] as String, style: const TextStyle(fontSize: 14)),
+                        const SizedBox(width: 6),
+                        Text(
+                          q['label'] as String,
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: color,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAwanisInput() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.divider)),
+      ),
+      child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-                color: const Color(0xFF6B4EE6).withValues(alpha: 0.1),
-                shape: BoxShape.circle),
-            child: const Icon(Icons.smart_toy_rounded,
-                color: Color(0xFF6B4EE6), size: 80),
+          Expanded(
+            child: TextField(
+              controller: _awanisMsgCtrl,
+              decoration: InputDecoration(
+                hintText:'Tanya AWANIS (cth: Berapa SOS hari ini?)...'.tr(),
+                hintStyle: GoogleFonts.inter(color: AppColors.textHint, fontSize: 13),
+                filled: true,
+                fillColor: AppColors.background,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+              onSubmitted: (_) => _sendAwanisMessage(),
+            ),
           ),
-          const SizedBox(height: 32),
-          Text('AWANIS',
-              style: GoogleFonts.poppins(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF6B4EE6))),
-          const SizedBox(height: 8),
-          Text('Pembantu AI Pegawai',
-              style: GoogleFonts.inter(
-                  fontSize: 15, color: AppColors.textSecondary)),
+          const SizedBox(width: 8),
+          Container(
+            decoration: const BoxDecoration(
+              color: AppColors.officerAccent,
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+              onPressed: _sendAwanisMessage,
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  void _sendOfficerQuickQuery(String query) {
+    _awanisMsgCtrl.text = query;
+    _sendAwanisMessage();
+  }
+
+  void _sendAwanisMessage() async {
+    final text = _awanisMsgCtrl.text.trim();
+    if (text.isEmpty) return;
+
+    setState(() {
+      _awanisOfficerMessages.add({'isBot': false, 'text': text});
+      _isAwanisLoading = true;
+    });
+    _awanisMsgCtrl.clear();
+
+    try {
+      // Gather some simple analytics data
+      final activeSOS = _activeReports.length;
+      final activeVols = _activeVolunteers.length;
+      final firestoreData = {
+        'jumlah_sos_aktif': activeSOS,
+        'jumlah_sukarelawan_aktif': activeVols,
+      };
+
+      final response = await AwanisService().queryOfficerAnalytics(text, firestoreData);
+      if (mounted) {
+        setState(() {
+          _awanisOfficerMessages.add({'isBot': true, 'text': response});
+          _isAwanisLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _awanisOfficerMessages.add({'isBot': true, 'text': 'Maaf, ralat berlaku semasa memproses soalan anda.'});
+          _isAwanisLoading = false;
+        });
+      }
+    }
+  }
+
+  void _generateIncidentSummary() async {
+    setState(() {
+      _isAwanisLoading = true;
+    });
+    try {
+      final activeSOS = _activeReports.length;
+      final activeVols = _activeVolunteers.length;
+      final zoneData = {
+        'nama_zon': 'Zon Darurat Semasa',
+        'jumlah_sos_aktif': activeSOS,
+        'sukarelawan_aktif': activeVols,
+      };
+      
+      final report = await AwanisService().generateIncidentSummary(zoneData);
+      
+      if (mounted) {
+        setState(() {
+          _isAwanisLoading = false;
+        });
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Row(
+              children: [
+                const Icon(Icons.picture_as_pdf_rounded, color: Colors.red),
+                const SizedBox(width: 8),
+                Expanded(child: Text('Laporan Insiden AI'.tr(), style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18))),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Text(report, style: GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary)),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: Text('OK'.tr())),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isAwanisLoading = false;
+        });
+      }
+    }
   }
 
   // ─── TUNTUTAN (CLAIMS) TAB ────────────────────────────────────────
@@ -2674,7 +2932,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Text('Semakan Tuntutan Bantuan',
+            Text('Semakan Tuntutan Bantuan'.tr(),
                 style: GoogleFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
@@ -2739,13 +2997,13 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     isExpanded: true,
                     value: _selectedClaimZoneFilter,
                     decoration: InputDecoration(
-                      labelText: 'Tapis Mengikut Zon Bencana',
+                      labelText:'Tapis Mengikut Zon Bencana'.tr(),
                       isDense: true,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                     items: [
-                      const DropdownMenuItem(value: 'Semua', child: Text('Semua Zon')),
+                      const DropdownMenuItem(value: 'Semua', child: Text('Semua Zon'.tr())),
                       ...claimLocations.map((loc) => DropdownMenuItem(value: loc, child: Text(loc, overflow: TextOverflow.ellipsis))),
                     ],
                     onChanged: (val) {
@@ -2918,7 +3176,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                       color: AppColors.primary, size: 18),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text('Kelulusan Pukal Zon Bencana',
+                    child: Text('Kelulusan Pukal Zon Bencana'.tr(),
                         style: GoogleFonts.inter(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -2937,7 +3195,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                 isExpanded: true,
                 value: selectedZone,
                 decoration: InputDecoration(
-                    labelText: 'Zon bencana',
+                    labelText:'Zon bencana'.tr(),
                     isDense: true,
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8))),
@@ -2957,7 +3215,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
               ),
               if (matchingClaims.isEmpty && selectedZone != null) ...[
                 const SizedBox(height: 10),
-                Text('Tiada tuntutan "dihantar" untuk zon ini.',
+                Text('Tiada tuntutan "dihantar" untuk zon ini.'.tr(),
                     style: GoogleFonts.inter(
                         fontSize: 12, color: AppColors.textSecondary)),
               ] else if (matchingClaims.isNotEmpty) ...[
@@ -3111,7 +3369,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           children: [
             const Icon(Icons.done_all_rounded, color: AppColors.primary),
             const SizedBox(width: 8),
-            Text('Sahkan Kelulusan Pukal',
+            Text('Sahkan Kelulusan Pukal'.tr(),
                 style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -3125,13 +3383,13 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: Text('Batal',
+              child: Text('Batal'.tr(),
                   style: GoogleFonts.inter(color: AppColors.textSecondary))),
           ElevatedButton(
             style:
                 ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text('Ya, Lulus Semua',
+            child: Text('Ya, Lulus Semua'.tr(),
                 style: GoogleFonts.inter(
                     color: Colors.white, fontWeight: FontWeight.w600)),
           ),
@@ -3175,7 +3433,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
         return AlertDialog(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text('Semak Bukti Bergambar',
+          title: Text('Semak Bukti Bergambar'.tr(),
               style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -3289,7 +3547,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: Text('Tutup',
+                child: Text('Tutup'.tr(),
                     style: GoogleFonts.inter(
                         color: AppColors.textSecondary))),
             ElevatedButton(
@@ -3307,7 +3565,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                           isConfirmed ? AppColors.safe : AppColors.warning));
                 }
               },
-              child: Text('Sahkan & Tutup',
+              child: Text('Sahkan & Tutup'.tr(),
                   style: GoogleFonts.inter(
                       color: Colors.white, fontWeight: FontWeight.w600)),
             ),
@@ -3367,7 +3625,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                   child: IconButton(
                     icon: const Icon(Icons.download_rounded, color: Colors.white),
                     onPressed: () => _downloadEvidence(photoEvidence, title, ctx),
-                    tooltip: 'Muat Turun Gambar',
+                    tooltip:'Muat Turun Gambar'.tr(),
                   ),
                 ),
               ),
@@ -3376,7 +3634,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Tutup', style: TextStyle(color: Colors.white)),
+              child: Text('Tutup'.tr(), style: TextStyle(color: Colors.white)),
             ),
           ],
         );
@@ -3394,7 +3652,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           children: [
             CircularProgressIndicator(),
             SizedBox(width: 16),
-            Text('Menyimpan gambar...'),
+            Text('Menyimpan gambar...'.tr()),
           ],
         ),
       ),
@@ -3462,7 +3720,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                 children: [
                   const Icon(Icons.verified_user_rounded, color: AppColors.safe),
                   const SizedBox(width: 8),
-                  Text('Sahkan Kelulusan',
+                  Text('Sahkan Kelulusan'.tr(),
                       style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -3501,7 +3759,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
               actions: [
                 TextButton(
                     onPressed: () => Navigator.pop(ctx),
-                    child: Text('Batal', style: GoogleFonts.inter(color: AppColors.textSecondary))),
+                    child: Text('Batal'.tr(), style: GoogleFonts.inter(color: AppColors.textSecondary))),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: AppColors.safe),
                   onPressed: isConfirmed
@@ -3519,7 +3777,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                           });
                         }
                       : null,
-                  child: Text('Ya, Lulus', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
+                  child: Text('Ya, Lulus'.tr(), style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
                 ),
               ],
             );
@@ -3534,7 +3792,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
 
     _showClaimFeedbackDialog(
       claim: claim,
-      title: 'Tolak Tuntutan',
+      title:'Tolak Tuntutan'.tr(),
       actionLabel: 'Tolak',
       status: 'rejected',
       color: AppColors.danger,
@@ -3551,7 +3809,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
         return AlertDialog(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text('Minta Maklumat Tambahan',
+          title: Text('Minta Maklumat Tambahan'.tr(),
               style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -3577,7 +3835,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                   const Icon(Icons.timer_outlined,
                       size: 16, color: AppColors.warning),
                   const SizedBox(width: 8),
-                  Text('Tarikh akhir respons:',
+                  Text('Tarikh akhir respons:'.tr(),
                       style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -3586,10 +3844,10 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                   DropdownButton<int>(
                     value: selectedDays,
                     items: const [
-                      DropdownMenuItem(value: 2, child: Text('2 hari')),
-                      DropdownMenuItem(value: 3, child: Text('3 hari')),
-                      DropdownMenuItem(value: 4, child: Text('4 hari')),
-                      DropdownMenuItem(value: 5, child: Text('5 hari')),
+                      DropdownMenuItem(value: 2, child: Text('2 hari'.tr())),
+                      DropdownMenuItem(value: 3, child: Text('3 hari'.tr())),
+                      DropdownMenuItem(value: 4, child: Text('4 hari'.tr())),
+                      DropdownMenuItem(value: 5, child: Text('5 hari'.tr())),
                     ],
                     onChanged: (v) {
                       if (v != null) setS(() => selectedDays = v);
@@ -3602,7 +3860,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: Text('Batal',
+                child: Text('Batal'.tr(),
                     style: GoogleFonts.inter(
                         color: AppColors.textSecondary))),
             ElevatedButton(
@@ -3636,7 +3894,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                   }
                 });
               },
-              child: Text('Hantar',
+              child: Text('Hantar'.tr(),
                   style: GoogleFonts.inter(
                       color: Colors.white, fontWeight: FontWeight.w600)),
             ),
@@ -3670,7 +3928,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Pilih sebab penolakan:',
+                Text('Pilih sebab penolakan:'.tr(),
                     style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
@@ -3681,12 +3939,12 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     isDense: true,
                   ),
                   items: const [
-                    DropdownMenuItem(value: 'Bukti Gambar Tidak Jelas / Ralat', child: Text('Bukti Gambar Tidak Jelas / Ralat')),
-                    DropdownMenuItem(value: 'Tuntutan Bertindih (Duplicate IC)', child: Text('Tuntutan Bertindih (Duplicate IC)')),
-                    DropdownMenuItem(value: 'Alamat di Luar Zon Bencana', child: Text('Alamat di Luar Zon Bencana')),
-                    DropdownMenuItem(value: 'Bawah Umur & Tiada Wali Sah', child: Text('Bawah Umur & Tiada Wali Sah')),
-                    DropdownMenuItem(value: 'Kerosakan Tidak Memenuhi Syarat Kelayakan', child: Text('Kerosakan Tidak Memenuhi Syarat Kelayakan')),
-                    DropdownMenuItem(value: 'Lain-lain (Nyatakan)', child: Text('Lain-lain (Nyatakan)')),
+                    DropdownMenuItem(value: 'Bukti Gambar Tidak Jelas / Ralat', child: Text('Bukti Gambar Tidak Jelas / Ralat'.tr())),
+                    DropdownMenuItem(value: 'Tuntutan Bertindih (Duplicate IC)', child: Text('Tuntutan Bertindih (Duplicate IC)'.tr())),
+                    DropdownMenuItem(value: 'Alamat di Luar Zon Bencana', child: Text('Alamat di Luar Zon Bencana'.tr())),
+                    DropdownMenuItem(value: 'Bawah Umur & Tiada Wali Sah', child: Text('Bawah Umur & Tiada Wali Sah'.tr())),
+                    DropdownMenuItem(value: 'Kerosakan Tidak Memenuhi Syarat Kelayakan', child: Text('Kerosakan Tidak Memenuhi Syarat Kelayakan'.tr())),
+                    DropdownMenuItem(value: 'Lain-lain (Nyatakan)', child: Text('Lain-lain (Nyatakan)'.tr())),
                   ],
                   onChanged: (v) {
                     if (v != null) {
@@ -3701,7 +3959,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                   TextField(
                     controller: ctrl,
                     decoration: InputDecoration(
-                      hintText: 'Sila nyatakan sebab...',
+                      hintText:'Sila nyatakan sebab...'.tr(),
                       hintStyle: GoogleFonts.inter(fontSize: 13, color: AppColors.textHint),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                     ),
@@ -3713,7 +3971,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
             actions: [
               TextButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: Text('Batal',
+                  child: Text('Batal'.tr(),
                       style: GoogleFonts.inter(color: AppColors.textSecondary))),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: color),
@@ -3721,7 +3979,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                   final reasonText = isOther ? ctrl.text.trim() : selectedReason;
                   if (isOther && reasonText.isEmpty) {
                     ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
-                      content: Text('Sila nyatakan sebab penolakan.'),
+                      content: Text('Sila nyatakan sebab penolakan.'.tr()),
                       backgroundColor: AppColors.danger,
                     ));
                     return;
@@ -4029,6 +4287,31 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
             ],
           ),
           const SizedBox(height: 6),
+          // ── Bank Info + KIR ────────────────────────────────────
+          Row(
+            children: [
+              const Icon(Icons.account_balance_rounded,
+                  size: 14, color: AppColors.textSecondary),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text('Bank: ${claim.bankName ?? '-'} (${claim.bankAccountNumber ?? '-'})',
+                    style: GoogleFonts.inter(
+                        fontSize: 12, color: AppColors.textPrimary)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Icon(claim.isKIR ? Icons.verified_user_rounded : Icons.cancel_rounded,
+                  size: 14, color: claim.isKIR ? AppColors.safe : AppColors.danger),
+              const SizedBox(width: 6),
+              Text(claim.isKIR ? 'Ketua Isi Rumah (KIR)' : 'Bukan KIR',
+                  style: GoogleFonts.inter(
+                      fontSize: 12, color: claim.isKIR ? AppColors.safe : AppColors.danger, fontWeight: FontWeight.w600)),
+            ],
+          ),
+          const SizedBox(height: 6),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -4074,7 +4357,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     children: [
                       const Icon(Icons.hourglass_empty_rounded, size: 12, color: Colors.purple),
                       const SizedBox(width: 4),
-                      Text('Menunggu respons daripada pemohon...',
+                      Text('Menunggu respons daripada pemohon...'.tr(),
                           style: GoogleFonts.inter(
                               fontSize: 11,
                               fontStyle: FontStyle.italic,
@@ -4111,7 +4394,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                           const Icon(Icons.broken_image_rounded, color: Colors.grey, size: 32),
                           const SizedBox(height: 4),
-                          Text('Gagal muat gambar', style: GoogleFonts.inter(fontSize: 11, color: Colors.grey)),
+                          Text('Gagal muat gambar'.tr(), style: GoogleFonts.inter(fontSize: 11, color: Colors.grey)),
                         ]),
                       ),
                     )
@@ -4133,7 +4416,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                         const Icon(Icons.insert_drive_file_rounded, color: Colors.grey, size: 32),
                         const SizedBox(height: 4),
-                        Text('Tiada gambar', style: GoogleFonts.inter(fontSize: 11, color: Colors.grey)),
+                        Text('Tiada gambar'.tr(), style: GoogleFonts.inter(fontSize: 11, color: Colors.grey)),
                       ]),
                     ),
                   // "Tap to view" overlay
@@ -4147,7 +4430,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                         children: [
                           const Icon(Icons.zoom_in_rounded, color: Colors.white, size: 14),
                           const SizedBox(width: 4),
-                          Text('Ketik untuk perbesar',
+                          Text('Ketik untuk perbesar'.tr(),
                               style: GoogleFonts.inter(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w500)),
                         ],
                       ),
@@ -4171,7 +4454,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8)),
                     ),
-                    child: const Text('Tolak', style: TextStyle(fontSize: 12)),
+                    child: Text('Tolak'.tr(), style: TextStyle(fontSize: 12)),
                   ),
                 ),
                 if (!isInfoRequested) ...[
@@ -4185,7 +4468,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8)),
                       ),
-                      child: const Text('Info', style: TextStyle(fontSize: 12)),
+                      child: Text('Info'.tr(), style: TextStyle(fontSize: 12)),
                     ),
                   ),
                 ],
@@ -4208,7 +4491,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8)),
                     ),
-                    child: const Text('Lulus', style: TextStyle(fontSize: 12)),
+                    child: Text('Lulus'.tr(), style: TextStyle(fontSize: 12)),
                   ),
                 ),
               ],
@@ -4225,7 +4508,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: const Text('Tolak', style: TextStyle(fontSize: 12)),
+                  child: Text('Tolak'.tr(), style: TextStyle(fontSize: 12)),
                 ),
               ),
             ]),
@@ -4268,7 +4551,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
         return AlertDialog(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text('Lulus Di Luar Zon',
+          title: Text('Lulus Di Luar Zon'.tr(),
               style: GoogleFonts.poppins(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
@@ -4291,11 +4574,11 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                 items: const [
                   DropdownMenuItem(
                       value: 'Berkaitan Bencana',
-                      child: Text('Berkaitan Bencana')),
+                      child: Text('Berkaitan Bencana'.tr())),
                   DropdownMenuItem(
-                      value: 'Kes Khas', child: Text('Kes Khas')),
+                      value: 'Kes Khas', child: Text('Kes Khas'.tr())),
                   DropdownMenuItem(
-                      value: 'Ralat Lokasi', child: Text('Ralat Lokasi')),
+                      value: 'Ralat Lokasi', child: Text('Ralat Lokasi'.tr())),
                 ],
                 onChanged: (v) {
                   if (v != null) setDialogState(() => selectedReason = v);
@@ -4327,7 +4610,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: Text('Batal',
+                child: Text('Batal'.tr(),
                     style:
                         GoogleFonts.inter(color: AppColors.textSecondary))),
             ElevatedButton(
@@ -4352,7 +4635,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                       }
                     }
                   : null,
-              child: Text('Lulus',
+              child: Text('Lulus'.tr(),
                   style: GoogleFonts.inter(
                       color: Colors.white, fontWeight: FontWeight.w600)),
             ),
@@ -4404,7 +4687,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Pusat Kawalan Operasi',
+                    Text('Pusat Kawalan Operasi'.tr(),
                         style: GoogleFonts.inter(
                             color: Colors.white.withValues(alpha: 0.8),
                             fontSize: 12,
@@ -4738,7 +5021,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     child: OutlinedButton.icon(
                       onPressed: () => _allocateFundsDialog(campaign),
                       icon: const Icon(Icons.pie_chart_rounded, size: 14),
-                      label: const Text('Peruntuk'),
+                      label: Text('Peruntuk'.tr()),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.officerAccent,
                         side: const BorderSide(color: AppColors.officerAccent),
@@ -4755,7 +5038,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     child: ElevatedButton.icon(
                       onPressed: () => _closeCampaignDialog(campaign),
                       icon: const Icon(Icons.lock_rounded, size: 14),
-                      label: const Text('Tutup'),
+                      label: Text('Tutup'.tr()),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.danger,
                         foregroundColor: Colors.white,
@@ -4843,7 +5126,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     const Icon(Icons.campaign_rounded,
                         color: AppColors.officerAccent, size: 22),
                     const SizedBox(width: 10),
-                    Text('Cipta Kempen Baru',
+                    Text('Cipta Kempen Baru'.tr(),
                         style: GoogleFonts.poppins(
                             fontSize: 17, fontWeight: FontWeight.w700)),
                   ],
@@ -4863,7 +5146,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                 const SizedBox(height: 20),
                 Row(
                   children: [
-                    Text('Pengagihan Dana (%)',
+                    Text('Pengagihan Dana (%)'.tr(),
                         style: GoogleFonts.inter(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -4877,7 +5160,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                         });
                       },
                       icon: const Icon(Icons.add_rounded, size: 16),
-                      label: const Text('Tambah'),
+                      label: Text('Tambah'.tr()),
                       style: TextButton.styleFrom(
                         foregroundColor: AppColors.officerAccent,
                         textStyle:
@@ -4897,7 +5180,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                           child: TextField(
                             controller: allocationKeys[i],
                             decoration: InputDecoration(
-                              hintText: 'Kategori (cth: Makanan)',
+                              hintText:'Kategori (cth: Makanan)'.tr(),
                               contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 10),
                               border: OutlineInputBorder(
@@ -4951,7 +5234,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
 
                             if (name.isEmpty || purpose.isEmpty || target <= 0) {
                               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                                  content: Text('Sila lengkapkan semua medan wajib.')));
+                                  content: Text('Sila lengkapkan semua medan wajib.'.tr())));
                               return;
                             }
 
@@ -4999,7 +5282,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                             height: 20,
                             child: CircularProgressIndicator(
                                 color: Colors.white, strokeWidth: 2))
-                        : Text('Cipta Kempen',
+                        : Text('Cipta Kempen'.tr(),
                             style: GoogleFonts.inter(
                                 fontSize: 14, fontWeight: FontWeight.w700)),
                   ),
@@ -5077,7 +5360,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Kategori & Peratus',
+                    Text('Kategori & Peratus'.tr(),
                         style: GoogleFonts.inter(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -5090,7 +5373,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                         });
                       },
                       icon: const Icon(Icons.add_rounded, size: 16),
-                      label: const Text('Tambah'),
+                      label: Text('Tambah'.tr()),
                       style: TextButton.styleFrom(
                           foregroundColor: AppColors.officerAccent),
                     ),
@@ -5107,7 +5390,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                           child: TextField(
                             controller: keys[i],
                             decoration: InputDecoration(
-                              hintText: 'Kategori',
+                              hintText:'Kategori'.tr(),
                               contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 10),
                               border: OutlineInputBorder(
@@ -5168,7 +5451,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                               Navigator.pop(ctx);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Pengagihan dana berjaya dikemaskini.'),
+                                  content: Text('Pengagihan dana berjaya dikemaskini.'.tr()),
                                   backgroundColor: AppColors.safe,
                                 ),
                               );
@@ -5187,7 +5470,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                             height: 20,
                             child: CircularProgressIndicator(
                                 color: Colors.white, strokeWidth: 2))
-                        : Text('Simpan Perubahan',
+                        : Text('Simpan Perubahan'.tr(),
                             style: GoogleFonts.inter(
                                 fontSize: 14, fontWeight: FontWeight.w700)),
                   ),
@@ -5210,7 +5493,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           children: [
             const Icon(Icons.lock_rounded, color: AppColors.danger, size: 20),
             const SizedBox(width: 8),
-            Text('Tutup Kempen',
+            Text('Tutup Kempen'.tr(),
                 style: GoogleFonts.poppins(
                     fontSize: 15, fontWeight: FontWeight.w700)),
           ],
@@ -5262,7 +5545,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Batal',
+            child: Text('Batal'.tr(),
                 style: GoogleFonts.inter(
                     fontWeight: FontWeight.w600,
                     color: AppColors.textSecondary)),
@@ -5287,7 +5570,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                   borderRadius: BorderRadius.circular(10)),
               elevation: 0,
             ),
-            child: Text('Ya, Tutup Kempen',
+            child: Text('Ya, Tutup Kempen'.tr(),
                 style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
           ),
         ],
@@ -5393,7 +5676,7 @@ class _SquadDispatchDialogState extends State<_SquadDispatchDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: Text('Agih Skuad Baru',
+      title: Text('Agih Skuad Baru'.tr(),
           style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w700,
@@ -5409,27 +5692,27 @@ class _SquadDispatchDialogState extends State<_SquadDispatchDialog> {
               decoration: InputDecoration(
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8)),
-                  labelText: 'Pilih Jenis Skuad'),
+                  labelText:'Pilih Jenis Skuad'.tr()),
               value: selectedSquad,
               items: const [
                 DropdownMenuItem(
                     value: 'Skuad Alpha (Penyelamat)',
-                    child: Text('Skuad Alpha (Penyelamat)')),
+                    child: Text('Skuad Alpha (Penyelamat)'.tr())),
                 DropdownMenuItem(
                     value: 'Skuad Bravo (Pembersihan)',
-                    child: Text('Skuad Bravo (Pembersihan)')),
+                    child: Text('Skuad Bravo (Pembersihan)'.tr())),
                 DropdownMenuItem(
                     value: 'Skuad Charlie (Logistik)',
-                    child: Text('Skuad Charlie (Logistik)')),
+                    child: Text('Skuad Charlie (Logistik)'.tr())),
                 DropdownMenuItem(
                     value: 'Skuad Delta (Perubatan)',
-                    child: Text('Skuad Delta (Perubatan)')),
+                    child: Text('Skuad Delta (Perubatan)'.tr())),
                 DropdownMenuItem(
                     value: 'Skuad Echo (Dapur Jalanan)',
-                    child: Text('Skuad Echo (Dapur Jalanan)')),
+                    child: Text('Skuad Echo (Dapur Jalanan)'.tr())),
                 DropdownMenuItem(
                     value: 'Skuad Foxtrot (Komunikasi)',
-                    child: Text('Skuad Foxtrot (Komunikasi)')),
+                    child: Text('Skuad Foxtrot (Komunikasi)'.tr())),
               ],
               onChanged: (v) {
                 if (v != null) {
@@ -5447,7 +5730,7 @@ class _SquadDispatchDialogState extends State<_SquadDispatchDialog> {
               decoration: InputDecoration(
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8)),
-                  labelText: 'Lokasi Tugasan'),
+                  labelText:'Lokasi Tugasan'.tr()),
               value: selectedZone,
               items: widget.dynamicZones
                   .map((z) => DropdownMenuItem(value: z, child: Text(z, overflow: TextOverflow.ellipsis)))
@@ -5465,13 +5748,13 @@ class _SquadDispatchDialogState extends State<_SquadDispatchDialog> {
               decoration: InputDecoration(
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8)),
-                  labelText: 'Keutamaan Insiden'),
+                  labelText:'Keutamaan Insiden'.tr()),
               value: selectedPriority,
               items: const [
-                DropdownMenuItem(value: 'Kritikal', child: Text('Kritikal')),
-                DropdownMenuItem(value: 'Tinggi', child: Text('Tinggi')),
-                DropdownMenuItem(value: 'Sederhana', child: Text('Sederhana')),
-                DropdownMenuItem(value: 'Rendah', child: Text('Rendah')),
+                DropdownMenuItem(value: 'Kritikal', child: Text('Kritikal'.tr())),
+                DropdownMenuItem(value: 'Tinggi', child: Text('Tinggi'.tr())),
+                DropdownMenuItem(value: 'Sederhana', child: Text('Sederhana'.tr())),
+                DropdownMenuItem(value: 'Rendah', child: Text('Rendah'.tr())),
               ],
               onChanged: (v) {
                 if (v != null) setState(() => selectedPriority = v);
@@ -5489,7 +5772,7 @@ class _SquadDispatchDialogState extends State<_SquadDispatchDialog> {
                       const Icon(Icons.groups_rounded, size: 15, color: AppColors.volunteerAccent),
                       const SizedBox(width: 6),
                       Expanded(
-                        child: Text('Bilangan Sukarelawan Diperlukan',
+                        child: Text('Bilangan Sukarelawan Diperlukan'.tr(),
                             style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.volunteerAccent)),
                       ),
                     ],
@@ -5517,8 +5800,8 @@ class _SquadDispatchDialogState extends State<_SquadDispatchDialog> {
             TextField(
               controller: taskCtrl,
               decoration: InputDecoration(
-                  labelText: 'Tugasan Khusus',
-                  hintText: 'Terangkan tugasan skuad ini...',
+                  labelText:'Tugasan Khusus'.tr(),
+                  hintText:'Terangkan tugasan skuad ini...'.tr(),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
               maxLines: 2,
             ),
@@ -5527,8 +5810,8 @@ class _SquadDispatchDialogState extends State<_SquadDispatchDialog> {
             TextField(
               controller: etaCtrl,
               decoration: InputDecoration(
-                  labelText: 'Anggaran Tiba (ETA)',
-                  hintText: 'Contoh: 15 min',
+                  labelText:'Anggaran Tiba (ETA)'.tr(),
+                  hintText:'Contoh: 15 min'.tr(),
                   prefixIcon: const Icon(Icons.timer_outlined, size: 18),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
             ),
@@ -5562,13 +5845,13 @@ class _SquadDispatchDialogState extends State<_SquadDispatchDialog> {
             onPressed: () {
               Navigator.pop(context);
             },
-            child: Text('Batal', style: GoogleFonts.inter(color: AppColors.textSecondary))),
+            child: Text('Batal'.tr(), style: GoogleFonts.inter(color: AppColors.textSecondary))),
         ElevatedButton(
           style: ElevatedButton.styleFrom(backgroundColor: AppColors.volunteerAccent),
           onPressed: () async {
             if (taskCtrl.text.trim().isEmpty) {
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                  content: Text('Sila masukkan tugasan khusus.')));
+                  content: Text('Sila masukkan tugasan khusus.'.tr())));
               return;
             }
             final coords = widget.zoneCoordinatesMap[selectedZone] ?? widget.fallbackCoordinates(selectedZone);
@@ -5608,7 +5891,7 @@ class _SquadDispatchDialogState extends State<_SquadDispatchDialog> {
               if (mounted) {
                 navigator.pop();
                 messenger.showSnackBar(const SnackBar(
-                    content: Text('Skuad berjaya diagihkan!'),
+                    content: Text('Skuad berjaya diagihkan!'.tr()),
                     backgroundColor: AppColors.volunteerAccent));
               }
             } catch (e) {
@@ -5619,7 +5902,7 @@ class _SquadDispatchDialogState extends State<_SquadDispatchDialog> {
               }
             }
           },
-          child: Text('Agih Pasukan',
+          child: Text('Agih Pasukan'.tr(),
               style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
         ),
       ],

@@ -447,7 +447,7 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
             margin: const EdgeInsets.only(top: 4),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
             decoration: BoxDecoration(color: AppColors.officerAccent.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(99)),
-            child: Text('Pegawai Kerajaan', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.officerAccent)),
+            child: Text('Pegawai Kerajaan'.tr(), style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.officerAccent)),
           ),
           if (_isEditing)
             Padding(
