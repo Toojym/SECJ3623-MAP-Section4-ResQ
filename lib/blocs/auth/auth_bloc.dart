@@ -30,6 +30,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   void _onAuthStarted(AuthStarted event, Emitter<AuthState> emit) {
     emit(const AuthLoading());
+    _authService.signOut(); // Force logout on app start
     _authSubscription?.cancel();
     _authSubscription = _authService.authStateChanges.listen((user) {
       add(AuthUserChanged(uid: user?.uid));
@@ -44,7 +45,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     try {
       final data = await _firestoreService.getUserDocument(event.uid!);
       if (data == null) {
-        emit(AuthAuthenticated(uid: event.uid!, role: _fallbackRole, displayName: 'Test User', profileComplete: true));
+        await _authService.signOut();
+        emit(const AuthUnauthenticated());
         return;
       }
       emit(AuthAuthenticated(
@@ -54,7 +56,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         profileComplete: data['profileComplete'] as bool? ?? false,
       ));
     } catch (_) {
-      emit(AuthAuthenticated(uid: event.uid!, role: _fallbackRole, displayName: 'Test User', profileComplete: true));
+      await _authService.signOut();
+      emit(const AuthUnauthenticated());
     }
   }
 
@@ -70,7 +73,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       try {
         final data = await _firestoreService.getUserDocument(user.uid);
         if (data == null) {
-          emit(AuthAuthenticated(uid: user.uid, role: _fallbackRole, displayName: 'Test User', profileComplete: true));
+          await _authService.signOut();
+          emit(const AuthError(message: 'User data not found in database.'));
           return;
         }
         emit(AuthAuthenticated(
@@ -79,8 +83,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           displayName: data['displayName'] as String? ?? '',
           profileComplete: data['profileComplete'] as bool? ?? false,
         ));
-      } catch (_) {
-        emit(AuthAuthenticated(uid: user.uid, role: _fallbackRole, displayName: 'Test User', profileComplete: true));
+      } catch (e) {
+        await _authService.signOut();
+        emit(AuthError(message: 'Failed to fetch user data: $e'));
       }
     } catch (e) {
       emit(AuthError(message: e.toString()));

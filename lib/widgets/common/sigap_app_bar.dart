@@ -43,12 +43,15 @@ class SigapAppBar extends StatelessWidget implements PreferredSizeWidget {
             child: const Icon(Icons.bolt_rounded, color: Colors.white, size: 18),
           ),
           const SizedBox(width: 8),
-          Text(
-            title,
-            style: GoogleFonts.poppins(
-              fontSize: 17,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+          Flexible(
+            child: Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],

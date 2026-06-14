@@ -20,6 +20,7 @@ class SigapTextField extends StatefulWidget {
   final void Function(String)? onSubmitted;
   final FocusNode? focusNode;
   final bool autofocus;
+  final int? maxLength;
 
   const SigapTextField({
     super.key,
@@ -40,6 +41,7 @@ class SigapTextField extends StatefulWidget {
     this.onSubmitted,
     this.focusNode,
     this.autofocus = false,
+    this.maxLength,
   });
 
   @override
@@ -82,6 +84,7 @@ class _SigapTextFieldState extends State<SigapTextField> {
           onFieldSubmitted: widget.onSubmitted,
           focusNode: widget.focusNode,
           autofocus: widget.autofocus,
+          maxLength: widget.maxLength,
           style: GoogleFonts.inter(
             fontSize: 14,
             color: AppColors.textPrimary,

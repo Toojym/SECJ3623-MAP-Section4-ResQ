@@ -68,19 +68,11 @@ class ClaimModel {
       rejectReason: data['rejectReason'],
       infoRequestReason: data['infoRequestReason'] ?? data['officerFeedback'],
       reviewedBy: data['reviewedBy'],
-      reviewedAt: data['reviewedAt'] != null
-          ? (data['reviewedAt'] as Timestamp).toDate()
-          : null,
-      createdAt: data['createdAt'] != null
-          ? (data['createdAt'] as Timestamp).toDate()
-          : null,
-      infoDeadline: data['infoDeadline'] != null
-          ? (data['infoDeadline'] as Timestamp).toDate()
-          : null,
+      reviewedAt: _parseTimestamp(data['reviewedAt']),
+      createdAt: _parseTimestamp(data['createdAt']),
+      infoDeadline: _parseTimestamp(data['infoDeadline']),
       outOfZoneReason: data['outOfZoneReason'],
-      citizenUpdatedAt: data['citizenUpdatedAt'] != null
-          ? (data['citizenUpdatedAt'] as Timestamp).toDate()
-          : null,
+      citizenUpdatedAt: _parseTimestamp(data['citizenUpdatedAt']),
       bankName: data['bankName'],
       bankAccountNumber: data['bankAccountNumber'],
       isKIR: data['isKIR'] ?? false,
@@ -115,5 +107,14 @@ class ClaimModel {
       'isKIR': isKIR,
       'agreedToPdpa': agreedToPdpa,
     };
+  }
+
+  static DateTime? _parseTimestamp(dynamic ts) {
+    if (ts == null) return null;
+    if (ts is Timestamp) return ts.toDate();
+    if (ts is DateTime) return ts;
+    if (ts is int) return DateTime.fromMillisecondsSinceEpoch(ts);
+    if (ts is String) return DateTime.tryParse(ts);
+    return null;
   }
 }

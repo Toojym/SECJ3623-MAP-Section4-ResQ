@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:io';
+import 'dart:convert';
+import 'package:image_picker/image_picker.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/validators.dart';
@@ -21,6 +24,9 @@ class VolunteerProfileScreen extends StatefulWidget {
 class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
   final _firestoreService = FirestoreService();
   final _formKey = GlobalKey<FormState>();
+
+  File? _selectedImageFile;
+  String? _profileImageUrl;
 
   // 1. Identity & Account
   final _fullNameCtrl = TextEditingController();
@@ -101,6 +107,16 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
     }
   }
 
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery, maxWidth: 500, imageQuality: 50);
+    if (pickedFile != null && mounted) {
+      setState(() {
+        _selectedImageFile = File(pickedFile.path);
+      });
+    }
+  }
+
   Future<void> _loadProfile() async {
     setState(() => _isLoading = true);
     final state = context.read<AuthBloc>().state;
@@ -117,6 +133,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
 
       if (data != null && mounted) {
         setState(() {
+          _profileImageUrl = data['profileImageUrl'] as String?;
           _fullNameCtrl.text = data['fullName'] as String? ?? state.displayName;
           _emailCtrl.text = data['email'] as String? ?? currentUser?.email ?? '';
           _passwordCtrl.text = data['password'] as String? ?? '';
@@ -174,7 +191,20 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
           .toList();
       final allSkillsToSave = [..._selectedSkills, ...customSkillsList];
 
+      String finalImageUrl = _profileImageUrl ?? '';
+      if (_selectedImageFile != null) {
+        try {
+          final bytes = await _selectedImageFile!.readAsBytes();
+          final base64String = base64Encode(bytes);
+          finalImageUrl = 'data:image/jpeg;base64,$base64String';
+          _profileImageUrl = finalImageUrl;
+        } catch (e) {
+          debugPrint('Image Encode Error: $e');
+        }
+      }
+
       await FirestoreService().createVolunteerProfile(state.uid, {
+        'profileImageUrl': finalImageUrl,
         'fullName': _fullNameCtrl.text.trim(),
         'email': _emailCtrl.text.trim(),
         'password': _passwordCtrl.text.trim(),
@@ -524,53 +554,68 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
     );
   }
 
+  ImageProvider? _getAvatarProvider() {
+    if (_selectedImageFile != null) {
+      return FileImage(_selectedImageFile!);
+    }
+    if (_profileImageUrl != null && _profileImageUrl!.isNotEmpty) {
+      if (_profileImageUrl!.startsWith('data:image')) {
+        final base64Str = _profileImageUrl!.split(',').last;
+        return MemoryImage(base64Decode(base64Str));
+      }
+      return NetworkImage(_profileImageUrl!);
+    }
+    return null;
+  }
+
   Widget _buildAvatarSection() {
     return Center(
       child: Column(
         children: [
-          CircleAvatar(
-            radius: 40,
-            backgroundColor: AppColors.volunteerAccent.withValues(alpha: 0.12),
-            child: Text(
-              _fullNameCtrl.text.isNotEmpty
-                  ? _fullNameCtrl.text[0].toUpperCase()
-                  : 'S',
-              style: GoogleFonts.poppins(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.volunteerAccent),
+          GestureDetector(
+            onTap: _isEditing ? _pickImage : null,
+            child: Stack(
+              children: [
+                CircleAvatar(
+                  radius: 40,
+                  backgroundColor: AppColors.volunteerAccent.withOpacity(0.12),
+                  backgroundImage: _getAvatarProvider(),
+                  child: (_selectedImageFile == null && (_profileImageUrl == null || _profileImageUrl!.isEmpty))
+                      ? Text(
+                          _fullNameCtrl.text.isNotEmpty ? _fullNameCtrl.text[0].toUpperCase() : 'S',
+                          style: GoogleFonts.poppins(fontSize: 32, fontWeight: FontWeight.w700, color: AppColors.volunteerAccent),
+                        )
+                      : null,
+                ),
+                if (_isEditing)
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(color: AppColors.volunteerAccent, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)),
+                      child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 14),
+                    ),
+                  ),
+              ],
             ),
           ),
           const SizedBox(height: 12),
           Text(
-            _fullNameCtrl.text.isNotEmpty
-                ? _fullNameCtrl.text
-                : 'Sukarelawan SIGAP',
-            style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary),
+            _fullNameCtrl.text.isNotEmpty ? _fullNameCtrl.text : 'Sukarelawan SIGAP',
+            style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
           ),
           Container(
             margin: const EdgeInsets.only(top: 4),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-            decoration: BoxDecoration(
-                color: AppColors.volunteerAccent.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(99)),
-            child: Text('Sukarelawan'.tr(),
-                style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.volunteerAccent)),
+            decoration: BoxDecoration(color: AppColors.volunteerAccent.withOpacity(0.1), borderRadius: BorderRadius.circular(99)),
+            child: Text('Sukarelawan'.tr(), style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.volunteerAccent)),
           ),
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              tr('photoNotEditable'),
-              style: GoogleFonts.inter(
-                  fontSize: 11, color: AppColors.textHint),
+          if (_isEditing)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(tr('tapToChangePhoto'), style: GoogleFonts.inter(fontSize: 11, color: AppColors.textHint)),
             ),
-          ),
         ],
       ),
     );

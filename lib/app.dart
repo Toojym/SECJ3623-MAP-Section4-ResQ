@@ -13,12 +13,14 @@ import 'screens/auth/register_screen.dart';
 import 'screens/auth/role_onboarding_screen.dart';
 import 'screens/citizen/citizen_dashboard.dart';
 import 'screens/citizen/citizen_profile_screen.dart';
+import 'screens/citizen/citizen_notifications_screen.dart';
 import 'screens/officer/officer_dashboard.dart';
 import 'screens/officer/officer_profile_screen.dart';
 import 'screens/volunteer/volunteer_dashboard.dart';
 import 'screens/volunteer/volunteer_profile_screen.dart';
 import 'screens/volunteer/sos_response_screen.dart';
 import 'screens/volunteer/volunteer_notifications_screen.dart';
+import 'screens/officer/officer_notifications_screen.dart';
 import 'screens/volunteer/mission_checklist_screen.dart';
 import 'screens/volunteer/mission_completion_screen.dart';
 import 'screens/citizen/donation_campaigns_screen.dart';
@@ -161,6 +163,10 @@ class _SigapAppState extends State<SigapApp> {
           builder: (_, __) => const CitizenProfileScreen(),
         ),
         GoRoute(
+          path: AppRoutes.citizenNotifications,
+          builder: (_, __) => const CitizenNotificationsScreen(),
+        ),
+        GoRoute(
           path: AppRoutes.volunteer,
           builder: (_, __) => const VolunteerDashboard(),
         ),
@@ -200,6 +206,10 @@ class _SigapAppState extends State<SigapApp> {
         GoRoute(
           path: AppRoutes.officerProfile,
           builder: (_, __) => const OfficerProfileScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.officerNotifications,
+          builder: (_, __) => const OfficerNotificationsScreen(),
         ),
         GoRoute(
           path: AppRoutes.donationCampaigns,

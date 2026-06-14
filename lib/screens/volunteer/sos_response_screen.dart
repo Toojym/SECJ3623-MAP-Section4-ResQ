@@ -1042,7 +1042,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
                     } else {
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
+                          SnackBar(
                             content: Text('Tidak dapat membuka panggilan telefon.'.tr()),
                             backgroundColor: AppColors.danger,
                           ),

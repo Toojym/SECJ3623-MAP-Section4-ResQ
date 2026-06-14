@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../core/constants/app_colors.dart';
+import '../../services/firestore_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/constants/app_routes.dart';
 import '../../models/sos_report_model.dart';
 import '../../services/firestore_service.dart';
@@ -17,7 +19,17 @@ class VolunteerNotificationsScreen extends StatefulWidget {
 }
 
 class _VolunteerNotificationsScreenState extends State<VolunteerNotificationsScreen> {
-  final _firestoreService = FirestoreService();
+  final FirestoreService _firestoreService = FirestoreService();
+
+  String _formatDate(Timestamp? timestamp) {
+    if (timestamp == null) return 'Baru sahaja';
+    final now = DateTime.now();
+    final date = timestamp.toDate();
+    final diff = now.difference(date);
+    if (diff.inMinutes < 60) return '${diff.inMinutes} minit lalu';
+    if (diff.inHours < 24) return '${diff.inHours} jam lalu';
+    return '${diff.inDays} hari lalu';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,42 +51,154 @@ class _VolunteerNotificationsScreenState extends State<VolunteerNotificationsScr
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: _firestoreService.streamActiveSOSReports(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppColors.volunteerAccent),
-            );
-          }
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Text(
+                'Notifikasi Umum',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+            StreamBuilder<QuerySnapshot>(
+              stream: _firestoreService.streamGlobalNotifications(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Text('Tiada notifikasi umum', style: GoogleFonts.inter(color: AppColors.textSecondary)),
+                  );
+                }
 
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return _buildEmptyState();
-          }
+                final docs = snapshot.data!.docs;
+                return ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  itemCount: docs.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final notif = docs[index].data() as Map<String, dynamic>;
+                    final type = notif['type'] as String? ?? 'info';
+                    
+                    Color typeColor = AppColors.primary;
+                    IconData typeIcon = Icons.info_outline_rounded;
+                    if (type == 'warning') {
+                      typeColor = AppColors.danger;
+                      typeIcon = Icons.warning_rounded;
+                    }
 
-          var reports = snapshot.data!.docs
-              .map((doc) => SosReportModel.fromDocument(doc))
-              .where((r) => !r.declinedBy.contains(uid))
-              .toList();
+                    return Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: typeColor.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: typeColor.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(typeIcon, color: typeColor, size: 24),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  notif['title'] as String? ?? 'Notifikasi',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  notif['message'] as String? ?? '',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  _formatDate(notif['timestamp'] as Timestamp?),
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                    color: AppColors.textHint,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+            const Divider(height: 32),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Text(
+                'Misi SOS Terkini',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+            StreamBuilder<QuerySnapshot>(
+              stream: _firestoreService.streamActiveSOSReports(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: AppColors.volunteerAccent),
+                  );
+                }
 
-          reports.sort((a, b) {
-            return (b.createdAt ?? DateTime.now()).compareTo(a.createdAt ?? DateTime.now());
-          });
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return _buildEmptyState();
+                }
 
-          if (reports.isEmpty) {
-            return _buildEmptyState();
-          }
+                var reports = snapshot.data!.docs
+                    .map((doc) => SosReportModel.fromDocument(doc))
+                    .where((r) => !r.declinedBy.contains(uid))
+                    .toList();
 
-          return ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: reports.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              final report = reports[index];
-              return _buildNotificationCard(report);
-            },
-          );
-        },
+                reports.sort((a, b) {
+                  return (b.createdAt ?? DateTime.now()).compareTo(a.createdAt ?? DateTime.now());
+                });
+
+                if (reports.isEmpty) {
+                  return _buildEmptyState();
+                }
+
+                return ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  itemCount: reports.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final report = reports[index];
+                    return _buildNotificationCard(report);
+                  },
+                );
+              },
+            ),
+            const SizedBox(height: 32),
+          ],
+        ),
       ),
     );
   }
@@ -118,18 +242,6 @@ class _VolunteerNotificationsScreenState extends State<VolunteerNotificationsScr
         break;
       default:
         severityColor = const Color(0xFF22C55E);
-    }
-
-    String timeAgo = 'Baru sahaja';
-    if (report.createdAt != null) {
-      final diff = DateTime.now().difference(report.createdAt!);
-      if (diff.inMinutes < 60) {
-        timeAgo = '${diff.inMinutes} min lalu';
-      } else if (diff.inHours < 24) {
-        timeAgo = '${diff.inHours} jam lalu';
-      } else {
-        timeAgo = '${diff.inDays} hari lalu';
-      }
     }
 
     return GestureDetector(
@@ -179,7 +291,7 @@ class _VolunteerNotificationsScreenState extends State<VolunteerNotificationsScr
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    timeAgo,
+                    _formatDate(report.createdAt != null ? Timestamp.fromDate(report.createdAt!) : null),
                     style: GoogleFonts.inter(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,

@@ -249,8 +249,9 @@ class _DonationCampaignsScreenState extends State<DonationCampaignsScreen> {
     var campaigns = snapshot.data!.docs
         .map((doc) => CampaignModel.fromMap(doc.id, doc.data() as Map<String, dynamic>))
         .where((c) {
-          if (_filterStatus == 'Aktif') return !c.isClosed;
-          if (_filterStatus == 'Ditutup') return c.isClosed;
+          bool isClosed = c.isClosed || c.currentAmount >= c.targetAmount;
+          if (_filterStatus == 'Aktif') return !isClosed;
+          if (_filterStatus == 'Ditutup') return isClosed;
           return true;
         })
         .where((c) =>
@@ -260,7 +261,9 @@ class _DonationCampaignsScreenState extends State<DonationCampaignsScreen> {
         .toList()
       ..sort((a, b) {
         // Active first, then by creation date
-        if (a.isClosed != b.isClosed) return a.isClosed ? 1 : -1;
+        bool aClosed = a.isClosed || a.currentAmount >= a.targetAmount;
+        bool bClosed = b.isClosed || b.currentAmount >= b.targetAmount;
+        if (aClosed != bClosed) return aClosed ? 1 : -1;
         final at = a.createdAt ?? DateTime(2000);
         final bt = b.createdAt ?? DateTime(2000);
         return bt.compareTo(at);
@@ -374,7 +377,7 @@ class _CampaignCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final progress = campaign.progressFraction;
-    final isClosed = campaign.isClosed;
+    final isClosed = campaign.isClosed || campaign.currentAmount >= campaign.targetAmount;
     final hasDonated = userDonated > 0;
 
     return GestureDetector(

@@ -24,6 +24,8 @@ import '../../models/volunteer_profile_model.dart';
 import '../../services/authority_routing_service.dart';
 import '../../services/firestore_service.dart';
 import '../../services/awanis_service.dart';
+import '../../services/pdf_report_service.dart';
+import '../citizen/faq_screen.dart';
 
 import '../../widgets/common/sigap_app_bar.dart';
 
@@ -107,6 +109,10 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
   @override
   void initState() {
     super.initState();
+    _awanisOfficerMessages.add({
+      'isBot': true,
+      'text': 'Hai Tuan/Puan Pegawai! Saya AWANIS, pembantu AI pusat kawalan anda. Boleh saya bantu paparkan status SOS, sukarelawan, atau analisa semasa?'
+    });
     _disasterZonesStream = _firestoreService.streamDisasterZones();
     _loadOfficerData();
     _listenToActiveVolunteers();
@@ -142,7 +148,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
               IconButton(
                 icon: const Icon(Icons.notifications_active_rounded,
                     color: AppColors.warning),
-                onPressed: () {},
+                onPressed: () => context.push(AppRoutes.officerNotifications),
               ),
               IconButton(
                 icon: const Icon(Icons.person_outline_rounded),
@@ -356,22 +362,25 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
   }
 
   Widget _faqCard(String title) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.divider)),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(title,
-              style: GoogleFonts.inter(
-                  fontSize: 13, color: AppColors.textPrimary)),
-          const Icon(Icons.chevron_right_rounded,
-              color: AppColors.textSecondary, size: 20),
-        ],
+    return InkWell(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FAQScreen())),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.divider)),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(title,
+                style: GoogleFonts.inter(
+                    fontSize: 13, color: AppColors.textPrimary)),
+            const Icon(Icons.chevron_right_rounded,
+                color: AppColors.textSecondary, size: 20),
+          ],
+        ),
       ),
     );
   }
@@ -1389,7 +1398,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                             const BorderSide(color: AppColors.officerAccent),
                       ),
                     ),
-                    items: const [
+                    items: [
                       DropdownMenuItem(
                           value: 'Skuad Alpha',
                           child: Text('Skuad Alpha (Penyelamat)'.tr())),
@@ -1961,7 +1970,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                           borderRadius: BorderRadius.circular(8)),
                       labelText:'Pilih Skuad'.tr()),
                   value: selectedSquad,
-                  items: const [
+                  items: [
                     DropdownMenuItem(value: 'Skuad Alpha (Penyelamat)', child: Text('Skuad Alpha (Penyelamat)'.tr())),
                     DropdownMenuItem(value: 'Skuad Bravo (Pembersihan)', child: Text('Skuad Bravo (Pembersihan)'.tr())),
                     DropdownMenuItem(value: 'Skuad Charlie (Logistik)', child: Text('Skuad Charlie (Logistik)'.tr())),
@@ -2271,7 +2280,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
 
   void _showSquadTrackMapDialog(VolunteerTaskModel task) {
     if (task.currentLat == null || task.currentLng == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Lokasi skuad belum disegerakkan oleh GPS.'.tr()),
       ));
       return;
@@ -2619,6 +2628,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                 icon: const Icon(Icons.picture_as_pdf_rounded, size: 16),
                 label: Text('Jana Laporan'.tr()),
                 style: ElevatedButton.styleFrom(
+                  minimumSize: Size.zero,
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -2760,25 +2770,33 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
         color: AppColors.surface,
         border: Border(top: BorderSide(color: AppColors.divider)),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _awanisMsgCtrl,
-              decoration: InputDecoration(
-                hintText:'Tanya AWANIS (cth: Berapa SOS hari ini?)...'.tr(),
-                hintStyle: GoogleFonts.inter(color: AppColors.textHint, fontSize: 13),
-                filled: true,
-                fillColor: AppColors.background,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide.none,
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          width: MediaQuery.of(context).size.width,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _awanisMsgCtrl,
+                  maxLines: null,
+                  keyboardType: TextInputType.multiline,
+                  textInputAction: TextInputAction.send,
+                  decoration: InputDecoration(
+                    hintText:'Tanya AWANIS (cth: Berapa SOS hari ini?)...'.tr(),
+                    hintStyle: GoogleFonts.inter(color: AppColors.textHint, fontSize: 13),
+                    filled: true,
+                    fillColor: AppColors.background,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  ),
+                  onSubmitted: (_) => _sendAwanisMessage(),
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               ),
-              onSubmitted: (_) => _sendAwanisMessage(),
-            ),
-          ),
           const SizedBox(width: 8),
           Container(
             decoration: const BoxDecoration(
@@ -2791,6 +2809,8 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
             ),
           ),
         ],
+      ),
+        ),
       ),
     );
   }
@@ -2870,7 +2890,34 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
               child: Text(report, style: GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary)),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: Text('OK'.tr())),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('Tutup'.tr(), style: GoogleFonts.inter(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+              ),
+              TextButton.icon(
+                onPressed: () async {
+                  final file = await PdfReportService.generateReportPdf(report, 'Laporan Insiden AI');
+                  await PdfReportService.shareReport(file);
+                },
+                icon: const Icon(Icons.share_rounded, size: 16),
+                label: Text('Kongsi'.tr()),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: () async {
+                  final file = await PdfReportService.generateReportPdf(report, 'Laporan Insiden AI');
+                  await PdfReportService.downloadReport(file);
+                },
+                icon: const Icon(Icons.download_rounded, size: 16),
+                label: Text('Muat Turun'.tr()),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.safe,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+              ),
             ],
           ),
         );
@@ -3003,7 +3050,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                     items: [
-                      const DropdownMenuItem(value: 'Semua', child: Text('Semua Zon'.tr())),
+                      DropdownMenuItem(value: 'Semua', child: Text('Semua Zon'.tr())),
                       ...claimLocations.map((loc) => DropdownMenuItem(value: loc, child: Text(loc, overflow: TextOverflow.ellipsis))),
                     ],
                     onChanged: (val) {
@@ -3647,11 +3694,11 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
     showDialog(
       context: ctx,
       barrierDismissible: false,
-      builder: (loadingCtx) => const AlertDialog(
+      builder: (loadingCtx) => AlertDialog(
         content: Row(
           children: [
-            CircularProgressIndicator(),
-            SizedBox(width: 16),
+            const CircularProgressIndicator(),
+            const SizedBox(width: 16),
             Text('Menyimpan gambar...'.tr()),
           ],
         ),
@@ -3843,7 +3890,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                   const Spacer(),
                   DropdownButton<int>(
                     value: selectedDays,
-                    items: const [
+                    items: [
                       DropdownMenuItem(value: 2, child: Text('2 hari'.tr())),
                       DropdownMenuItem(value: 3, child: Text('3 hari'.tr())),
                       DropdownMenuItem(value: 4, child: Text('4 hari'.tr())),
@@ -3938,7 +3985,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                     isDense: true,
                   ),
-                  items: const [
+                  items: [
                     DropdownMenuItem(value: 'Bukti Gambar Tidak Jelas / Ralat', child: Text('Bukti Gambar Tidak Jelas / Ralat'.tr())),
                     DropdownMenuItem(value: 'Tuntutan Bertindih (Duplicate IC)', child: Text('Tuntutan Bertindih (Duplicate IC)'.tr())),
                     DropdownMenuItem(value: 'Alamat di Luar Zon Bencana', child: Text('Alamat di Luar Zon Bencana'.tr())),
@@ -3978,7 +4025,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                 onPressed: () {
                   final reasonText = isOther ? ctrl.text.trim() : selectedReason;
                   if (isOther && reasonText.isEmpty) {
-                    ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
+                    ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
                       content: Text('Sila nyatakan sebab penolakan.'.tr()),
                       backgroundColor: AppColors.danger,
                     ));
@@ -4571,7 +4618,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8)),
                     isDense: true),
-                items: const [
+                items: [
                   DropdownMenuItem(
                       value: 'Berkaitan Bencana',
                       child: Text('Berkaitan Bencana'.tr())),
@@ -5233,7 +5280,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                             final target = double.tryParse(targetCtrl.text) ?? 0.0;
 
                             if (name.isEmpty || purpose.isEmpty || target <= 0) {
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                                   content: Text('Sila lengkapkan semua medan wajib.'.tr())));
                               return;
                             }
@@ -5450,7 +5497,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                             if (mounted) {
                               Navigator.pop(ctx);
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
+                                SnackBar(
                                   content: Text('Pengagihan dana berjaya dikemaskini.'.tr()),
                                   backgroundColor: AppColors.safe,
                                 ),
@@ -5694,7 +5741,7 @@ class _SquadDispatchDialogState extends State<_SquadDispatchDialog> {
                       borderRadius: BorderRadius.circular(8)),
                   labelText:'Pilih Jenis Skuad'.tr()),
               value: selectedSquad,
-              items: const [
+              items: [
                 DropdownMenuItem(
                     value: 'Skuad Alpha (Penyelamat)',
                     child: Text('Skuad Alpha (Penyelamat)'.tr())),
@@ -5750,7 +5797,7 @@ class _SquadDispatchDialogState extends State<_SquadDispatchDialog> {
                       borderRadius: BorderRadius.circular(8)),
                   labelText:'Keutamaan Insiden'.tr()),
               value: selectedPriority,
-              items: const [
+              items: [
                 DropdownMenuItem(value: 'Kritikal', child: Text('Kritikal'.tr())),
                 DropdownMenuItem(value: 'Tinggi', child: Text('Tinggi'.tr())),
                 DropdownMenuItem(value: 'Sederhana', child: Text('Sederhana'.tr())),
@@ -5850,7 +5897,7 @@ class _SquadDispatchDialogState extends State<_SquadDispatchDialog> {
           style: ElevatedButton.styleFrom(backgroundColor: AppColors.volunteerAccent),
           onPressed: () async {
             if (taskCtrl.text.trim().isEmpty) {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                   content: Text('Sila masukkan tugasan khusus.'.tr())));
               return;
             }
@@ -5890,7 +5937,7 @@ class _SquadDispatchDialogState extends State<_SquadDispatchDialog> {
               await widget.onCreateTask(model.toMap());
               if (mounted) {
                 navigator.pop();
-                messenger.showSnackBar(const SnackBar(
+                messenger.showSnackBar(SnackBar(
                     content: Text('Skuad berjaya diagihkan!'.tr()),
                     backgroundColor: AppColors.volunteerAccent));
               }

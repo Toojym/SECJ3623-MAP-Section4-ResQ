@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -137,7 +138,8 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
     if (data != null && mounted) {
       setState(() {
         _isActive = data['isActive'] as bool? ?? false;
-        _sigapMataPoints = data['sigapMataPoints'] as int? ?? 0;
+        final dbPoints = data['sigapMataPoints'] as int? ?? 0;
+        _sigapMataPoints = 1250 + dbPoints;
         _profileImageUrl = data['profileImageUrl'] as String?;
         _assignedSquad = data['assignedSquad'] as String? ?? ''; // ADD THIS
         _assignedSquadId = data['assignedSquadId'] as String? ?? ''; // ADD THIS
@@ -301,19 +303,23 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
             ),
             child: _profileImageUrl != null && _profileImageUrl!.isNotEmpty
                 ? ClipOval(
-                    child: Image.network(
-                      _profileImageUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withValues(alpha: 0.3),
+                    child: _profileImageUrl!.startsWith('data:image')
+                        ? Image.memory(
+                            base64Decode(_profileImageUrl!.split(',').last),
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.3)),
+                              child: const Icon(Icons.person_rounded, color: Colors.white, size: 28),
+                            ),
+                          )
+                        : Image.network(
+                            _profileImageUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.3)),
+                              child: const Icon(Icons.person_rounded, color: Colors.white, size: 28),
+                            ),
                           ),
-                          child: const Icon(Icons.person_rounded, color: Colors.white, size: 28),
-                        );
-                      },
-                    ),
                   )
                 : Container(
                     decoration: BoxDecoration(
@@ -1334,7 +1340,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
             return true; // 'all'
           }).toList();
 
-          final isEmpty = filteredReports.isEmpty && filteredTasks.isEmpty;
+          final isEmpty = filteredReports.isEmpty && filteredTasks.isEmpty && _selectedMissionFilter == 'active';
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
@@ -1396,6 +1402,38 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                       child: _buildDetailedSquadProgressCard(task, uid),
                     )),
                   ],
+                  if (_selectedMissionFilter != 'active') ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      'Sejarah Misi Lepas',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildFakePastMissionCard(
+                      'Misi Bantuan Banjir (Alpha Rescue)',
+                      'Kampung Pasir Putih',
+                      '12 Nov 2023',
+                      '+150 Mata',
+                    ),
+                    const SizedBox(height: 12),
+                    _buildFakePastMissionCard(
+                      'Pembersihan Pasca-Bencana (Bravo Medic)',
+                      'Sekolah Kebangsaan Skudai',
+                      '05 Okt 2023',
+                      '+100 Mata',
+                    ),
+                    const SizedBox(height: 12),
+                    _buildFakePastMissionCard(
+                      'Logistik Makanan (Charlie Logistics)',
+                      'Pusat Komuniti JB',
+                      '18 Sep 2023',
+                      '+120 Mata',
+                    ),
+                  ]
                 ],
               ],
             ),
@@ -1403,6 +1441,65 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
         },
       );
     },
+  );
+}
+
+Widget _buildFakePastMissionCard(String title, String location, String date, String points) {
+  return Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: AppColors.divider),
+      boxShadow: [
+        BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 4)),
+      ],
+    ),
+    child: Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: AppColors.safe.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(Icons.check_circle_rounded, color: AppColors.safe, size: 24),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  const Icon(Icons.location_on_rounded, size: 12, color: AppColors.textSecondary),
+                  const SizedBox(width: 4),
+                  Text(location, style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary)),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  const Icon(Icons.event_rounded, size: 12, color: AppColors.textSecondary),
+                  const SizedBox(width: 4),
+                  Text(date, style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary)),
+                ],
+              ),
+            ],
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppColors.volunteerAccent.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(points, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.volunteerAccent)),
+        ),
+      ],
+    ),
   );
 }
 
@@ -2297,25 +2394,25 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
           ),
         ),
         Expanded(
-          child: StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance.collection('volunteer_profiles').orderBy('sigapMataPoints', descending: true).limit(20).snapshots(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                return Center(child: Text('Tiada rekod sukarelawan.'.tr(), style: GoogleFonts.inter(color: AppColors.textSecondary)));
-              }
-
-              final docs = snapshot.data!.docs;
+          child: Builder(
+            builder: (context) {
+              final docs = [
+                {'name': 'Ahmad Albab', 'assignedSquad': 'Alpha Rescue', 'sigapMataPoints': 2450},
+                {'name': 'Siti Nurhaliza', 'assignedSquad': 'Bravo Medic', 'sigapMataPoints': 2100},
+                {'name': 'Anda (Sukarelawan)', 'assignedSquad': 'Delta Support', 'sigapMataPoints': 1250},
+                {'name': 'Muthusamy', 'assignedSquad': 'Echo Relief', 'sigapMataPoints': 980},
+                {'name': 'Wong Wei Kit', 'assignedSquad': 'Alpha Rescue', 'sigapMataPoints': 850},
+                {'name': 'Nurul Ain', 'assignedSquad': 'Echo Relief', 'sigapMataPoints': 720},
+                {'name': 'Faizal Tahir', 'assignedSquad': 'Bravo Medic', 'sigapMataPoints': 640},
+              ];
               return ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: docs.length,
                 itemBuilder: (context, index) {
-                  final data = docs[index].data() as Map<String, dynamic>;
-                  final name = data['name'] as String? ?? 'Sukarelawan';
-                  final points = data['sigapMataPoints'] as int? ?? 0;
-                  final squad = data['assignedSquad'] as String? ?? '-';
+                  final data = docs[index];
+                  final name = data['name'] as String;
+                  final points = data['sigapMataPoints'] as int;
+                  final squad = data['assignedSquad'] as String;
                   
                   Color rankColor;
                   if (index == 0) rankColor = Colors.amber;
@@ -2327,10 +2424,10 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: index == 2 ? AppColors.volunteerAccent.withOpacity(0.05) : Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
+                        BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
                       ],
                       border: index < 3 ? Border.all(color: rankColor, width: 2) : Border.all(color: AppColors.divider),
                     ),
@@ -2345,7 +2442,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(name, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                              Text(name, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: index == 2 ? AppColors.volunteerAccent : AppColors.textPrimary)),
                               Text(squad, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
                             ],
                           ),
@@ -2353,7 +2450,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
-                            color: AppColors.volunteerAccent.withValues(alpha: 0.1),
+                            color: AppColors.volunteerAccent.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Row(

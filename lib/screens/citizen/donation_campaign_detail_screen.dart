@@ -643,18 +643,18 @@ class _DonationCampaignDetailScreenState
                 const SizedBox(height: 16),
                 TextField(
                   controller: nameCtrl,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText:'Nama Penderma'.tr(),
-                    prefixIcon: Icon(Icons.person_outline_rounded),
+                    prefixIcon: const Icon(Icons.person_outline_rounded),
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: amountCtrl,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText:'Jumlah Derma (RM)'.tr(),
                     prefixText:'RM '.tr(),
-                    prefixIcon: Icon(Icons.attach_money_rounded),
+                    prefixIcon: const Icon(Icons.attach_money_rounded),
                   ),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 ),
@@ -692,14 +692,14 @@ class _DonationCampaignDetailScreenState
                   ),
                 ] else ...[
                   const SizedBox(height: 12),
-                  const TextField(
+                  TextField(
                     decoration: InputDecoration(labelText:'Nombor Kad'.tr()),
                   ),
                   const SizedBox(height: 12),
                   Row(
-                    children: const [
+                    children: [
                       Expanded(child: TextField(decoration: InputDecoration(labelText:'Luput (MM/YY)'.tr()))),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Expanded(child: TextField(decoration: InputDecoration(labelText:'CVV'.tr()))),
                     ],
                   ),
@@ -716,12 +716,12 @@ class _DonationCampaignDetailScreenState
                             final donorName = nameCtrl.text.trim();
                             if (amount <= 0) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Sila masukkan jumlah yang sah.'.tr())));
+                                  SnackBar(content: Text('Sila masukkan jumlah yang sah.'.tr())));
                               return;
                             }
                             if (donorName.isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Sila masukkan nama penderma.'.tr())));
+                                  SnackBar(content: Text('Sila masukkan nama penderma.'.tr())));
                               return;
                             }
                             setModalState(() => isProcessing = true);
@@ -779,12 +779,12 @@ class _DonationCampaignDetailScreenState
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => const AlertDialog(
+      builder: (ctx) => AlertDialog(
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
             Text('Menjana resit PDF...'.tr()),
           ],
         ),

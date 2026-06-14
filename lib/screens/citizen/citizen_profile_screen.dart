@@ -214,18 +214,42 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
   void _addFamilyMemberDialog() {
     final nameCtrl = TextEditingController();
     final relationCtrl = TextEditingController();
+    final icCtrl = TextEditingController();
+    final formKey = GlobalKey<FormState>();
     
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(tr('addFamilyMemberTitle'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SigapTextField(label: tr('fullNameLabel'), controller: nameCtrl),
-            const SizedBox(height: 16),
-            SigapTextField(label: tr('relationshipLabel'), controller: relationCtrl),
-          ],
+        content: SingleChildScrollView(
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SigapTextField(
+                label: tr('fullNameLabel'), 
+                controller: nameCtrl,
+                validator: (v) => Validators.validateRequired(v, fieldName: 'Nama'),
+              ),
+              const SizedBox(height: 16),
+              SigapTextField(
+                label: tr('relationshipLabel'), 
+                controller: relationCtrl,
+                validator: (v) => Validators.validateRequired(v, fieldName: 'Hubungan'),
+              ),
+              const SizedBox(height: 16),
+              SigapTextField(
+                label: 'No. Kad Pengenalan (IC)',
+                hint: '12 digit tanpa -',
+                controller: icCtrl,
+                keyboardType: TextInputType.number,
+                maxLength: 12,
+                validator: Validators.validateIC,
+              ),
+            ],
+          ),
+        ),
         ),
         actions: [
           TextButton(
@@ -234,11 +258,12 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
           ),
           ElevatedButton(
             onPressed: () {
-              if (nameCtrl.text.isNotEmpty && relationCtrl.text.isNotEmpty) {
+              if (formKey.currentState?.validate() ?? false) {
                 setState(() {
                   _familyMembers.add({
                     'name': nameCtrl.text.trim(),
                     'relation': relationCtrl.text.trim(),
+                    'icNumber': icCtrl.text.trim(),
                     'status': 'Selamat', // default status
                     'lastKnownLocation': 'Belum dikemaskini',
                   });
@@ -659,22 +684,37 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
     return _card([
       _buildSwitchTile(tr('mobilityQuestion'), _hasMobilityIssue, (val) => setState(() => _hasMobilityIssue = val)),
       if (_hasMobilityIssue) ...[
-        const SizedBox(height: 8),
-        SigapTextField(label: tr('mobilityDescHint'), controller: _mobilityDescCtrl, enabled: _isEditing),
+        if (_isEditing) ...[
+          const SizedBox(height: 8),
+          SigapTextField(label: tr('mobilityDescHint'), controller: _mobilityDescCtrl),
+        ] else if (_mobilityDescCtrl.text.trim().isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(_mobilityDescCtrl.text.trim(), style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary)),
+        ],
       ],
       const Divider(height: 24),
       
       _buildSwitchTile(tr('illnessQuestion'), _hasCriticalIllness, (val) => setState(() => _hasCriticalIllness = val)),
       if (_hasCriticalIllness) ...[
-        const SizedBox(height: 8),
-        SigapTextField(label: tr('illnessDescHint'), controller: _illnessDescCtrl, enabled: _isEditing),
+        if (_isEditing) ...[
+          const SizedBox(height: 8),
+          SigapTextField(label: tr('illnessDescHint'), controller: _illnessDescCtrl),
+        ] else if (_illnessDescCtrl.text.trim().isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(_illnessDescCtrl.text.trim(), style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary)),
+        ],
       ],
       const Divider(height: 24),
       
       _buildSwitchTile(tr('pregnantQuestion'), _isPregnant, (val) => setState(() => _isPregnant = val)),
       if (_isPregnant) ...[
-        const SizedBox(height: 8),
-        SigapTextField(label: tr('trimesterQuestion'), controller: _trimesterCtrl, enabled: _isEditing),
+        if (_isEditing) ...[
+          const SizedBox(height: 8),
+          SigapTextField(label: tr('trimesterQuestion'), controller: _trimesterCtrl),
+        ] else if (_trimesterCtrl.text.trim().isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(_trimesterCtrl.text.trim(), style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary)),
+        ],
       ],
     ]);
   }

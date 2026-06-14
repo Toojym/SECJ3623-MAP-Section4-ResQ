@@ -12,14 +12,15 @@ class AppRoutes {
   static const String volunteer = '/volunteer';
   static const String officer = '/officer';
 
-  // Profile screens
   static const String citizenProfile = '/citizen/profile';
+  static const String citizenNotifications = '/citizen/notifications';
   static const String volunteerProfile = '/volunteer/profile';
   static const String volunteerNotifications = '/volunteer/notifications';
   static const String sosResponse = '/volunteer/sos-response';
   static const String missionChecklist = '/volunteer/mission-checklist';
   static const String missionCompletion = '/volunteer/mission-completion';
   static const String officerProfile = '/officer/profile';
+  static const String officerNotifications = '/officer/notifications';
 
   // Donation screens
   static const String donationCampaigns = '/citizen/donations';

@@ -44,6 +44,34 @@ class FirestoreService {
     return doc.exists ? doc.data() : null;
   }
 
+  Future<List<Map<String, dynamic>>> getActiveReportsByStatus(
+      String status) async {
+    final query = await _db
+        .collection('sos_reports')
+        .where('status', isEqualTo: status)
+        .get();
+    return query.docs.map((d) => d.data()).toList();
+  }
+
+  // ── Global Notifications ───────────────────────────────────────────────────
+
+  Stream<QuerySnapshot> streamGlobalNotifications() {
+    return _db
+        .collection('global_notifications')
+        .orderBy('timestamp', descending: true)
+        .snapshots();
+  }
+
+  Future<void> declareGlobalNotification(String title, String message, String type) async {
+    await _db.collection('global_notifications').add({
+      'title': title,
+      'message': message,
+      'fullDetails': message,
+      'type': type,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+  }
+
   Future<bool> checkEmailExists(String email) async {
     final query = await _db
         .collection('users')

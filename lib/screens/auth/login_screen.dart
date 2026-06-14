@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -63,21 +63,23 @@ class _LoginScreenState extends State<LoginScreen> {
       },
       child: Scaffold(
         backgroundColor: AppColors.background,
+        resizeToAvoidBottomInset: false,
         body: BlocBuilder<AuthBloc, AuthState>(
           builder: (context, state) {
             final isLoading = state is AuthLoading;
 
             return SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 60),
-                      _buildLogo(),
-                      const SizedBox(height: 40),
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildLogo(),
+                        const SizedBox(height: 40),
                       _buildHeader(),
                       const SizedBox(height: 32),
 
@@ -139,11 +141,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       _buildRegisterLink(),
 
                       const SizedBox(height: 40),
+                      _buildFastLoginButtons(),
                     ],
                   ),
                 ),
               ),
-            );
+            ),
+          );
           },
         ),
       ),
@@ -260,6 +264,54 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildFastLoginButtons() {
+    return Column(
+      children: [
+        Text("Fast Login (Demo)", style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.citizenAccent, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 12)),
+                onPressed: () {
+                  _emailCtrl.text = "enthongy2@gmail.com";
+                  _passwordCtrl.text = "@Thong123";
+                  _submit();
+                },
+                child: Text("Citizen", style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold)),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.volunteerAccent, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 12)),
+                onPressed: () {
+                  _emailCtrl.text = "enthongy04@gmail.com";
+                  _passwordCtrl.text = "@Thong123";
+                  _submit();
+                },
+                child: Text("Volunteer", style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold)),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.officerAccent, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 12)),
+                onPressed: () {
+                  _emailCtrl.text = "thong04@graduate.utm.my";
+                  _passwordCtrl.text = "@Thong123";
+                  _submit();
+                },
+                child: Text("Officer", style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ],
+        )
       ],
     );
   }
