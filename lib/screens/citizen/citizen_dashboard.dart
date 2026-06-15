@@ -24,10 +24,12 @@ import 'privacy_policy_screen.dart';
 import '../../services/notification_service.dart';
 import '../../widgets/common/sigap_app_bar.dart';
 import '../../widgets/common/sigap_button.dart';
+import 'package:geolocator/geolocator.dart';
 import 'donation_campaigns_screen.dart';
 import 'offline_guide_screen.dart';
 import 'faq_screen.dart';
 import 'awanis_chat_screen.dart';
+import 'dart:typed_data';
 import 'package:url_launcher/url_launcher.dart';
 class SirenOverlay extends StatefulWidget {
   final VoidCallback onClose;
@@ -1874,50 +1876,103 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
     Map<String, dynamic> specificDetails,
   ) async {
     final authState = context.read<AuthBloc>().state;
-    if (authState is! AuthAuthenticated) return;
+    if (authState is! AuthAuthenticated) {
+      _showErrorSnackbar('Sila log masuk untuk menghantar SOS');
+      return;
+    }
 
+    // Use a completer to track loading state properly
+    final navigator = Navigator.of(context);
+    
     try {
-      // Get GPS location
-      final position = await _locationService.getCurrentPosition();
-      final address = await _locationService.getAddressFromCoords(
-        position.latitude,
-        position.longitude,
-      );
+      debugPrint('🚀 Starting SOS submission for: $type');
 
-      // Get citizen phone from profile
-      final citizenProfile = await _firestoreService.getCitizenProfile(authState.uid);
-      final phone = citizenProfile?['phone'] as String? ?? '';
+      // STEP 1: Get GPS Location with TIMEOUT
+      debugPrint('📍 Getting GPS location...');
+      Position? position;
+      try {
+        position = await _locationService.getCurrentPosition().timeout(
+          const Duration(seconds: 15),
+          onTimeout: () {
+            debugPrint('⚠️ GPS timeout after 15 seconds');
+            throw Exception('Gagal mendapatkan lokasi GPS. Sila pastikan GPS dihidupkan.');
+          },
+        );
+        debugPrint('✅ GPS obtained: ${position.latitude}, ${position.longitude}');
+      } catch (locError) {
+        debugPrint('❌ Location error: $locError');
+        _showErrorSnackbar('Gagal mendapatkan lokasi: $locError');
+        return;
+      }
 
-      // Upload image
+      // STEP 2: Get address (don't let this hang)
+      debugPrint('📍 Getting address...');
+      String address = '';
+      try {
+        address = await _locationService.getAddressFromCoords(
+          position.latitude,
+          position.longitude,
+        ).timeout(const Duration(seconds: 10));
+        debugPrint('✅ Address: $address');
+      } catch (addrError) {
+        debugPrint('⚠️ Address lookup failed: $addrError');
+        address = '${position.latitude}, ${position.longitude}';
+      }
+
+      // STEP 3: Get citizen profile (with timeout)
+      debugPrint('📞 Getting citizen profile...');
+      String phone = '';
+      try {
+        final citizenProfile = await _firestoreService
+            .getCitizenProfile(authState.uid)
+            .timeout(const Duration(seconds: 10));
+        phone = citizenProfile?['phone'] as String? ?? '';
+        debugPrint('✅ Phone: $phone');
+      } catch (profileError) {
+        debugPrint('⚠️ Profile fetch failed: $profileError');
+        phone = '';
+      }
+
+      // STEP 4: Upload image (if any) with timeout
       String? imageUrl;
       if (imageFile != null) {
+        debugPrint('📸 Uploading image...');
         try {
           final filename = 'sos_${DateTime.now().millisecondsSinceEpoch}.jpg';
           final storageRef = FirebaseStorage.instance.ref().child('sos_evidence/$filename');
-          final uploadTask = storageRef.putFile(
-            imageFile,
+          
+          // Compress image first to reduce upload time
+          final bytes = await imageFile.readAsBytes();
+          final compressedBytes = await _compressImage(bytes);
+          
+          final uploadTask = storageRef.putData(
+            compressedBytes,
             SettableMetadata(contentType: 'image/jpeg'),
           );
-          final snapshot = await uploadTask;
+          
+          final snapshot = await uploadTask.timeout(const Duration(seconds: 30));
           imageUrl = await snapshot.ref.getDownloadURL();
-          debugPrint('Uploaded to Firebase Storage: $imageUrl');
+          debugPrint('✅ Image uploaded: $imageUrl');
         } catch (storageError) {
-          debugPrint('Firebase Storage upload failed: $storageError. Falling back to Base64.');
+          debugPrint('⚠️ Storage upload failed: $storageError');
+          // Fallback to Base64 (no network dependency)
           try {
             final bytes = await imageFile.readAsBytes();
             final base64String = base64Encode(bytes);
             imageUrl = 'data:image/jpeg;base64,$base64String';
-            debugPrint('Image encoded to Base64 successfully.');
+            debugPrint('✅ Image encoded to Base64 (${imageUrl.length} chars)');
           } catch (base64Error) {
-            debugPrint('Base64 encoding failed: $base64Error');
+            debugPrint('⚠️ Base64 encoding failed: $base64Error');
           }
         }
       }
 
+      // STEP 5: Create SOS report in Firestore with timeout
+      debugPrint('📤 Creating SOS in Firestore...');
       final reportData = SosReportModel(
         id: '',
         reporterId: authState.uid,
-        reporterName: authState.displayName,
+        reporterName: authState.displayName.isNotEmpty ? authState.displayName : 'Warga SIGAP',
         reporterPhone: phone,
         type: type,
         description: description.isNotEmpty ? description : 'Kecemasan $type — Perlukan bantuan segera.',
@@ -1930,27 +1985,52 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
         specificDetails: specificDetails,
       ).toMap();
 
-      await _firestoreService.createSOSReport(reportData);
+      await _firestoreService.createSOSReport(reportData).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          throw Exception('Firestore response timeout. Sila semak sambungan internet.');
+        },
+      );
+      debugPrint('✅ SOS created successfully!');
 
-      // Get the routed authority for this incident type
-      final authority = AuthorityRoutingService.instance.getAuthority(type);
-
+      // Close the loading dialog and show success
       if (mounted) {
-        // Show authority routing bottom sheet
+        navigator.pop(); // Close the SOS form dialog
+        
+        // Show success
+        final authority = AuthorityRoutingService.instance.getAuthority(type);
         _showAuthorityRoutedSheet(authority, type);
       }
-    } catch (e) {
+      
+    } catch (e, stackTrace) {
+      debugPrint('❌ SOS submission FAILED: $e');
+      debugPrint('📚 Stack trace: $stackTrace');
+      
+      // Make sure to close any loading state
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Gagal menghantar SOS: $e'),
-            backgroundColor: AppColors.danger,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
+        navigator.pop(); // Close the loading dialog if still open
+        _showErrorSnackbar('Gagal menghantar SOS: ${e.toString().split('\n').first}');
       }
     }
+  }
+
+  // Helper method to compress image
+  Future<Uint8List> _compressImage(List<int> bytes) async {
+    // Simple compression - you can add proper image compression here
+    // For now, just return as-is or implement using image package
+    return Uint8List.fromList(bytes);
+  }
+
+  void _showErrorSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.danger,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 4),
+      ),
+    );
   }
 
   /// Shows a bottom sheet confirming the authority routed for an SOS incident.

@@ -558,221 +558,290 @@ class _DonationCampaignDetailScreenState
 
   // ─── Donate Dialog ───────────────────────────────────────────────────────────
   void _showDonationDialog(CampaignModel campaign) {
-    String selectedMethod = 'FPX';
-    bool isProcessing = false;
-    final amountCtrl = TextEditingController();
-    final nameCtrl = TextEditingController();
+  String selectedMethod = 'FPX';
+  bool isProcessing = false;
+  final amountCtrl = TextEditingController();
+  final nameCtrl = TextEditingController();
+  String selectedBank = 'Maybank2U';
 
-    final authState = context.read<AuthBloc>().state;
-    if (authState is AuthAuthenticated && authState.displayName.isNotEmpty) {
-      nameCtrl.text = authState.displayName;
-    }
+  final authState = context.read<AuthBloc>().state;
+  if (authState is AuthAuthenticated && authState.displayName.isNotEmpty) {
+    nameCtrl.text = authState.displayName;
+  }
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setModalState) => Container(
-          padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom),
-          decoration: const BoxDecoration(
-            color: AppColors.background,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: AppColors.divider,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (ctx) => StatefulBuilder(
+      builder: (context, setModalState) => Container(
+        padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom),
+        decoration: const BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.divider,
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                const SizedBox(height: 20),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  const Icon(Icons.favorite_rounded, color: Colors.pink, size: 22),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      campaign.name,
+                      style: GoogleFonts.poppins(
+                          fontSize: 16, fontWeight: FontWeight.w700),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              // Quick amount chips
+              Text('Jumlah Cepat',
+                  style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: [10, 20, 50, 100, 200, 500].map((amt) {
+                  return ActionChip(
+                    label: Text('RM $amt'),
+                    onPressed: () {
+                      amountCtrl.text = amt.toString();
+                      setModalState(() {});
+                    },
+                    backgroundColor: AppColors.primaryLight,
+                    labelStyle: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        side: BorderSide.none),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: nameCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Nama Penderma',
+                  prefixIcon: const Icon(Icons.person_outline_rounded),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: amountCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Jumlah Derma (RM)',
+                  prefixText: 'RM ',
+                  prefixIcon: const Icon(Icons.attach_money_rounded),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              ),
+              const SizedBox(height: 12),
+              Text('Kaedah Pembayaran',
+                  style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary)),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                value: selectedMethod,
+                items: ['FPX', 'Kad Kredit / Debit']
+                    .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                    .toList(),
+                onChanged: (val) {
+                  if (val != null) setModalState(() => selectedMethod = val);
+                },
+                decoration: InputDecoration(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              if (selectedMethod == 'FPX') ...[
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: selectedBank,
+                  items: ['Maybank2U', 'CIMB Clicks', 'RHB Now', 'Bank Islam', 'Public Bank']
+                      .map((b) => DropdownMenuItem(value: b, child: Text(b)))
+                      .toList(),
+                  onChanged: (val) {
+                    if (val != null) setModalState(() => selectedBank = val);
+                  },
+                  decoration: InputDecoration(
+                    labelText: 'Pilih Bank',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ] else ...[
+                const SizedBox(height: 12),
+                TextField(
+                  decoration: InputDecoration(
+                    labelText: 'Nombor Kad',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 Row(
                   children: [
-                    const Icon(Icons.favorite_rounded, color: Colors.pink, size: 22),
-                    const SizedBox(width: 10),
                     Expanded(
-                      child: Text(
-                        campaign.name,
-                        style: GoogleFonts.poppins(
-                            fontSize: 16, fontWeight: FontWeight.w700),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                      child: TextField(
+                        decoration: InputDecoration(
+                          labelText: 'Luput (MM/YY)',
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        decoration: InputDecoration(
+                          labelText: 'CVV',
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        obscureText: true,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
-                // Quick amount chips
-                Text('Jumlah Cepat'.tr(),
-                    style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary)),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  children: [10, 20, 50, 100, 200, 500].map((amt) {
-                    return ActionChip(
-                      label: Text('RM $amt'),
-                      onPressed: () {
-                        amountCtrl.text = amt.toString();
-                        setModalState(() {});
-                      },
-                      backgroundColor: AppColors.primaryLight,
-                      labelStyle: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primary),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          side: BorderSide.none),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: nameCtrl,
-                  decoration: InputDecoration(
-                    labelText:'Nama Penderma'.tr(),
-                    prefixIcon: const Icon(Icons.person_outline_rounded),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: amountCtrl,
-                  decoration: InputDecoration(
-                    labelText:'Jumlah Derma (RM)'.tr(),
-                    prefixText:'RM '.tr(),
-                    prefixIcon: const Icon(Icons.attach_money_rounded),
-                  ),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                ),
-                const SizedBox(height: 12),
-                Text('Kaedah Pembayaran'.tr(),
-                    style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary)),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  value: selectedMethod,
-                  items: ['FPX', 'Kad Kredit / Debit']
-                      .map((m) => DropdownMenuItem(value: m, child: Text(m)))
-                      .toList(),
-                  onChanged: (val) {
-                    if (val != null) setModalState(() => selectedMethod = val);
-                  },
-                  decoration: InputDecoration(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
-                if (selectedMethod == 'FPX') ...[
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    items: ['Maybank2U', 'CIMB Clicks', 'RHB Now', 'Bank Islam', 'Public Bank']
-                        .map((b) => DropdownMenuItem(value: b, child: Text(b)))
-                        .toList(),
-                    onChanged: (_) {},
-                    decoration: InputDecoration(
-                      labelText:'Pilih Bank'.tr(),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                ] else ...[
-                  const SizedBox(height: 12),
-                  TextField(
-                    decoration: InputDecoration(labelText:'Nombor Kad'.tr()),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(child: TextField(decoration: InputDecoration(labelText:'Luput (MM/YY)'.tr()))),
-                      const SizedBox(width: 8),
-                      Expanded(child: TextField(decoration: InputDecoration(labelText:'CVV'.tr()))),
-                    ],
-                  ),
-                ],
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  height: 54,
-                  child: ElevatedButton(
-                    onPressed: isProcessing
-                        ? null
-                        : () async {
-                            final amount = double.tryParse(amountCtrl.text) ?? 0.0;
-                            final donorName = nameCtrl.text.trim();
-                            if (amount <= 0) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Sila masukkan jumlah yang sah.'.tr())));
-                              return;
-                            }
-                            if (donorName.isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Sila masukkan nama penderma.'.tr())));
-                              return;
-                            }
-                            setModalState(() => isProcessing = true);
-                            await Future.delayed(const Duration(seconds: 2));
-                            if (!mounted) return;
+              ],
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: ElevatedButton(
+                  onPressed: isProcessing
+                      ? null
+                      : () async {
+                          final amount = double.tryParse(amountCtrl.text) ?? 0.0;
+                          final donorName = nameCtrl.text.trim();
+                          
+                          if (amount <= 0) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Sila masukkan jumlah yang sah.')));
+                            return;
+                          }
+                          if (donorName.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Sila masukkan nama penderma.')));
+                            return;
+                          }
+                          
+                          setModalState(() => isProcessing = true);
+                          
+                          try {
                             final state = context.read<AuthBloc>().state;
                             if (state is AuthAuthenticated) {
                               final receiptNo = 'SIGAP-${DateTime.now().millisecondsSinceEpoch}';
-                              final donation = DonationModel(
-                                id: '',
-                                campaignId: campaign.id,
-                                campaignName: campaign.name,
-                                citizenId: state.uid,
-                                amount: amount,
-                                paymentMethod: selectedMethod,
-                                receiptNo: receiptNo,
-                                createdAt: DateTime.now(),
-                                donorName: donorName,
-                              );
+                              
+                              // Prepare donation data
+                              final donationData = {
+                                'campaignId': campaign.id,
+                                'campaignName': campaign.name,
+                                'citizenId': state.uid,
+                                'citizenName': donorName,
+                                'amount': amount,
+                                'paymentMethod': selectedMethod,
+                                'bank': selectedMethod == 'FPX' ? selectedBank : 'Card',
+                                'receiptNo': receiptNo,
+                                'status': 'completed',
+                                'donorName': donorName,
+                                'createdAt': FieldValue.serverTimestamp(),
+                              };
+                              
+                              // Submit to Firestore
                               await _firestoreService.submitDonation(
-                                  campaign.id, donation.toMap(), amount);
+                                  campaign.id, donationData, amount);
+                              
                               if (mounted) {
-                                Navigator.pop(ctx);
+                                // Create DonationModel for receipt
+                                final donation = DonationModel(
+                                  id: '',
+                                  campaignId: campaign.id,
+                                  campaignName: campaign.name,
+                                  citizenId: state.uid,
+                                  amount: amount,
+                                  paymentMethod: selectedMethod,
+                                  receiptNo: receiptNo,
+                                  createdAt: DateTime.now(),
+                                  donorName: donorName,
+                                );
+                                
+                                Navigator.pop(ctx); // Close donation dialog
                                 _showReceiptDialog(donation);
                               }
                             }
-                          },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      elevation: 0,
-                    ),
-                    child: isProcessing
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                                color: Colors.white, strokeWidth: 2))
-                        : Text('Bayar Sekarang'.tr(),
-                            style: GoogleFonts.inter(
-                                fontSize: 15, fontWeight: FontWeight.w700)),
+                          } catch (e) {
+                            debugPrint('Donation error: $e');
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Gagal memproses derma: ${e.toString().split('\n').first}'),
+                                  backgroundColor: AppColors.danger,
+                                ),
+                              );
+                              setModalState(() => isProcessing = false);
+                            }
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    elevation: 0,
                   ),
+                  child: isProcessing
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2))
+                      : Text('Bayar Sekarang',
+                          style: GoogleFonts.inter(
+                              fontSize: 15, fontWeight: FontWeight.w700)),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 12),
+              Center(
+                child: Text(
+                  '🔒 Pembayaran selamat. Resit layak potongan cukai.',
+                  style: GoogleFonts.inter(fontSize: 11, color: AppColors.textHint),
+                ),
+              ),
+            ],
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   // ─── Receipt Dialog ──────────────────────────────────────────────────────────
   void _showReceiptDialog(DonationModel donation) async {

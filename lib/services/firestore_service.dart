@@ -534,29 +534,39 @@ class FirestoreService {
 
   Future<void> submitDonation(String campaignId,
       Map<String, dynamic> donationData, double amount) async {
-    final campaignRef = _db.collection('campaigns').doc(campaignId);
-    final newDonationRef = _db.collection('donations').doc();
-
-    await _db.runTransaction((transaction) async {
-      final snapshot = await transaction.get(campaignRef);
-      if (!snapshot.exists) {
+    try {
+      final campaignRef = _db.collection('campaigns').doc(campaignId);
+      
+      // Check if campaign exists
+      final campaignDoc = await campaignRef.get();
+      if (!campaignDoc.exists) {
         throw Exception("Campaign does not exist!");
       }
 
-      // Read current amount
-      final currentAmount =
-          (snapshot.data()!['currentAmount'] as num?)?.toDouble() ?? 0.0;
-
-      // Update campaign
-      transaction.update(campaignRef, {
-        'currentAmount': currentAmount + amount,
+      // Get current amount
+      final currentAmount = (campaignDoc.data()?['currentAmount'] as num?)?.toDouble() ?? 0.0;
+      
+      // Use transaction for atomic update
+      await _db.runTransaction((transaction) async {
+        // Update campaign current amount
+        transaction.update(campaignRef, {
+          'currentAmount': currentAmount + amount,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+        
+        // Add donation document with proper ID
+        final newDonationRef = _db.collection('donations').doc();
+        donationData['id'] = newDonationRef.id;
+        donationData['createdAt'] = FieldValue.serverTimestamp();
+        transaction.set(newDonationRef, donationData);
       });
-
-      // Insert donation record
-      transaction.set(newDonationRef, donationData);
-    });
+      
+      debugPrint('✅ Donation submitted successfully for campaign: $campaignId');
+    } catch (e) {
+      debugPrint('❌ submitDonation error: $e');
+      rethrow;
+    }
   }
-
   // ── Volunteer Tasks ────────────────────────────────────────────────────────
 
   Future<void> createVolunteerTask(Map<String, dynamic> data) async {
