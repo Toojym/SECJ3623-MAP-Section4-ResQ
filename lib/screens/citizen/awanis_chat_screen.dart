@@ -22,7 +22,7 @@ class _AwanisChatScreenState extends State<AwanisChatScreen> {
     super.initState();
     _messages.add({
       'isBot': true,
-      'text': 'Hai, saya AWANIS. AI Pembantu Bencana anda. Apa yang boleh saya bantu hari ini? Anda boleh tanya saya dalam Bahasa Malaysia atau English.',
+      'text': 'Hai, saya AWANIS. AI Pembantu Bencana anda. Apa yang boleh saya bantu hari ini? Anda boleh tanya saya dalam Bahasa Malaysia atau English.'.tr(),
     });
   }
 
@@ -172,26 +172,26 @@ class _AwanisChatScreenState extends State<AwanisChatScreen> {
     final quickQuestions = [
       {
         'icon': '🚨', 
-        'label': 'Hantar SOS', 
-        'query': 'Macam mana nak hantar SOS?',
+        'label': 'Hantar SOS'.tr(), 
+        'query': 'Macam mana nak hantar SOS?'.tr(),
         'color': AppColors.danger,
       },
       {
         'icon': '👥', 
-        'label': 'Keluarga saya', 
-        'query': 'Bagaimana nak kesan keselamatan keluarga saya?',
+        'label': 'Keluarga saya'.tr(), 
+        'query': 'Bagaimana nak kesan keselamatan keluarga saya?'.tr(),
         'color': AppColors.safe,
       },
       {
         'icon': '📍', 
-        'label': 'Pusat pemindahan', 
-        'query': 'Di mana pusat pemindahan (PPS) terdekat?',
+        'label': 'Pusat pemindahan'.tr(), 
+        'query': 'Di mana pusat pemindahan (PPS) terdekat?'.tr(),
         'color': AppColors.warning,
       },
       {
         'icon': '🌧️', 
-        'label': 'Status cuaca', 
-        'query': 'Boleh berikan amaran cuaca terkini?',
+        'label': 'Status cuaca'.tr(), 
+        'query': 'Boleh berikan amaran cuaca terkini?'.tr(),
         'color': AppColors.primary,
       },
     ];

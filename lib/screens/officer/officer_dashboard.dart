@@ -58,7 +58,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
   bool _isSelectingDisasterZone = false;
   LatLng? _selectedDisasterEpicenter;
   double _disasterRadius = 5000.0; // meters
-  String _disasterType = 'Banjir';
+  String _disasterType = 'Banjir'.tr();
   final TextEditingController _disasterNameController = TextEditingController();
   final List<Circle> _disasterZones = [];
   String? _selectedBulkClaimZone;
@@ -111,7 +111,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
     super.initState();
     _awanisOfficerMessages.add({
       'isBot': true,
-      'text': 'Hai Tuan/Puan Pegawai! Saya AWANIS, pembantu AI pusat kawalan anda. Boleh saya bantu paparkan status SOS, sukarelawan, atau analisa semasa?'
+      'text': 'Hai Tuan/Puan Pegawai! Saya AWANIS, pembantu AI pusat kawalan anda. Boleh saya bantu paparkan status SOS, sukarelawan, atau analisa semasa?'.tr()
     });
     _disasterZonesStream = _firestoreService.streamDisasterZones();
     _loadOfficerData();
@@ -136,6 +136,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    context.locale;
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
         final name = state is AuthAuthenticated ? state.displayName : '';
@@ -239,21 +240,21 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
         const SizedBox(height: 16),
         _buildStatsRow(),
         const SizedBox(height: 24),
-        _sectionTitle('Modul & Ciri Tambahan'),
+        _sectionTitle('Modul & Ciri Tambahan'.tr()),
         const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
-                child: _moduleCard('Laporan Analitik', Icons.analytics_rounded,
+                child: _moduleCard('Laporan Analitik'.tr(), Icons.analytics_rounded,
                     AppColors.primary)),
             const SizedBox(width: 12),
             Expanded(
                 child: _moduleCard(
-                    'Modul Tambahan', Icons.extension_rounded, Colors.teal)),
+                    'Modul Tambahan'.tr(), Icons.extension_rounded, Colors.teal)),
           ],
         ),
         const SizedBox(height: 24),
-        _sectionTitle('Kempen Derma Aktif'),
+        _sectionTitle('Kempen Derma Aktif'.tr()),
         const SizedBox(height: 12),
         StreamBuilder<QuerySnapshot>(
           stream: _firestoreService.streamActiveCampaigns(),
@@ -324,10 +325,10 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           ),
         ),
         const SizedBox(height: 24),
-        _sectionTitle('Soalan Lazim (FAQ)'),
+        _sectionTitle('Soalan Lazim (FAQ)'.tr()),
         const SizedBox(height: 12),
-        _faqCard('Panduan Pengisytiharan Darurat'),
-        _faqCard('Prosedur Penugasan Sukarelawan'),
+        _faqCard('Panduan Pengisytiharan Darurat'.tr()),
+        _faqCard('Prosedur Penugasan Sukarelawan'.tr()),
         const SizedBox(height: 80),
       ],
     );
@@ -460,7 +461,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                                     border:
                                         Border.all(color: AppColors.warning)),
                                 child: Text(
-                                    'Sila tap pada peta untuk memilih pusat zon darurat.',
+                                    'Sila tap pada peta untuk memilih pusat zon darurat.'.tr(),
                                     style: GoogleFonts.inter(
                                         color: AppColors.warning,
                                         fontWeight: FontWeight.w600,
@@ -496,10 +497,10 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                                     contentPadding: const EdgeInsets.symmetric(
                                         horizontal: 12, vertical: 8)),
                                 items: [
-                                  'Banjir',
-                                  'Tanah Runtuh',
-                                  'Kebakaran',
-                                  'Lain-lain'
+                                  'Banjir'.tr(),
+                                  'Tanah Runtuh'.tr(),
+                                  'Kebakaran'.tr(),
+                                  'Lain-lain'.tr()
                                 ]
                                     .map((t) => DropdownMenuItem(
                                         value: t, child: Text(t)))
@@ -596,11 +597,11 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                           value: _filterType,
                           items: [
                             'Semua',
-                            'Banjir',
-                            'Tanah Runtuh',
-                            'Kebakaran',
-                            'Perubatan',
-                            'Orang Hilang',
+                            'Banjir'.tr(),
+                            'Tanah Runtuh'.tr(),
+                            'Kebakaran'.tr(),
+                            'Perubatan'.tr(),
+                            'Orang Hilang'.tr(),
                           ],
                           onChanged: (v) => setState(() => _filterType = v!),
                         ),
@@ -610,9 +611,9 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                           value: _filterDuration,
                           items: [
                             'Semua',
-                            '< 1 Hari',
-                            '< 3 Hari',
-                            '> 3 Hari',
+                            '< 1 Hari'.tr(),
+                            '< 3 Hari'.tr(),
+                            '> 3 Hari'.tr(),
                           ],
                           onChanged: (v) =>
                               setState(() => _filterDuration = v!),
@@ -688,13 +689,13 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _sectionTitle('Insiden Aktif & Penyelesaian'),
+                    _sectionTitle('Insiden Aktif & Penyelesaian'.tr()),
                     InkWell(
                       onTap: _showHistoryDialog,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 4.0),
                         child: Text(
-                          'History',
+                          'History'.tr(),
                           style: GoogleFonts.inter(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -743,9 +744,9 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
       reports = reports.where((r) {
         if (r.createdAt == null) return true;
         final diff = now.difference(r.createdAt!);
-        if (_filterDuration == '< 1 Hari') return diff.inDays < 1;
-        if (_filterDuration == '< 3 Hari') return diff.inDays < 3;
-        if (_filterDuration == '> 3 Hari') return diff.inDays >= 3;
+        if (_filterDuration == '< 1 Hari'.tr()) return diff.inDays < 1;
+        if (_filterDuration == '< 3 Hari'.tr()) return diff.inDays < 3;
+        if (_filterDuration == '> 3 Hari'.tr()) return diff.inDays >= 3;
         return true;
       }).toList();
     }
@@ -775,7 +776,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           ]),
           const SizedBox(height: 8),
           Text(
-              'Semak Firebase Security Rules anda: allow read di sos_reports bagi pengguna yang log masuk.',
+              'Semak Firebase Security Rules anda: allow read di sos_reports bagi pengguna yang log masuk.'.tr(),
               style: GoogleFonts.inter(
                   fontSize: 12, color: AppColors.textSecondary)),
           const SizedBox(height: 12),
@@ -1252,7 +1253,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
   }
 
   void _showSOSDetails(SosReportModel report, Color color, IconData icon) {
-    String selectedSquad = 'Skuad Alpha';
+    String selectedSquad = 'Skuad Alpha'.tr();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1303,10 +1304,10 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                 const SizedBox(height: 24),
                 Row(
                   children: [
-                    _detailBadge('Keutamaan', report.urgency, color),
+                    _detailBadge('Keutamaan'.tr(), report.urgency, color),
                     const SizedBox(width: 12),
                     _detailBadge(
-                        'Status', report.status, AppColors.officerAccent),
+                        'Status'.tr(), report.status, AppColors.officerAccent),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -1357,7 +1358,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                                 color: Colors.grey[100],
                                 alignment: Alignment.center,
                                 child: Text(
-                                  'Gagal memuatkan gambar bukti.',
+                                  'Gagal memuatkan gambar bukti.'.tr(),
                                   style: GoogleFonts.inter(
                                       color: AppColors.textSecondary),
                                 ),
@@ -1400,13 +1401,13 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     ),
                     items: [
                       DropdownMenuItem(
-                          value: 'Skuad Alpha',
+                          value: 'Skuad Alpha'.tr(),
                           child: Text('Skuad Alpha (Penyelamat)'.tr())),
                       DropdownMenuItem(
-                          value: 'Skuad Delta',
+                          value: 'Skuad Delta'.tr(),
                           child: Text('Skuad Delta (Perubatan)'.tr())),
                       DropdownMenuItem(
-                          value: 'Skuad Charlie',
+                          value: 'Skuad Charlie'.tr(),
                           child: Text('Skuad Charlie (Logistik)'.tr())),
                     ],
                     onChanged: (val) {
@@ -1489,7 +1490,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'RESPONDER',
+                                'RESPONDER'.tr(),
                                 style: GoogleFonts.inter(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
@@ -1497,7 +1498,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                report.responderName ?? 'Sukarelawan',
+                                report.responderName ?? 'Sukarelawan'.tr(),
                                 style: GoogleFonts.inter(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
@@ -1529,7 +1530,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'BANTUAN TAMBAHAN DIPERLUKAN',
+                                  'BANTUAN TAMBAHAN DIPERLUKAN'.tr(),
                                   style: GoogleFonts.inter(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
@@ -1537,7 +1538,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  'Responder di lokasi telah meminta bantuan unit tambahan/squad sokongan segera.',
+                                  'Responder di lokasi telah meminta bantuan unit tambahan/squad sokongan segera.'.tr(),
                                   style: GoogleFonts.inter(
                                       fontSize: 12, color: AppColors.danger),
                                 ),
@@ -1825,7 +1826,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                                   size: 10, color: AppColors.danger),
                               const SizedBox(width: 4),
                               Text(
-                                'Perlu Bantuan',
+                                'Perlu Bantuan'.tr(),
                                 style: GoogleFonts.inter(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
@@ -1947,7 +1948,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
 
   void _assignSquadDialog() {
     final unassignedVolunteers = _activeVolunteers.where((v) => v.assignedSquad.isEmpty).toList();
-    String selectedSquad = 'Skuad Alpha (Penyelamat)';
+    String selectedSquad = 'Skuad Alpha (Penyelamat)'.tr();
     
     showDialog(
       context: context,
@@ -1971,12 +1972,12 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                       labelText:'Pilih Skuad'.tr()),
                   value: selectedSquad,
                   items: [
-                    DropdownMenuItem(value: 'Skuad Alpha (Penyelamat)', child: Text('Skuad Alpha (Penyelamat)'.tr())),
-                    DropdownMenuItem(value: 'Skuad Bravo (Pembersihan)', child: Text('Skuad Bravo (Pembersihan)'.tr())),
-                    DropdownMenuItem(value: 'Skuad Charlie (Logistik)', child: Text('Skuad Charlie (Logistik)'.tr())),
-                    DropdownMenuItem(value: 'Skuad Delta (Perubatan)', child: Text('Skuad Delta (Perubatan)'.tr())),
-                    DropdownMenuItem(value: 'Skuad Echo (Dapur Jalanan)', child: Text('Skuad Echo (Dapur Jalanan)'.tr())),
-                    DropdownMenuItem(value: 'Skuad Foxtrot (Komunikasi)', child: Text('Skuad Foxtrot (Komunikasi)'.tr())),
+                    DropdownMenuItem(value: 'Skuad Alpha (Penyelamat)'.tr(), child: Text('Skuad Alpha (Penyelamat)'.tr())),
+                    DropdownMenuItem(value: 'Skuad Bravo (Pembersihan)'.tr(), child: Text('Skuad Bravo (Pembersihan)'.tr())),
+                    DropdownMenuItem(value: 'Skuad Charlie (Logistik)'.tr(), child: Text('Skuad Charlie (Logistik)'.tr())),
+                    DropdownMenuItem(value: 'Skuad Delta (Perubatan)'.tr(), child: Text('Skuad Delta (Perubatan)'.tr())),
+                    DropdownMenuItem(value: 'Skuad Echo (Dapur Jalanan)'.tr(), child: Text('Skuad Echo (Dapur Jalanan)'.tr())),
+                    DropdownMenuItem(value: 'Skuad Foxtrot (Komunikasi)'.tr(), child: Text('Skuad Foxtrot (Komunikasi)'.tr())),
                   ],
                   onChanged: (v) {
                     if (v != null) setDialogState(() => selectedSquad = v);
@@ -2007,7 +2008,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(vol.fullName, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
-                              Text(vol.skills.isNotEmpty ? vol.skills : 'Tiada kemahiran',
+                              Text(vol.skills.isNotEmpty ? vol.skills : 'Tiada kemahiran'.tr(),
                                   style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary)),
                             ],
                           ),
@@ -2016,9 +2017,9 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                           onPressed: () async {
                             final squadId = selectedSquad
                                 .toLowerCase()
-                                .replaceAll('(', '')
-                                .replaceAll(')', '')
-                                .replaceAll(' ', '_');
+                                .replaceAll('(', '.tr()')
+                                .replaceAll(')', '.tr()')
+                                .replaceAll(' ', '.tr()_');
                             await _firestoreService.assignVolunteerToSquad(vol.uid, selectedSquad, squadId);
                             if (mounted) {
                               Navigator.pop(ctx);
@@ -2055,7 +2056,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
   void _assignVolunteerDialog() {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
-    String selectedSquad = 'Skuad Alpha (Penyelamat)';
+    String selectedSquad = 'Skuad Alpha (Penyelamat)'.tr();
     final Set<String> dynamicZonesSet = {};
     
     // Store the loading dialog context/navigator to close it later
@@ -2130,7 +2131,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
         
         // Fallback if still empty
         if (dynamicZonesSet.isEmpty) {
-          dynamicZonesSet.add('Tiada Zon Aktif');
+          dynamicZonesSet.add('Tiada Zon Aktif'.tr());
         }
         
         final dynamicZones = dynamicZonesSet.toList()..sort();
@@ -2180,11 +2181,11 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
   LatLng _zoneCoordinates(String zone) {
     final normalized = zone.toLowerCase();
     if (normalized.contains('ampang')) return const LatLng(3.1490, 101.7620);
-    if (normalized.contains('hulu langat')) {
+    if (normalized.contains('hulu langat'.tr())) {
       return const LatLng(3.0948, 101.8187);
     }
     if (normalized.contains('gombak')) return const LatLng(3.2521, 101.6530);
-    if (normalized.contains('sri petaling')) {
+    if (normalized.contains('sri petaling'.tr())) {
       return const LatLng(3.0705, 101.6920);
     }
     return const LatLng(3.1390, 101.6869);
@@ -2199,7 +2200,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
     zonesSet.addAll(_disasterZoneNames);
     // Ensure the task's current zone is always available
     if (task.zone.isNotEmpty) zonesSet.add(task.zone);
-    if (zonesSet.isEmpty) zonesSet.add('Tiada Zon Tersedia');
+    if (zonesSet.isEmpty) zonesSet.add('Tiada Zon Tersedia'.tr());
     final zones = zonesSet.toList()..sort();
     // Default new zone to the first zone that is NOT the current one
     String newZone = zones.firstWhere((z) => z != task.zone, orElse: () => zones.first);
@@ -2254,7 +2255,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                 final coords = _zoneCoordinates(newZone);
                 await _firestoreService.updateVolunteerTask(task.id, {
                   'zone': newZone,
-                  'status': 'Menuju ke Lokasi',
+                  'status': 'Menuju ke Lokasi'.tr(),
                   'progress': 0.1,
                   'currentLat': coords.latitude,
                   'currentLng': coords.longitude,
@@ -2356,17 +2357,17 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
 
   Widget _volunteerSquadCard(VolunteerTaskModel task) {
     Color statusColor = Colors.orange;
-    if (task.status == 'Sedang Bertugas') statusColor = Colors.green;
-    if (task.status == 'Selesai Tugas') statusColor = Colors.blue;
+    if (task.status == 'Sedang Bertugas'.tr()) statusColor = Colors.green;
+    if (task.status == 'Selesai Tugas'.tr()) statusColor = Colors.blue;
     final priorityColor =
-        task.priority == 'Kritikal' || task.priority == 'Tinggi'
+        task.priority == 'Kritikal'.tr() || task.priority == 'Tinggi'.tr()
             ? AppColors.danger
-            : task.priority == 'Rendah'
+            : task.priority == 'Rendah'.tr()
                 ? AppColors.safe
                 : AppColors.warning;
     final coordinates = task.currentLat != null && task.currentLng != null
         ? '${task.currentLat!.toStringAsFixed(4)}, ${task.currentLng!.toStringAsFixed(4)}'
-        : 'Belum disegerakkan';
+        : 'Belum disegerakkan'.tr();
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -2434,7 +2435,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
               _trackingChip(
                   Icons.person_pin_circle_rounded,
                   task.assignedVolunteer.isEmpty
-                      ? 'Skuad penuh'
+                      ? 'Skuad penuh'.tr()
                       : task.assignedVolunteer,
                   AppColors.volunteerAccent),
               _trackingChip(
@@ -2532,7 +2533,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           ),
           const SizedBox(height: 8),
           const SizedBox(height: 8),
-          if (task.status == 'Selesai Tugas')
+          if (task.status == 'Selesai Tugas'.tr())
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 10),
@@ -2691,26 +2692,26 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
     final quickQuestions = [
       {
         'icon': '📊', 
-        'label': 'Statistik SOS', 
-        'query': 'Berapa banyak SOS yang belum diselesaikan hari ini?',
+        'label': 'Statistik SOS'.tr(), 
+        'query': 'Berapa banyak SOS yang belum diselesaikan hari ini?'.tr(),
         'color': AppColors.danger,
       },
       {
         'icon': '👥', 
-        'label': 'Jumlah Mangsa', 
-        'query': 'Berapa jumlah mangsa di kawasan Gombak?',
+        'label': 'Jumlah Mangsa'.tr(), 
+        'query': 'Berapa jumlah mangsa di kawasan Gombak?'.tr(),
         'color': AppColors.safe,
       },
       {
         'icon': '🛡️', 
-        'label': 'Status Skuad', 
-        'query': 'Berapa ramai sukarelawan aktif sekarang?',
+        'label': 'Status Skuad'.tr(), 
+        'query': 'Berapa ramai sukarelawan aktif sekarang?'.tr(),
         'color': AppColors.officerAccent,
       },
       {
         'icon': '💰', 
-        'label': 'Tuntutan BWI', 
-        'query': 'Berapa jumlah dana tuntutan yang telah diluluskan?',
+        'label': 'Tuntutan BWI'.tr(), 
+        'query': 'Berapa jumlah dana tuntutan yang telah diluluskan?'.tr(),
         'color': AppColors.warning,
       },
     ];
@@ -2846,7 +2847,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _awanisOfficerMessages.add({'isBot': true, 'text': 'Maaf, ralat berlaku semasa memproses soalan anda.'});
+          _awanisOfficerMessages.add({'isBot': true, 'text': 'Maaf, ralat berlaku semasa memproses soalan anda.'.tr()});
           _isAwanisLoading = false;
         });
       }
@@ -2861,7 +2862,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
       final activeSOS = _activeReports.length;
       final activeVols = _activeVolunteers.length;
       final zoneData = {
-        'nama_zon': 'Zon Darurat Semasa',
+        'nama_zon': 'Zon Darurat Semasa'.tr(),
         'jumlah_sos_aktif': activeSOS,
         'sukarelawan_aktif': activeVols,
       };
@@ -2893,7 +2894,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
               ),
               ElevatedButton.icon(
                 onPressed: () async {
-                  final bytes = await PdfReportService.generateReportPdf(report, 'Laporan Insiden AI');
+                  final bytes = await PdfReportService.generateReportPdf(report, 'Laporan Insiden AI'.tr());
                   await PdfReportService.shareReport(bytes, 'Laporan_Insiden_AI.pdf');
                 },
                 icon: const Icon(Icons.share_rounded, size: 16),
@@ -2906,7 +2907,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
               ),
               ElevatedButton.icon(
                 onPressed: () async {
-                  final bytes = await PdfReportService.generateReportPdf(report, 'Laporan Insiden AI');
+                  final bytes = await PdfReportService.generateReportPdf(report, 'Laporan Insiden AI'.tr());
                   await PdfReportService.downloadReport(bytes, 'Laporan_Insiden_AI.pdf');
                 },
                 icon: const Icon(Icons.download_rounded, size: 16),
@@ -2985,7 +2986,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     color: AppColors.textPrimary)),
             const SizedBox(height: 4),
             Text(
-                'Semak bukti, beri maklum balas, atau luluskan tuntutan mengikut zon bencana.',
+                'Semak bukti, beri maklum balas, atau luluskan tuntutan mengikut zon bencana.'.tr(),
                 style: GoogleFonts.inter(
                     fontSize: 12, color: AppColors.textSecondary)),
             const SizedBox(height: 12),
@@ -3011,7 +3012,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                           const Icon(Icons.filter_list_rounded, size: 18, color: AppColors.primary),
                           const SizedBox(width: 8),
                           Text(
-                            'Tapis Senarai Tuntutan',
+                            'Tapis Senarai Tuntutan'.tr(),
                             style: GoogleFonts.inter(
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
@@ -3031,7 +3032,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           ),
                           child: Text(
-                            'Set Semula',
+                            'Set Semula'.tr(),
                             style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primary),
                           ),
                         ),
@@ -3066,11 +3067,11 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                       children: [
                         _buildFilterChip('Semua', 'Semua', claims),
                         const SizedBox(width: 8),
-                        _buildFilterChip('Baru', 'submitted', claims),
+                        _buildFilterChip('Baru'.tr(), 'submitted', claims),
                         const SizedBox(width: 8),
-                        _buildFilterChip('Dalam Semakan', 'under_review', claims),
+                        _buildFilterChip('Dalam Semakan'.tr(), 'under_review', claims),
                         const SizedBox(width: 8),
-                        _buildFilterChip('Tamat Tempoh', 'expired', claims),
+                        _buildFilterChip('Tamat Tempoh'.tr(), 'expired', claims),
                       ],
                     ),
                   ),
@@ -3085,8 +3086,8 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                 child: Center(
                   child: Text(
                     claims.isEmpty 
-                        ? 'Tiada tuntutan untuk semakan buat masa ini.'
-                        : 'Tiada tuntutan sepadan dengan penapis.',
+                        ? 'Tiada tuntutan untuk semakan buat masa ini.'.tr()
+                        : 'Tiada tuntutan sepadan dengan penapis.'.tr(),
                     style: GoogleFonts.inter(color: AppColors.textSecondary),
                   ),
                 ),
@@ -3286,7 +3287,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     ),
                     Text(
                       _bulkSelectedClaimIds.length == matchingClaims.length
-                          ? 'Nyahpilih semua'
+                          ? 'Nyahpilih semua'.tr()
                           : 'Pilih semua (${matchingClaims.length})',
                       style: GoogleFonts.inter(
                           fontSize: 12,
@@ -3374,9 +3375,9 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     icon: const Icon(Icons.verified_rounded, size: 18),
                     label: Text(
                       _bulkSelectedClaimIds.isEmpty
-                          ? 'Pilih tuntutan untuk diluluskan'
+                          ? 'Pilih tuntutan untuk diluluskan'.tr()
                           : !_photoReviewConfirmed
-                              ? 'Sila semak bukti dahulu'
+                              ? 'Sila semak bukti dahulu'.tr()
                               : 'Lulus ${_bulkSelectedClaimIds.length} Tuntutan Terpilih',
                     ),
                     style: ElevatedButton.styleFrom(
@@ -3578,7 +3579,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     activeColor: AppColors.primary,
                     controlAffinity: ListTileControlAffinity.leading,
                     title: Text(
-                      'Saya mengesahkan bukti gambar bagi semua tuntutan terpilih telah disemak dan adalah sah',
+                      'Saya mengesahkan bukti gambar bagi semua tuntutan terpilih telah disemak dan adalah sah'.tr(),
                       style: GoogleFonts.inter(
                           fontSize: 12, fontWeight: FontWeight.w600),
                     ),
@@ -3605,8 +3606,8 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                       content: Text(isConfirmed
-                          ? 'Bukti disahkan. Boleh meluluskan tuntutan.'
-                          : 'Pengesahan ditarik balik.'),
+                          ? 'Bukti disahkan. Boleh meluluskan tuntutan.'.tr()
+                          : 'Pengesahan ditarik balik.'.tr()),
                       backgroundColor:
                           isConfirmed ? AppColors.safe : AppColors.warning));
                 }
@@ -3720,12 +3721,12 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
         }
         bytes = bytesBuilder.takeBytes();
       } else {
-        throw 'Format gambar tidak disokong.';
+        throw 'Format gambar tidak disokong.'.tr();
       }
       
       final tempDir = await getTemporaryDirectory();
       final extension = isBase64 && photoEvidence.contains('image/png') ? 'png' : 'jpg';
-      final fileName = 'bukti_${title.replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}.$extension';
+      final fileName = 'bukti_${title.replaceAll(' ', '.tr()_')}_${DateTime.now().millisecondsSinceEpoch}.$extension';
       final file = File('${tempDir.path}/$fileName');
       await file.writeAsBytes(bytes);
       
@@ -3792,7 +3793,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                       controlAffinity: ListTileControlAffinity.leading,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 8),
                       title: Text(
-                        'Saya mengesahkan bukti gambar bagi tuntutan ini telah disemak dan adalah sah',
+                        'Saya mengesahkan bukti gambar bagi tuntutan ini telah disemak dan adalah sah'.tr(),
                         style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600),
                       ),
                       onChanged: (val) {
@@ -3839,10 +3840,10 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
     _showClaimFeedbackDialog(
       claim: claim,
       title:'Tolak Tuntutan'.tr(),
-      actionLabel: 'Tolak',
+      actionLabel: 'Tolak'.tr(),
       status: 'rejected',
       color: AppColors.danger,
-      hint: 'Nyatakan sebab penolakan',
+      hint: 'Nyatakan sebab penolakan'.tr(),
     );
   }
 
@@ -3867,7 +3868,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                 controller: ctrl,
                 decoration: InputDecoration(
                   hintText:
-                      'Contoh: Sila muat naik gambar kerosakan yang lebih jelas.',
+                      'Contoh: Sila muat naik gambar kerosakan yang lebih jelas.'.tr(),
                   hintStyle: GoogleFonts.inter(
                       fontSize: 13, color: AppColors.textHint),
                   border: OutlineInputBorder(
@@ -3958,13 +3959,13 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
     required Color color,
     required String hint,
   }) {
-    String selectedReason = 'Bukti Gambar Tidak Jelas / Ralat';
+    String selectedReason = 'Bukti Gambar Tidak Jelas / Ralat'.tr();
     final ctrl = TextEditingController();
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) {
-          final isOther = selectedReason == 'Lain-lain (Nyatakan)';
+          final isOther = selectedReason == 'Lain-lain (Nyatakan)'.tr();
           return AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             title: Text(title,
@@ -3985,12 +3986,12 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     isDense: true,
                   ),
                   items: [
-                    DropdownMenuItem(value: 'Bukti Gambar Tidak Jelas / Ralat', child: Text('Bukti Gambar Tidak Jelas / Ralat'.tr())),
-                    DropdownMenuItem(value: 'Tuntutan Bertindih (Duplicate IC)', child: Text('Tuntutan Bertindih (Duplicate IC)'.tr())),
-                    DropdownMenuItem(value: 'Alamat di Luar Zon Bencana', child: Text('Alamat di Luar Zon Bencana'.tr())),
-                    DropdownMenuItem(value: 'Bawah Umur & Tiada Wali Sah', child: Text('Bawah Umur & Tiada Wali Sah'.tr())),
-                    DropdownMenuItem(value: 'Kerosakan Tidak Memenuhi Syarat Kelayakan', child: Text('Kerosakan Tidak Memenuhi Syarat Kelayakan'.tr())),
-                    DropdownMenuItem(value: 'Lain-lain (Nyatakan)', child: Text('Lain-lain (Nyatakan)'.tr())),
+                    DropdownMenuItem(value: 'Bukti Gambar Tidak Jelas / Ralat'.tr(), child: Text('Bukti Gambar Tidak Jelas / Ralat'.tr())),
+                    DropdownMenuItem(value: 'Tuntutan Bertindih (Duplicate IC)'.tr(), child: Text('Tuntutan Bertindih (Duplicate IC)'.tr())),
+                    DropdownMenuItem(value: 'Alamat di Luar Zon Bencana'.tr(), child: Text('Alamat di Luar Zon Bencana'.tr())),
+                    DropdownMenuItem(value: 'Bawah Umur & Tiada Wali Sah'.tr(), child: Text('Bawah Umur & Tiada Wali Sah'.tr())),
+                    DropdownMenuItem(value: 'Kerosakan Tidak Memenuhi Syarat Kelayakan'.tr(), child: Text('Kerosakan Tidak Memenuhi Syarat Kelayakan'.tr())),
+                    DropdownMenuItem(value: 'Lain-lain (Nyatakan)'.tr(), child: Text('Lain-lain (Nyatakan)'.tr())),
                   ],
                   onChanged: (v) {
                     if (v != null) {
@@ -4067,7 +4068,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
   /// Returns age in years from Malaysian IC (YYMMDD prefix). Returns null if unparseable.
   int? _ageFromIC(String ic) {
     try {
-      final digits = ic.replaceAll('-', '');
+      final digits = ic.replaceAll('-', '.tr()');
       final yy = int.parse(digits.substring(0, 2));
       final mm = int.parse(digits.substring(2, 4));
       final dd = int.parse(digits.substring(4, 6));
@@ -4103,7 +4104,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
             claim.id,
             'rejected',
             reason:
-                'Auto-tolak: Saiz isi rumah melebihi had maksimum (15 orang). Sila hubungi pejabat.',
+                'Auto-tolak: Saiz isi rumah melebihi had maksimum (15 orang). Sila hubungi pejabat.'.tr(),
             officerId: _currentOfficerId(),
           ));
     }
@@ -4153,10 +4154,10 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
       final diff = claim.infoDeadline!.difference(DateTime.now());
       if (diff.isNegative) {
         deadlinePassed = true;
-        deadlineText = 'TAMAT TEMPOH';
+        deadlineText = 'TAMAT TEMPOH'.tr();
       } else {
         final days = diff.inDays;
-        deadlineText = days > 0 ? 'Respon dalam $days hari lagi' : 'Respon hari ini';
+        deadlineText = days > 0 ? 'Respon dalam $days hari lagi' : 'Respon hari ini'.tr();
       }
     }
 
@@ -4168,12 +4169,12 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                 ? AppColors.safe
                 : AppColors.warning;
     String statusLabel = isExpired
-        ? 'Tamat Tempoh'
+        ? 'Tamat Tempoh'.tr()
         : isInfoRequested
-            ? 'Info Diminta'
+            ? 'Info Diminta'.tr()
             : citizenResubmitted
-                ? 'Respons Diterima ✓'
-                : 'Menunggu';
+                ? 'Respons Diterima ✓'.tr()
+                : 'Menunggu'.tr();
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -4230,7 +4231,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                      'IC ini telah mempunyai tuntutan diluluskan dalam 30 hari lepas.',
+                      'IC ini telah mempunyai tuntutan diluluskan dalam 30 hari lepas.'.tr(),
                       style: GoogleFonts.inter(
                           fontSize: 11,
                           color: AppColors.danger,
@@ -4241,7 +4242,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           ],
           if (!validIC) ...[
             const SizedBox(height: 8),
-            _claimBadge('Format IC Tidak Sah', Colors.orange),
+            _claimBadge('Format IC Tidak Sah'.tr(), Colors.orange),
           ],
           if (validIC && isUnderAge) ...[
             const SizedBox(height: 8),
@@ -4262,7 +4263,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           ],
           if (isOutOfZone) ...[
             const SizedBox(height: 8),
-            _claimBadge('Di Luar Zon Bencana Diisytiharkan ⚠️',
+            _claimBadge('Di Luar Zon Bencana Diisytiharkan ⚠️'.tr(),
                 Colors.amber[800]!),
           ],
           if (citizenResubmitted) ...[
@@ -4281,7 +4282,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                      'Pemohon telah menghantar semula bukti dan maklumat kemaskini. Sila semak bukti terbaru.',
+                      'Pemohon telah menghantar semula bukti dan maklumat kemaskini. Sila semak bukti terbaru.'.tr(),
                       style: GoogleFonts.inter(
                           fontSize: 11,
                           color: AppColors.safe,
@@ -4352,7 +4353,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
               Icon(claim.isKIR ? Icons.verified_user_rounded : Icons.cancel_rounded,
                   size: 14, color: claim.isKIR ? AppColors.safe : AppColors.danger),
               const SizedBox(width: 6),
-              Text(claim.isKIR ? 'Ketua Isi Rumah (KIR)' : 'Bukan KIR',
+              Text(claim.isKIR ? 'Ketua Isi Rumah (KIR)'.tr() : 'Bukan KIR'.tr(),
                   style: GoogleFonts.inter(
                       fontSize: 12, color: claim.isKIR ? AppColors.safe : AppColors.danger, fontWeight: FontWeight.w600)),
             ],
@@ -4589,7 +4590,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
   }
 
   void _approveWithOutOfZoneDialog(ClaimModel claim) {
-    String selectedReason = 'Berkaitan Bencana';
+    String selectedReason = 'Berkaitan Bencana'.tr();
     bool isConfirmed = false;
     showDialog(
       context: context,
@@ -4607,7 +4608,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                  'Tuntutan ini berada di luar zon bencana yang diisytiharkan. Pilih sebab kelulusan:',
+                  'Tuntutan ini berada di luar zon bencana yang diisytiharkan. Pilih sebab kelulusan:'.tr(),
                   style: GoogleFonts.inter(fontSize: 13)),
               const SizedBox(height: 14),
               DropdownButtonFormField<String>(
@@ -4619,12 +4620,12 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     isDense: true),
                 items: [
                   DropdownMenuItem(
-                      value: 'Berkaitan Bencana',
+                      value: 'Berkaitan Bencana'.tr(),
                       child: Text('Berkaitan Bencana'.tr())),
                   DropdownMenuItem(
-                      value: 'Kes Khas', child: Text('Kes Khas'.tr())),
+                      value: 'Kes Khas'.tr(), child: Text('Kes Khas'.tr())),
                   DropdownMenuItem(
-                      value: 'Ralat Lokasi', child: Text('Ralat Lokasi'.tr())),
+                      value: 'Ralat Lokasi'.tr(), child: Text('Ralat Lokasi'.tr())),
                 ],
                 onChanged: (v) {
                   if (v != null) setDialogState(() => selectedReason = v);
@@ -4643,7 +4644,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                   controlAffinity: ListTileControlAffinity.leading,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 8),
                   title: Text(
-                    'Saya mengesahkan bukti gambar bagi tuntutan ini telah disemak dan adalah sah',
+                    'Saya mengesahkan bukti gambar bagi tuntutan ini telah disemak dan adalah sah'.tr(),
                     style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600),
                   ),
                   onChanged: (val) {
@@ -4739,7 +4740,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                             fontSize: 12,
                             fontWeight: FontWeight.w500)),
                     const SizedBox(height: 4),
-                    Text(name.isNotEmpty ? name : 'Pegawai SIGAP',
+                    Text(name.isNotEmpty ? name : 'Pegawai SIGAP'.tr(),
                         style: GoogleFonts.poppins(
                             color: Colors.white,
                             fontSize: 22,
@@ -4779,7 +4780,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
             children: [
               _statusPill(Icons.circle, '4 Daerah Aktif', Colors.amber),
               const SizedBox(width: 8),
-              _statusPill(Icons.warning_rounded, 'Darurat Ditetapkan',
+              _statusPill(Icons.warning_rounded, 'Darurat Ditetapkan'.tr(),
                   Colors.redAccent),
             ],
           ),
@@ -4813,12 +4814,12 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
   Widget _buildStatsRow() {
     return Row(
       children: [
-        _statCard('247', 'Jumlah SOS', AppColors.danger, Icons.sos_rounded),
+        _statCard('247', 'Jumlah SOS'.tr(), AppColors.danger, Icons.sos_rounded),
         const SizedBox(width: 12),
-        _statCard('38', 'Sukarelawan', AppColors.safe, Icons.handshake_rounded),
+        _statCard('38', 'Sukarelawan'.tr(), AppColors.safe, Icons.handshake_rounded),
         const SizedBox(width: 12),
         _statCard(
-            '12', 'Zon Aktif', AppColors.officerAccent, Icons.map_rounded),
+            '12', 'Zon Aktif'.tr(), AppColors.officerAccent, Icons.map_rounded),
       ],
     );
   }
@@ -4954,7 +4955,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      isClosed ? 'Ditutup' : 'Aktif',
+                      isClosed ? 'Ditutup'.tr() : 'Aktif'.tr(),
                       style: GoogleFonts.inter(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
@@ -5111,7 +5112,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'Kempen ini telah ditutup',
+                  'Kempen ini telah ditutup'.tr(),
                   style: GoogleFonts.inter(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -5178,16 +5179,16 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                   ],
                 ),
                 const SizedBox(height: 20),
-                _officerField('Nama Kempen', nameCtrl,
-                    hint: 'Contoh: Tabung Banjir Kelantan 2025'),
+                _officerField('Nama Kempen'.tr(), nameCtrl,
+                    hint: 'Contoh: Tabung Banjir Kelantan 2025'.tr()),
                 const SizedBox(height: 12),
-                _officerField('Tujuan / Keterangan', purposeCtrl,
-                    hint: 'Terangkan tujuan kempen ini...', maxLines: 3),
+                _officerField('Tujuan / Keterangan'.tr(), purposeCtrl,
+                    hint: 'Terangkan tujuan kempen ini...'.tr(), maxLines: 3),
                 const SizedBox(height: 12),
-                _officerField('Sasaran Jumlah (RM)', targetCtrl,
+                _officerField('Sasaran Jumlah (RM)'.tr(), targetCtrl,
                     hint: '50000', keyboardType: TextInputType.number),
                 const SizedBox(height: 12),
-                _officerField('URL Imej Kempen (Pilihan)', imageCtrl,
+                _officerField('URL Imej Kempen (Pilihan)'.tr(), imageCtrl,
                     hint: 'https://...'),
                 const SizedBox(height: 20),
                 Row(
@@ -5391,7 +5392,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Kemaskini Pengagihan Dana',
+                        'Kemaskini Pengagihan Dana'.tr(),
                         style: GoogleFonts.poppins(
                             fontSize: 16, fontWeight: FontWeight.w700),
                       ),
@@ -5557,7 +5558,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Kempen ini akan ditutup dan tidak lagi menerima sumbangan baru. Rekod derma sedia ada kekal disimpan.\n\nAdakah anda pasti?',
+              'Kempen ini akan ditutup dan tidak lagi menerima sumbangan baru. Rekod derma sedia ada kekal disimpan.\n\nAdakah anda pasti?'.tr(),
               style: GoogleFonts.inter(
                   fontSize: 13, color: AppColors.textSecondary),
             ),
@@ -5576,7 +5577,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Tindakan ini tidak boleh diundur.',
+                      'Tindakan ini tidak boleh diundur.'.tr(),
                       style: GoogleFonts.inter(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -5693,7 +5694,7 @@ class _SquadDispatchDialog extends StatefulWidget {
 class _SquadDispatchDialogState extends State<_SquadDispatchDialog> {
   late String selectedSquad;
   late String selectedZone;
-  String selectedPriority = 'Sederhana';
+  String selectedPriority = 'Sederhana'.tr();
   int selectedVolunteerCount = 4;
   
   late TextEditingController squadCtrl;
@@ -5742,22 +5743,22 @@ class _SquadDispatchDialogState extends State<_SquadDispatchDialog> {
               value: selectedSquad,
               items: [
                 DropdownMenuItem(
-                    value: 'Skuad Alpha (Penyelamat)',
+                    value: 'Skuad Alpha (Penyelamat)'.tr(),
                     child: Text('Skuad Alpha (Penyelamat)'.tr())),
                 DropdownMenuItem(
-                    value: 'Skuad Bravo (Pembersihan)',
+                    value: 'Skuad Bravo (Pembersihan)'.tr(),
                     child: Text('Skuad Bravo (Pembersihan)'.tr())),
                 DropdownMenuItem(
-                    value: 'Skuad Charlie (Logistik)',
+                    value: 'Skuad Charlie (Logistik)'.tr(),
                     child: Text('Skuad Charlie (Logistik)'.tr())),
                 DropdownMenuItem(
-                    value: 'Skuad Delta (Perubatan)',
+                    value: 'Skuad Delta (Perubatan)'.tr(),
                     child: Text('Skuad Delta (Perubatan)'.tr())),
                 DropdownMenuItem(
-                    value: 'Skuad Echo (Dapur Jalanan)',
+                    value: 'Skuad Echo (Dapur Jalanan)'.tr(),
                     child: Text('Skuad Echo (Dapur Jalanan)'.tr())),
                 DropdownMenuItem(
-                    value: 'Skuad Foxtrot (Komunikasi)',
+                    value: 'Skuad Foxtrot (Komunikasi)'.tr(),
                     child: Text('Skuad Foxtrot (Komunikasi)'.tr())),
               ],
               onChanged: (v) {
@@ -5797,10 +5798,10 @@ class _SquadDispatchDialogState extends State<_SquadDispatchDialog> {
                   labelText:'Keutamaan Insiden'.tr()),
               value: selectedPriority,
               items: [
-                DropdownMenuItem(value: 'Kritikal', child: Text('Kritikal'.tr())),
-                DropdownMenuItem(value: 'Tinggi', child: Text('Tinggi'.tr())),
-                DropdownMenuItem(value: 'Sederhana', child: Text('Sederhana'.tr())),
-                DropdownMenuItem(value: 'Rendah', child: Text('Rendah'.tr())),
+                DropdownMenuItem(value: 'Kritikal'.tr(), child: Text('Kritikal'.tr())),
+                DropdownMenuItem(value: 'Tinggi'.tr(), child: Text('Tinggi'.tr())),
+                DropdownMenuItem(value: 'Sederhana'.tr(), child: Text('Sederhana'.tr())),
+                DropdownMenuItem(value: 'Rendah'.tr(), child: Text('Rendah'.tr())),
               ],
               onChanged: (v) {
                 if (v != null) setState(() => selectedPriority = v);
@@ -5876,7 +5877,7 @@ class _SquadDispatchDialogState extends State<_SquadDispatchDialog> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Tugasan ini hanya akan dilihat oleh sukarelawan yang dipilih',
+                      'Tugasan ini hanya akan dilihat oleh sukarelawan yang dipilih'.tr(),
                       style: GoogleFonts.inter(fontSize: 11, color: AppColors.warning),
                     ),
                   ),
@@ -5904,9 +5905,9 @@ class _SquadDispatchDialogState extends State<_SquadDispatchDialog> {
             // Create squadId from squad name
             final squadId = selectedSquad
                 .toLowerCase()
-                .replaceAll('(', '')
-                .replaceAll(')', '')
-                .replaceAll(' ', '_');
+                .replaceAll('(', '.tr()')
+                .replaceAll(')', '.tr()')
+                .replaceAll(' ', '.tr()_');
             
             print('Creating task with squadId: $squadId, zone: $selectedZone');
             
@@ -5916,7 +5917,7 @@ class _SquadDispatchDialogState extends State<_SquadDispatchDialog> {
               squadId: squadId,
               zone: selectedZone,
               priority: selectedPriority,
-              status: 'Menuju ke Lokasi',
+              status: 'Menuju ke Lokasi'.tr(),
               progress: 0.1,
               taskDescription: taskCtrl.text.trim(),
               assignedVolunteer: selectedSquad,

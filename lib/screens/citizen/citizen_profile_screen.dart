@@ -230,17 +230,17 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
                 SigapTextField(
                 label: tr('fullNameLabel'), 
                 controller: nameCtrl,
-                validator: (v) => Validators.validateRequired(v, fieldName: 'Nama'),
+                validator: (v) => Validators.validateRequired(v, fieldName: 'Nama'.tr()),
               ),
               const SizedBox(height: 16),
               SigapTextField(
                 label: tr('relationshipLabel'), 
                 controller: relationCtrl,
-                validator: (v) => Validators.validateRequired(v, fieldName: 'Hubungan'),
+                validator: (v) => Validators.validateRequired(v, fieldName: 'Hubungan'.tr()),
               ),
               const SizedBox(height: 16),
               SigapTextField(
-                label: 'No. Kad Pengenalan (IC)',
+                label: 'No. Kad Pengenalan (IC)'.tr(),
                 hint: '12 digit tanpa -',
                 controller: icCtrl,
                 keyboardType: TextInputType.number,
@@ -264,8 +264,8 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
                     'name': nameCtrl.text.trim(),
                     'relation': relationCtrl.text.trim(),
                     'icNumber': icCtrl.text.trim(),
-                    'status': 'Selamat', // default status
-                    'lastKnownLocation': 'Belum dikemaskini',
+                    'status': 'Selamat'.tr(), // default status
+                    'lastKnownLocation': 'Belum dikemaskini'.tr(),
                   });
                 });
                 Navigator.pop(ctx);
@@ -345,11 +345,11 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
 
               try {
                 final state = context.read<AuthBloc>().state;
-                if (state is! AuthAuthenticated) throw 'Pengguna tidak disahkan.';
+                if (state is! AuthAuthenticated) throw 'Pengguna tidak disahkan.'.tr();
                 final uid = state.uid;
 
                 final user = FirebaseAuth.instance.currentUser;
-                if (user == null || user.email == null) throw 'Pengguna tidak dijumpai.';
+                if (user == null || user.email == null) throw 'Pengguna tidak dijumpai.'.tr();
 
                 // Re-authenticate first to satisfy Firebase security requirement
                 final credential = EmailAuthProvider.credential(
@@ -410,15 +410,14 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
           IconButton(
             icon: const Icon(Icons.language_rounded, color: AppColors.primary),
             tooltip: tr('languageTooltip'),
-            onPressed: () {
-              if (context.locale.languageCode == 'ms') {
-                context.setLocale(const Locale('en'));
-              } else {
-                context.setLocale(const Locale('ms'));
+            onPressed: () async {
+              final newLocale = context.locale.languageCode == 'ms' ? const Locale('en') : const Locale('ms');
+              await context.setLocale(newLocale);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(newLocale.languageCode == 'en' ? 'Language switched to English'.tr() : 'Bahasa ditukar ke Bahasa Melayu'.tr())),
+                );
               }
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(tr('languageSwitched'))),
-              );
             },
           ),
           if (!_isEditing)
@@ -560,7 +559,7 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          Text(_fullNameCtrl.text.isNotEmpty ? _fullNameCtrl.text : 'Warga SIGAP', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+          Text(_fullNameCtrl.text.isNotEmpty ? _fullNameCtrl.text : 'Warga SIGAP'.tr(), style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
           if (_isEditing)
             Padding(
               padding: const EdgeInsets.only(top: 4),
@@ -586,7 +585,7 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
         label: tr('fullNameLabel'),
         hint: tr('fullNameHint'),
         controller: _fullNameCtrl,
-        validator: (v) => Validators.validateRequired(v, fieldName: 'Nama'),
+        validator: (v) => Validators.validateRequired(v, fieldName: 'Nama'.tr()),
         prefixIcon: const Icon(Icons.person_rounded, size: 20),
         enabled: _isEditing,
       ),
@@ -649,7 +648,7 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
         label: tr('addressLabel'),
         hint: tr('addressHint'),
         controller: _addressCtrl,
-        validator: (v) => Validators.validateRequired(v, fieldName: 'Alamat'),
+        validator: (v) => Validators.validateRequired(v, fieldName: 'Alamat'.tr()),
         maxLines: 3,
         prefixIcon: const Icon(Icons.home_rounded, size: 20),
         enabled: _isEditing,
@@ -818,7 +817,9 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(tr('no'), style: const TextStyle(color: AppColors.textSecondary)),
+            child: Text(tr('no'),
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(

@@ -236,11 +236,11 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
 
               try {
                 final state = context.read<AuthBloc>().state;
-                if (state is! AuthAuthenticated) throw 'Pengguna tidak disahkan.';
+                if (state is! AuthAuthenticated) throw 'Pengguna tidak disahkan.'.tr();
                 final uid = state.uid;
 
                 final user = FirebaseAuth.instance.currentUser;
-                if (user == null || user.email == null) throw 'Pengguna tidak dijumpai.';
+                if (user == null || user.email == null) throw 'Pengguna tidak dijumpai.'.tr();
 
                 final credential = EmailAuthProvider.credential(
                   email: user.email!,
@@ -297,15 +297,14 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
           IconButton(
             icon: const Icon(Icons.language_rounded, color: AppColors.primary),
             tooltip: tr('languageTooltip'),
-            onPressed: () {
-              if (context.locale.languageCode == 'ms') {
-                context.setLocale(const Locale('en'));
-              } else {
-                context.setLocale(const Locale('ms'));
+            onPressed: () async {
+              final newLocale = context.locale.languageCode == 'ms' ? const Locale('en') : const Locale('ms');
+              await context.setLocale(newLocale);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(newLocale.languageCode == 'en' ? 'Language switched to English'.tr() : 'Bahasa ditukar ke Bahasa Melayu'.tr())),
+                );
               }
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(tr('languageSwitched'))),
-              );
             },
           ),
           if (!_isEditing)
@@ -442,7 +441,7 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          Text(_fullNameCtrl.text.isNotEmpty ? _fullNameCtrl.text : 'Pegawai SIGAP', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+          Text(_fullNameCtrl.text.isNotEmpty ? _fullNameCtrl.text : 'Pegawai SIGAP'.tr(), style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
           Container(
             margin: const EdgeInsets.only(top: 4),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
@@ -472,9 +471,9 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
     return _card([
       SigapTextField(
         label: tr('fullNameLabel'),
-        hint: 'Tuan/Puan ...',
+        hint: 'Tuan/Puan ...'.tr(),
         controller: _fullNameCtrl,
-        validator: (v) => Validators.validateRequired(v, fieldName: 'Nama'),
+        validator: (v) => Validators.validateRequired(v, fieldName: 'Nama'.tr()),
         prefixIcon: const Icon(Icons.person_rounded, size: 20),
         enabled: _isEditing,
       ),
@@ -538,7 +537,7 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
         label: tr('agencyLabel'),
         hint: tr('agencyHint'),
         controller: _agencyCtrl,
-        validator: (v) => Validators.validateRequired(v, fieldName: 'Nama agensi'),
+        validator: (v) => Validators.validateRequired(v, fieldName: 'Nama agensi'.tr()),
         prefixIcon: const Icon(Icons.business_rounded, size: 20),
         enabled: _isEditing,
       ),
@@ -547,7 +546,7 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
         label: tr('designationLabel'),
         hint: tr('designationHint'),
         controller: _designationCtrl,
-        validator: (v) => Validators.validateRequired(v, fieldName: 'Jawatan'),
+        validator: (v) => Validators.validateRequired(v, fieldName: 'Jawatan'.tr()),
         prefixIcon: const Icon(Icons.work_outline_rounded, size: 20),
         enabled: _isEditing,
       ),
@@ -565,7 +564,7 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
         label: tr('districtLabel'),
         hint: tr('districtHint'),
         controller: _districtCtrl,
-        validator: (v) => Validators.validateRequired(v, fieldName: 'Daerah'),
+        validator: (v) => Validators.validateRequired(v, fieldName: 'Daerah'.tr()),
         prefixIcon: const Icon(Icons.map_rounded, size: 20),
         enabled: _isEditing,
       ),
@@ -582,7 +581,9 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(tr('no'), style: const TextStyle(color: AppColors.textSecondary)),
+            child: Text(tr('no'),
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(

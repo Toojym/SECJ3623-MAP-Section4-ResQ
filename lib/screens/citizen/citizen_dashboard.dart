@@ -107,7 +107,7 @@ class _SirenOverlayState extends State<SirenOverlay> with SingleTickerProviderSt
             ),
             const SizedBox(height: 40),
             Text(
-              'SIREN KECEMASAN AKTIF',
+              'SIREN KECEMASAN AKTIF'.tr(),
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 28,
@@ -120,7 +120,7 @@ class _SirenOverlayState extends State<SirenOverlay> with SingleTickerProviderSt
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
               child: Text(
-                'Peranti anda sedang berkelip strobe dan memancarkan isyarat audio kelantangan maksimum untuk menarik perhatian penyelamat berhampiran.',
+                'Peranti anda sedang berkelip strobe dan memancarkan isyarat audio kelantangan maksimum untuk menarik perhatian penyelamat berhampiran.'.tr(),
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
                   fontSize: 14,
@@ -134,7 +134,7 @@ class _SirenOverlayState extends State<SirenOverlay> with SingleTickerProviderSt
               onPressed: widget.onClose,
               icon: const Icon(Icons.volume_off_rounded, size: 24),
               label: Text(
-                'MATIKAN SIREN',
+                'MATIKAN SIREN'.tr(),
                 style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               style: ElevatedButton.styleFrom(
@@ -193,11 +193,11 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
           // Status changed — fire local notification
           String statusLabel;
           switch (status) {
-            case 'approved':   statusLabel = 'Diluluskan ✅'; break;
-            case 'rejected':   statusLabel = 'Ditolak ❌'; break;
-            case 'under_review': statusLabel = 'Sedang Disemak 🔍'; break;
-            case 'disbursed':  statusLabel = 'Dana Disalurkan 💰'; break;
-            case 'cancelled':  statusLabel = 'Dibatalkan'; break;
+            case 'approved':   statusLabel = 'Diluluskan ✅'.tr(); break;
+            case 'rejected':   statusLabel = 'Ditolak ❌'.tr(); break;
+            case 'under_review': statusLabel = 'Sedang Disemak 🔍'.tr(); break;
+            case 'disbursed':  statusLabel = 'Dana Disalurkan 💰'.tr(); break;
+            case 'cancelled':  statusLabel = 'Dibatalkan'.tr(); break;
             default:           statusLabel = status;
           }
           NotificationService.instance.showLocalNotification(
@@ -220,6 +220,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    context.locale;
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
         final name = state is AuthAuthenticated ? state.displayName : '';
@@ -371,7 +372,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Tabung Bantuan',
+                    'Tabung Bantuan'.tr(),
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -379,7 +380,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                     ),
                   ),
                   Text(
-                    'Lihat kempen derma aktif & sumbang sekarang',
+                    'Lihat kempen derma aktif & sumbang sekarang'.tr(),
                     style: GoogleFonts.inter(fontSize: 12, color: Colors.white70),
                   ),
                 ],
@@ -502,7 +503,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      name.isNotEmpty ? name : 'Warga SIGAP',
+                      name.isNotEmpty ? name : 'Warga SIGAP'.tr(),
                       style: GoogleFonts.poppins(
                         color: Colors.white,
                         fontSize: 22,
@@ -555,29 +556,29 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
           StreamBuilder<DocumentSnapshot>(
             stream: FirebaseFirestore.instance.collection('citizen_profiles').doc(uid).snapshots(),
             builder: (context, snapshot) {
-              String rawStatus = 'Selamat';
-              String status = 'Selamat (Safe 🟢)';
-              String statusDesc = 'Selamat di lokasi berdaftar';
+              String rawStatus = 'Selamat'.tr();
+              String status = 'Selamat (Safe 🟢)'.tr();
+              String statusDesc = 'Selamat di lokasi berdaftar'.tr();
               Color statusColor = AppColors.safe;
               IconData statusIcon = Icons.check_circle_rounded;
 
               if (snapshot.hasData && snapshot.data!.exists) {
                 final profileData = snapshot.data!.data() as Map<String, dynamic>;
-                rawStatus = profileData['safetyStatus'] as String? ?? 'Selamat';
+                rawStatus = profileData['safetyStatus'] as String? ?? 'Selamat'.tr();
                 
-                if (rawStatus == 'Berpindah') {
-                  status = 'Berpindah (Evacuated 🟡)';
-                  statusDesc = 'Telah dipindahkan ke pusat pemindahan';
+                if (rawStatus == 'Berpindah'.tr()) {
+                  status = 'Berpindah (Evacuated 🟡)'.tr();
+                  statusDesc = 'Telah dipindahkan ke pusat pemindahan'.tr();
                   statusColor = AppColors.warning;
                   statusIcon = Icons.home_work_rounded;
-                } else if (rawStatus == 'Perlu Bantuan') {
-                  status = 'Perlu Bantuan (Need Help 🔴)';
-                  statusDesc = 'Memerlukan bantuan penyelamat segera!';
+                } else if (rawStatus == 'Perlu Bantuan'.tr()) {
+                  status = 'Perlu Bantuan (Need Help 🔴)'.tr();
+                  statusDesc = 'Memerlukan bantuan penyelamat segera!'.tr();
                   statusColor = AppColors.danger;
                   statusIcon = Icons.error_rounded;
                 } else {
-                  status = 'Selamat (Safe 🟢)';
-                  statusDesc = 'Selamat di lokasi berdaftar';
+                  status = 'Selamat (Safe 🟢)'.tr();
+                  statusDesc = 'Selamat di lokasi berdaftar'.tr();
                   statusColor = AppColors.safe;
                   statusIcon = Icons.check_circle_rounded;
                 }
@@ -615,7 +616,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Status Keselamatan (Ketik untuk tukar)',
+                              'Status Keselamatan (Ketik untuk tukar)'.tr(),
                               style: GoogleFonts.inter(color: Colors.white70, fontSize: 12),
                             ),
                             const SizedBox(height: 2),
@@ -651,11 +652,11 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _safetyStatusOption(uid, 'Selamat', 'Safe 🟢', 'Saya selamat dan tidak memerlukan bantuan.', AppColors.safe, currentStatus),
+            _safetyStatusOption(uid, 'Selamat'.tr(), 'Safe 🟢'.tr(), 'Saya selamat dan tidak memerlukan bantuan.'.tr(), AppColors.safe, currentStatus),
             const SizedBox(height: 12),
-            _safetyStatusOption(uid, 'Berpindah', 'Evacuated 🟡', 'Saya telah dipindahkan ke pusat pemindahan.', AppColors.warning, currentStatus),
+            _safetyStatusOption(uid, 'Berpindah'.tr(), 'Evacuated 🟡'.tr(), 'Saya telah dipindahkan ke pusat pemindahan.'.tr(), AppColors.warning, currentStatus),
             const SizedBox(height: 12),
-            _safetyStatusOption(uid, 'Perlu Bantuan', 'Need Help 🔴', 'Saya terperangkap atau memerlukan bantuan segera!', AppColors.danger, currentStatus),
+            _safetyStatusOption(uid, 'Perlu Bantuan'.tr(), 'Need Help 🔴'.tr(), 'Saya terperangkap atau memerlukan bantuan segera!'.tr(), AppColors.danger, currentStatus),
           ],
         ),
         actions: [
@@ -761,13 +762,13 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
         final Color cardColor = isResponded ? AppColors.safe : AppColors.danger;
         final IconData icon = isResponded ? Icons.handshake_rounded : Icons.radar_rounded;
         final String statusLabel = isResponded
-            ? 'Penyelamat Sedang Datang!'
-            : 'Mencari Penyelamat...';
+            ? 'Penyelamat Sedang Datang!'.tr()
+            : 'Mencari Penyelamat...'.tr();
         final String statusDesc = isResponded
             ? 'Misi diterima oleh ${report.responderName ?? "Sukarelawan"}. Sila bertenang, penyelamat dalam perjalanan.'
-            : 'Laporan SOS anda telah diterima sistem. Sukarelawan berdekatan sedang dimaklumkan.';
+            : 'Laporan SOS anda telah diterima sistem. Sukarelawan berdekatan sedang dimaklumkan.'.tr();
 
-        String etaStr = 'Anggaran Masa Tiba: 8 - 15 minit';
+        String etaStr = 'Anggaran Masa Tiba: 8 - 15 minit'.tr();
         if (isResponded) {
           final int hash = report.id.hashCode.abs();
           final int etaMin = 5 + (hash % 10);
@@ -924,7 +925,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
 
   void _showCitizenActiveSOSDetails(SosReportModel report, Color cardColor) {
     final bool isResponded = report.status == SosReportModel.statusResponded;
-    String etaStr = 'Anggaran Masa Tiba: 8 - 15 minit';
+    String etaStr = 'Anggaran Masa Tiba: 8 - 15 minit'.tr();
     if (isResponded) {
       final int hash = report.id.hashCode.abs();
       final int etaMin = 5 + (hash % 10);
@@ -958,7 +959,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 children: [
                   Text(
-                    'Perincian Laporan SOS',
+                    'Perincian Laporan SOS'.tr(),
                     style: GoogleFonts.poppins(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
@@ -1020,7 +1021,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              isResponded ? 'Bantuan Sedang Menuju' : 'Menunggu Penyelamat',
+                              isResponded ? 'Bantuan Sedang Menuju'.tr() : 'Menunggu Penyelamat'.tr(),
                               style: GoogleFonts.inter(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
@@ -1033,7 +1034,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                         Text(
                           isResponded
                               ? 'Laporan SOS anda telah diterima oleh ${report.responderName}. Sila kekal di lokasi anda yang selamat.'
-                              : 'Laporan SOS anda telah dihantar ke sistem. Sukarelawan berhampiran sedang dipanggil.',
+                              : 'Laporan SOS anda telah dihantar ke sistem. Sukarelawan berhampiran sedang dipanggil.'.tr(),
                           style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
                         ),
                         if (isResponded) ...[
@@ -1044,7 +1045,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'Anggaran Masa Tiba:',
+                                'Anggaran Masa Tiba:'.tr(),
                                 style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
                               ),
                               Text(
@@ -1081,7 +1082,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Bantuan Tambahan Diminta',
+                                  'Bantuan Tambahan Diminta'.tr(),
                                   style: GoogleFonts.inter(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
@@ -1089,7 +1090,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  'Penyelamat sedang meminta unit tambahan/squad sokongan ke lokasi.',
+                                  'Penyelamat sedang meminta unit tambahan/squad sokongan ke lokasi.'.tr(),
                                   style: GoogleFonts.inter(
                                       fontSize: 12,
                                       color: AppColors.danger),
@@ -1105,19 +1106,19 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
 
                   // Report Details Section
                   Text(
-                    'Maklumat Laporan',
+                    'Maklumat Laporan'.tr(),
                     style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
                   ),
                   const SizedBox(height: 8),
-                  _detailField('Jenis Kecemasan', report.type),
-                  _detailField('Tahap Keutamaan', report.urgency),
+                  _detailField('Jenis Kecemasan'.tr(), report.type),
+                  _detailField('Tahap Keutamaan'.tr(), report.urgency),
                   if (report.description.isNotEmpty)
-                    _detailField('Keterangan', report.description),
-                  _detailField('Lokasi/Alamat', report.address.isNotEmpty ? report.address : '${report.latitude}, ${report.longitude}'),
+                    _detailField('Keterangan'.tr(), report.description),
+                  _detailField('Lokasi/Alamat'.tr(), report.address.isNotEmpty ? report.address : '${report.latitude}, ${report.longitude}'),
                   if (report.formattedSpecificDetails.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     Text(
-                      'Spesifikasi SOS',
+                      'Spesifikasi SOS'.tr(),
                       style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primary),
                     ),
                     const SizedBox(height: 8),
@@ -1230,7 +1231,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                 Text('Lokasi: Lembah Klang'.tr(), style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
                 const SizedBox(height: 12),
                 Text(
-                  'Paras air sungai di stesen utama telah melepasi paras bahaya. Penduduk di kawasan rendah dinasihatkan bersedia untuk berpindah dan patuhi arahan pihak berkuasa.',
+                  'Paras air sungai di stesen utama telah melepasi paras bahaya. Penduduk di kawasan rendah dinasihatkan bersedia untuk berpindah dan patuhi arahan pihak berkuasa.'.tr(),
                   style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary, height: 1.5),
                 ),
                 const SizedBox(height: 16),
@@ -1292,7 +1293,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Amaran Banjir Aktif',
+                    'Amaran Banjir Aktif'.tr(),
                     style: GoogleFonts.inter(
                       fontWeight: FontWeight.w700,
                       fontSize: 14,
@@ -1301,7 +1302,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Lembah Klang — Paras Air Meningkat',
+                    'Lembah Klang — Paras Air Meningkat'.tr(),
                     style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
                   ),
                 ],
@@ -1340,11 +1341,11 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
               runSpacing: 16,
               alignment: WrapAlignment.center,
               children: [
-                _sosOption(Icons.water_drop_rounded, 'Banjir', Colors.blue),
-                _sosOption(Icons.landscape_rounded, 'Tanah Runtuh', Colors.brown),
-                _sosOption(Icons.local_fire_department_rounded, 'Kebakaran', Colors.orange),
-                _sosOption(Icons.medical_services_rounded, 'Perubatan', Colors.red),
-                _sosOption(Icons.person_search_rounded, 'Orang Hilang', Colors.purple),
+                _sosOption(Icons.water_drop_rounded, 'Banjir'.tr(), Colors.blue),
+                _sosOption(Icons.landscape_rounded, 'Tanah Runtuh'.tr(), Colors.brown),
+                _sosOption(Icons.local_fire_department_rounded, 'Kebakaran'.tr(), Colors.orange),
+                _sosOption(Icons.medical_services_rounded, 'Perubatan'.tr(), Colors.red),
+                _sosOption(Icons.person_search_rounded, 'Orang Hilang'.tr(), Colors.purple),
               ],
             ),
             const SizedBox(height: 24),
@@ -1409,18 +1410,18 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
     File? pickedSOSImage;
 
     // Dynamic specifications state variables
-    String waterLevel = 'Paras Pinggang';
-    String trappedPeople = 'Tiada';
+    String waterLevel = 'Paras Pinggang'.tr();
+    String trappedPeople = 'Tiada'.tr();
     bool needBoat = false;
     
-    String fireType = 'Rumah Kediaman';
-    String fireTrappedPeople = 'Tiada';
+    String fireType = 'Rumah Kediaman'.tr();
+    String fireTrappedPeople = 'Tiada'.tr();
     
     bool accessBlocked = false;
     bool stillActive = false;
     
-    String victimCondition = 'Sedar & Bernafas';
-    String ageGroup = 'Dewasa';
+    String victimCondition = 'Sedar & Bernafas'.tr();
+    String ageGroup = 'Dewasa'.tr();
     
     final missingNameCtrl = TextEditingController();
     final missingAgeCtrl = TextEditingController();
@@ -1534,11 +1535,11 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                             ],
                           ),
                           const SizedBox(height: 12),
-                          if (type == 'Banjir') ...[
+                          if (type == 'Banjir'.tr()) ...[
                             _buildDropdownField(
                               label:'Anggaran Paras Air'.tr(),
                               value: waterLevel,
-                              items: ['Bawah Lutut', 'Paras Pinggang', 'Paras Dada', 'Melepasi Bumbung'],
+                              items: ['Bawah Lutut'.tr(), 'Paras Pinggang'.tr(), 'Paras Dada'.tr(), 'Melepasi Bumbung'.tr()],
                               onChanged: (val) {
                                 setModalState(() {
                                   waterLevel = val!;
@@ -1549,7 +1550,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                             _buildDropdownField(
                               label:'Jumlah Mangsa Terperangkap'.tr(),
                               value: trappedPeople,
-                              items: ['Tiada', '1 orang', '2 orang', '3 orang', '4 orang', '5+ orang'],
+                              items: ['Tiada'.tr(), '1 orang', '2 orang', '3 orang', '4 orang', '5+ orang'],
                               onChanged: (val) {
                                 setModalState(() {
                                   trappedPeople = val!;
@@ -1566,7 +1567,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                                 });
                               },
                             ),
-                          ] else if (type == 'Tanah Runtuh') ...[
+                          ] else if (type == 'Tanah Runtuh'.tr()) ...[
                             _buildSwitchField(
                               label:'Laluan/Akses Utama Terhalang?'.tr(),
                               value: accessBlocked,
@@ -1586,11 +1587,11 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                                 });
                               },
                             ),
-                          ] else if (type == 'Kebakaran') ...[
+                          ] else if (type == 'Kebakaran'.tr()) ...[
                             _buildDropdownField(
                               label:'Jenis Kebakaran'.tr(),
                               value: fireType,
-                              items: ['Rumah Kediaman', 'Hutan / Belukar', 'Litar Pintas', 'Bahan Kimia / Gas'],
+                              items: ['Rumah Kediaman'.tr(), 'Hutan / Belukar'.tr(), 'Litar Pintas'.tr(), 'Bahan Kimia / Gas'.tr()],
                               onChanged: (val) {
                                 setModalState(() {
                                   fireType = val!;
@@ -1601,18 +1602,18 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                             _buildDropdownField(
                               label:'Ada Mangsa Terperangkap?'.tr(),
                               value: fireTrappedPeople,
-                              items: ['Tiada', '1 orang', '2 orang', '3 orang', '4 orang', '5+ orang'],
+                              items: ['Tiada'.tr(), '1 orang', '2 orang', '3 orang', '4 orang', '5+ orang'],
                               onChanged: (val) {
                                 setModalState(() {
                                   fireTrappedPeople = val!;
                                 });
                               },
                             ),
-                          ] else if (type == 'Perubatan') ...[
+                          ] else if (type == 'Perubatan'.tr()) ...[
                             _buildDropdownField(
                               label:'Keadaan/Kondisi Mangsa'.tr(),
                               value: victimCondition,
-                              items: ['Sedar & Bernafas', 'Pengsan / Tiada Respon', 'Pendarahan Teruk', 'Sakit Dada / Sesak Nafas'],
+                              items: ['Sedar & Bernafas'.tr(), 'Pengsan / Tiada Respon'.tr(), 'Pendarahan Teruk'.tr(), 'Sakit Dada / Sesak Nafas'.tr()],
                               onChanged: (val) {
                                 setModalState(() {
                                   victimCondition = val!;
@@ -1623,30 +1624,30 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                             _buildDropdownField(
                               label:'Kumpulan Umur Mangsa'.tr(),
                               value: ageGroup,
-                              items: ['Kanak-kanak / Bayi', 'Dewasa', 'Warga Emas'],
+                              items: ['Kanak-kanak / Bayi'.tr(), 'Dewasa'.tr(), 'Warga Emas'.tr()],
                               onChanged: (val) {
                                 setModalState(() {
                                   ageGroup = val!;
                                 });
                               },
                             ),
-                          ] else if (type == 'Orang Hilang') ...[
+                          ] else if (type == 'Orang Hilang'.tr()) ...[
                             _buildTextField(
                               label:'Nama Penuh Orang Hilang'.tr(),
                               controller: missingNameCtrl,
-                              hint: 'Masukkan nama mangsa...',
+                              hint: 'Masukkan nama mangsa...'.tr(),
                             ),
                             const SizedBox(height: 12),
                             _buildTextField(
                               label:'Anggaran Umur'.tr(),
                               controller: missingAgeCtrl,
-                              hint: 'Contoh: 12 tahun, 70 tahun...',
+                              hint: 'Contoh: 12 tahun, 70 tahun...'.tr(),
                             ),
                             const SizedBox(height: 12),
                             _buildTextField(
                               label:'Pakaian Terakhir Dilihat'.tr(),
                               controller: lastSeenClothesCtrl,
-                              hint: 'Contoh: Baju T biru, seluar hitam...',
+                              hint: 'Contoh: Baju T biru, seluar hitam...'.tr(),
                             ),
                           ],
                         ],
@@ -1810,7 +1811,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: SigapButton(
-                            label: _isSubmittingSOS ? 'Menghantar...' : 'Hantar SOS',
+                            label: _isSubmittingSOS ? 'Menghantar...'.tr() : 'Hantar SOS'.tr(),
                             isLoading: _isSubmittingSOS,
                             onPressed: _isSubmittingSOS
                                 ? null
@@ -1824,20 +1825,20 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                                     });
 
                                     final Map<String, dynamic> specDetails = {};
-                                    if (type == 'Banjir') {
+                                    if (type == 'Banjir'.tr()) {
                                       specDetails['waterLevel'] = waterLevel;
                                       specDetails['trappedPeople'] = trappedPeople;
                                       specDetails['needBoat'] = needBoat;
-                                    } else if (type == 'Tanah Runtuh') {
+                                    } else if (type == 'Tanah Runtuh'.tr()) {
                                       specDetails['accessBlocked'] = accessBlocked;
                                       specDetails['stillActive'] = stillActive;
-                                    } else if (type == 'Kebakaran') {
+                                    } else if (type == 'Kebakaran'.tr()) {
                                       specDetails['fireType'] = fireType;
                                       specDetails['hasTrapped'] = fireTrappedPeople;
-                                    } else if (type == 'Perubatan') {
+                                    } else if (type == 'Perubatan'.tr()) {
                                       specDetails['victimCondition'] = victimCondition;
                                       specDetails['ageGroup'] = ageGroup;
-                                    } else if (type == 'Orang Hilang') {
+                                    } else if (type == 'Orang Hilang'.tr()) {
                                       specDetails['missingName'] = missingNameCtrl.text.trim();
                                       specDetails['missingAge'] = missingAgeCtrl.text.trim();
                                       specDetails['lastSeenClothes'] = lastSeenClothesCtrl.text.trim();
@@ -1877,7 +1878,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
   ) async {
     final authState = context.read<AuthBloc>().state;
     if (authState is! AuthAuthenticated) {
-      _showErrorSnackbar('Sila log masuk untuk menghantar SOS');
+      _showErrorSnackbar('Sila log masuk untuk menghantar SOS'.tr());
       return;
     }
 
@@ -1888,14 +1889,14 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
       debugPrint('🚀 Starting SOS submission for: $type');
 
       // STEP 1: Get GPS Location with TIMEOUT
-      debugPrint('📍 Getting GPS location...');
+      debugPrint('📍 Getting GPS location...'.tr());
       Position? position;
       try {
         position = await _locationService.getCurrentPosition().timeout(
           const Duration(seconds: 15),
           onTimeout: () {
-            debugPrint('⚠️ GPS timeout after 15 seconds');
-            throw Exception('Gagal mendapatkan lokasi GPS. Sila pastikan GPS dihidupkan.');
+            debugPrint('⚠️ GPS timeout after 15 seconds'.tr());
+            throw Exception('Gagal mendapatkan lokasi GPS. Sila pastikan GPS dihidupkan.'.tr());
           },
         );
         debugPrint('✅ GPS obtained: ${position.latitude}, ${position.longitude}');
@@ -1906,7 +1907,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
       }
 
       // STEP 2: Get address (don't let this hang)
-      debugPrint('📍 Getting address...');
+      debugPrint('📍 Getting address...'.tr());
       String address = '';
       try {
         address = await _locationService.getAddressFromCoords(
@@ -1920,7 +1921,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
       }
 
       // STEP 3: Get citizen profile (with timeout)
-      debugPrint('📞 Getting citizen profile...');
+      debugPrint('📞 Getting citizen profile...'.tr());
       String phone = '';
       try {
         final citizenProfile = await _firestoreService
@@ -1936,7 +1937,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
       // STEP 4: Upload image (if any) with timeout
       String? imageUrl;
       if (imageFile != null) {
-        debugPrint('📸 Uploading image...');
+        debugPrint('📸 Uploading image...'.tr());
         try {
           final filename = 'sos_${DateTime.now().millisecondsSinceEpoch}.jpg';
           final storageRef = FirebaseStorage.instance.ref().child('sos_evidence/$filename');
@@ -1968,11 +1969,11 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
       }
 
       // STEP 5: Create SOS report in Firestore with timeout
-      debugPrint('📤 Creating SOS in Firestore...');
+      debugPrint('📤 Creating SOS in Firestore...'.tr());
       final reportData = SosReportModel(
         id: '',
         reporterId: authState.uid,
-        reporterName: authState.displayName.isNotEmpty ? authState.displayName : 'Warga SIGAP',
+        reporterName: authState.displayName.isNotEmpty ? authState.displayName : 'Warga SIGAP'.tr(),
         reporterPhone: phone,
         type: type,
         description: description.isNotEmpty ? description : 'Kecemasan $type — Perlukan bantuan segera.',
@@ -1991,7 +1992,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
           throw Exception('Firestore response timeout. Sila semak sambungan internet.');
         },
       );
-      debugPrint('✅ SOS created successfully!');
+      debugPrint('✅ SOS created successfully!'.tr());
 
       // Close the loading dialog and show success
       if (mounted) {
@@ -2069,7 +2070,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                 const Icon(Icons.check_circle_rounded, color: AppColors.safe, size: 20),
                 const SizedBox(width: 8),
                 Text(
-                  'SOS Berjaya Dihantar!',
+                  'SOS Berjaya Dihantar!'.tr(),
                   style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                 ),
               ],
@@ -2235,7 +2236,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                     children: [
                       Expanded(
                         child: Text(
-                          '${data['type'] ?? 'SOS'} — ${data['address'] ?? 'Lokasi tidak diketahui'}',
+                          '${data['type'] ?? '.tr()SOS'} — ${data['address'] ?? '.tr()Lokasi tidak diketahui'}',
                           style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -2320,7 +2321,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                   docId,
                   reasonCtrl.text.trim().isNotEmpty
                       ? reasonCtrl.text.trim()
-                      : 'Penggera palsu / Situasi terkawal',
+                      : 'Penggera palsu / Situasi terkawal'.tr(),
                 );
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -2413,26 +2414,26 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
               Marker(
                 markerId: const MarkerId('shelter_1'),
                 position: const LatLng(3.1550, 101.7100),
-                infoWindow: InfoWindow(title:'PPS Dewan Komuniti Ampang'.tr(), snippet: 'Kapasiti: 150/300 orang | Status: Aktif'),
+                infoWindow: InfoWindow(title:'PPS Dewan Komuniti Ampang'.tr(), snippet: 'Kapasiti: 150/300 orang | Status: Aktif'.tr()),
                 icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
               ),
               Marker(
                 markerId: const MarkerId('shelter_2'),
                 position: const LatLng(3.2000, 101.6800),
-                infoWindow: InfoWindow(title:'PPS SK Selayang'.tr(), snippet: 'Kapasiti: 80/200 orang | Status: Aktif'),
+                infoWindow: InfoWindow(title:'PPS SK Selayang'.tr(), snippet: 'Kapasiti: 80/200 orang | Status: Aktif'.tr()),
                 icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
               ),
               // Relief Trucks
               Marker(
                 markerId: const MarkerId('truck_1'),
                 position: const LatLng(3.1450, 101.6950),
-                infoWindow: InfoWindow(title:'Trak Bantuan Makanan APM'.tr(), snippet: 'Status: Bergerak ke PPS Ampang'),
+                infoWindow: InfoWindow(title:'Trak Bantuan Makanan APM'.tr(), snippet: 'Status: Bergerak ke PPS Ampang'.tr()),
                 icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
               ),
               Marker(
                 markerId: const MarkerId('truck_2'),
                 position: const LatLng(3.1800, 101.6700),
-                infoWindow: InfoWindow(title:'Lori Logistik SIGAP'.tr(), snippet: 'Status: Mengedar selimut & khemah'),
+                infoWindow: InfoWindow(title:'Lori Logistik SIGAP'.tr(), snippet: 'Status: Mengedar selimut & khemah'.tr()),
                 icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
               ),
             };
@@ -2514,7 +2515,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildSectionHeader('Peta Krisis Langsung', actionLabel: 'Lihat Peta', onAction: () {}),
+                _buildSectionHeader('Peta Krisis Langsung'.tr(), actionLabel: 'Lihat Peta'.tr(), onAction: () {}),
                 const SizedBox(height: 12),
                 Container(
                   height: 480,
@@ -2563,11 +2564,11 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                           scrollDirection: Axis.horizontal,
                           child: Row(
                             children: [
-                              _mapChip(Icons.home_work_rounded, 'PPS (Shelter) 🟢', Colors.green),
+                              _mapChip(Icons.home_work_rounded, 'PPS (Shelter) 🟢'.tr(), Colors.green),
                               const SizedBox(width: 8),
-                              _mapChip(Icons.local_shipping_rounded, 'Trak Bantuan 🔵', Colors.blue),
+                              _mapChip(Icons.local_shipping_rounded, 'Trak Bantuan 🔵'.tr(), Colors.blue),
                               const SizedBox(width: 8),
-                              _mapChip(Icons.dangerous_rounded, 'Zon Bahaya 🔴', Colors.red),
+                              _mapChip(Icons.dangerous_rounded, 'Zon Bahaya 🔴'.tr(), Colors.red),
                             ],
                           ),
                         ),
@@ -2609,7 +2610,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader('Keselamatan Keluarga', actionLabel: 'Urus', onAction: () {
+        _buildSectionHeader('Keselamatan Keluarga'.tr(), actionLabel: 'Urus'.tr(), onAction: () {
           context.push(AppRoutes.citizenProfile);
         }),
         const SizedBox(height: 16),
@@ -2644,27 +2645,27 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
               decoration: _cardDecoration(),
               child: Column(
                 children: members.map((m) {
-                  final name = m['name'] as String? ?? 'Tidak Diketahui';
+                  final name = m['name'] as String? ?? 'Tidak Diketahui'.tr();
                   final relation = m['relation'] as String? ?? '';
-                  final status = m['status'] as String? ?? 'Selamat';
-                  final location = m['lastKnownLocation'] as String? ?? 'Belum dikemaskini';
+                  final status = m['status'] as String? ?? 'Selamat'.tr();
+                  final location = m['lastKnownLocation'] as String? ?? 'Belum dikemaskini'.tr();
                   
                   Color color = AppColors.safe;
                   IconData icon = Icons.check_circle_rounded;
-                  String displayStatus = 'Safe 🟢';
+                  String displayStatus = 'Safe 🟢'.tr();
 
-                  if (status == 'Berpindah') {
+                  if (status == 'Berpindah'.tr()) {
                     color = AppColors.warning;
                     icon = Icons.home_work_rounded;
-                    displayStatus = 'Evacuated 🟡';
-                  } else if (status == 'Perlu Bantuan') {
+                    displayStatus = 'Evacuated 🟡'.tr();
+                  } else if (status == 'Perlu Bantuan'.tr()) {
                     color = AppColors.danger;
                     icon = Icons.error_rounded;
-                    displayStatus = 'Need Help 🔴';
+                    displayStatus = 'Need Help 🔴'.tr();
                   } else {
                     color = AppColors.safe;
                     icon = Icons.check_circle_rounded;
-                    displayStatus = 'Safe 🟢';
+                    displayStatus = 'Safe 🟢'.tr();
                   }
 
                   return Padding(
@@ -2729,7 +2730,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader('Pusat Pemindahan Terdekat'),
+        _buildSectionHeader('Pusat Pemindahan Terdekat'.tr()),
         const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(20),
@@ -2773,10 +2774,10 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
               const SizedBox(height: 24),
               Row(
                 children: [
-                  Expanded(child: _resourceIcon(Icons.restaurant_rounded, 'Makanan')),
-                  Expanded(child: _resourceIcon(Icons.local_drink_rounded, 'Air')),
-                  Expanded(child: _resourceIcon(Icons.medical_services_rounded, 'Perubatan')),
-                  Expanded(child: _resourceIcon(Icons.electrical_services_rounded, 'Elektrik')),
+                  Expanded(child: _resourceIcon(Icons.restaurant_rounded, 'Makanan'.tr())),
+                  Expanded(child: _resourceIcon(Icons.local_drink_rounded, 'Air'.tr())),
+                  Expanded(child: _resourceIcon(Icons.medical_services_rounded, 'Perubatan'.tr())),
+                  Expanded(child: _resourceIcon(Icons.electrical_services_rounded, 'Elektrik'.tr())),
                 ],
               ),
               const SizedBox(height: 24),
@@ -2824,7 +2825,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader('Tuntutan Bantuan', actionLabel: 'Mohon Baru', onAction: _showSubmitClaimDialog),
+        _buildSectionHeader('Tuntutan Bantuan'.tr(), actionLabel: 'Mohon Baru'.tr(), onAction: _showSubmitClaimDialog),
         const SizedBox(height: 16),
         StreamBuilder<QuerySnapshot>(
           stream: _firestoreService.streamClaimsForCitizen(authState.uid),
@@ -2859,10 +2860,10 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
               if (status == 'cancelled') return false; // Hide self-cancelled claims
               
               if (_selectedClaimFilter == 'Semua') return true;
-              if (_selectedClaimFilter == 'Dihantar' && (status == 'submitted' || status.toLowerCase() == 'dihantar')) return true;
-              if (_selectedClaimFilter == 'Sedang Disemak' && (status == 'under_review' || status.toLowerCase() == 'sedang disemak')) return true;
-              if (_selectedClaimFilter == 'Diluluskan' && (status == 'approved' || status.toLowerCase() == 'diluluskan')) return true;
-              if (_selectedClaimFilter == 'Ditolak' && (status == 'rejected' || status.toLowerCase() == 'ditolak')) return true;
+              if (_selectedClaimFilter == 'Dihantar'.tr() && (status == 'submitted' || status.toLowerCase() == 'dihantar')) return true;
+              if (_selectedClaimFilter == 'Sedang Disemak'.tr() && (status == 'under_review' || status.toLowerCase() == 'sedang disemak'.tr())) return true;
+              if (_selectedClaimFilter == 'Diluluskan'.tr() && (status == 'approved' || status.toLowerCase() == 'diluluskan')) return true;
+              if (_selectedClaimFilter == 'Ditolak'.tr() && (status == 'rejected' || status.toLowerCase() == 'ditolak')) return true;
               return false;
             }).toList();
 
@@ -2875,7 +2876,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      'Semua', 'Dihantar', 'Sedang Disemak', 'Diluluskan', 'Ditolak'
+                      'Semua', 'Dihantar'.tr(), 'Sedang Disemak'.tr(), 'Diluluskan'.tr(), 'Ditolak'.tr()
                     ].map((filter) {
                       return Padding(
                         padding: const EdgeInsets.only(right: 8.0),
@@ -2911,30 +2912,30 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                   final claim = ClaimModel.fromMap(doc.id, data);
                   
                   Color statusColor = AppColors.warning;
-                  String statusText = 'Dihantar';
+                  String statusText = 'Dihantar'.tr();
                   double progress = 0.25;
-                  String subText = 'Menunggu semakan pegawai';
+                  String subText = 'Menunggu semakan pegawai'.tr();
                   
                   if (claim.status == 'under_review') {
                     statusColor = Colors.purple;
-                    statusText = 'Sedang Disemak';
+                    statusText = 'Sedang Disemak'.tr();
                     progress = 0.5;
-                    subText = 'Tuntutan sedang disemak oleh pegawai';
+                    subText = 'Tuntutan sedang disemak oleh pegawai'.tr();
                   } else if (claim.status == 'approved') {
                     statusColor = AppColors.safe;
-                    statusText = 'Diluluskan ✅';
+                    statusText = 'Diluluskan ✅'.tr();
                     progress = 1.0;
-                    subText = 'Bantuan akan disalurkan dalam 7 hari bekerja';
+                    subText = 'Bantuan akan disalurkan dalam 7 hari bekerja'.tr();
                   } else if (claim.status == 'expired') {
                     statusColor = AppColors.textHint;
-                    statusText = 'Tamat Tempoh';
+                    statusText = 'Tamat Tempoh'.tr();
                     progress = 1.0;
-                    subText = 'Tuntutan tamat tempoh — hubungi pejabat';
+                    subText = 'Tuntutan tamat tempoh — hubungi pejabat'.tr();
                   } else if (claim.status == 'rejected') {
                     statusColor = AppColors.danger;
-                    statusText = 'Ditolak';
+                    statusText = 'Ditolak'.tr();
                     progress = 1.0;
-                    subText = claim.rejectReason ?? 'Tuntutan ditolak';
+                    subText = claim.rejectReason ?? 'Tuntutan ditolak'.tr();
                   }
 
                   // Return a Column: main card + optional action banner (separate, no gesture conflict)
@@ -3084,7 +3085,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                         _showAllClaims = !_showAllClaims;
                       });
                     },
-                    child: Text(_showAllClaims ? 'Tutup' : 'Lihat Semua (${docs.length})', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                    child: Text(_showAllClaims ? 'Tutup'.tr() : 'Lihat Semua (${docs.length})', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                   ),
               ],
             );
@@ -3113,13 +3114,13 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
     bool agreedPDPA = false;
     
     final List<String> mockLocations = [
-      'Taman Mutiara Rini, Johor Bahru, Johor',
-      'Ampang, Selangor',
-      'Hulu Langat, Selangor',
-      'Gombak, Selangor',
-      'Baling, Kedah',
-      'Kuantan, Pahang',
-      'Kota Bharu, Kelantan'
+      'Taman Mutiara Rini, Johor Bahru, Johor'.tr(),
+      'Ampang, Selangor'.tr(),
+      'Hulu Langat, Selangor'.tr(),
+      'Gombak, Selangor'.tr(),
+      'Baling, Kedah'.tr(),
+      'Kuantan, Pahang'.tr(),
+      'Kota Bharu, Kelantan'.tr()
     ];
 
     showDialog(
@@ -3140,10 +3141,10 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                       controller: icCtrl,
                       decoration: InputDecoration(labelText:'No. Kad Pengenalan (IC)'.tr(), hintText:'xxxxxx-xx-xxxx'.tr()),
                       keyboardType: TextInputType.number,
-                      validator: (value) => value == null || value.isEmpty ? 'Sila isi ruangan ini' : null,
+                      validator: (value) => value == null || value.isEmpty ? 'Sila isi ruangan ini'.tr() : null,
                       onChanged: (value) {
                         // Auto format IC xxxxxx-xx-xxxx
-                        String newValue = value.replaceAll('-', '');
+                        String newValue = value.replaceAll('-', '.tr()');
                         if (newValue.length > 6) {
                           newValue = '${newValue.substring(0, 6)}-${newValue.substring(6)}';
                         }
@@ -3166,13 +3167,13 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                       controller: householdCtrl,
                       decoration: InputDecoration(labelText:'Saiz Isi Rumah (Bilangan)'.tr()),
                       keyboardType: TextInputType.number,
-                      validator: (value) => value == null || value.isEmpty ? 'Sila isi ruangan ini' : null,
+                      validator: (value) => value == null || value.isEmpty ? 'Sila isi ruangan ini'.tr() : null,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: typeCtrl,
                       decoration: InputDecoration(labelText:'Jenis Bantuan (Cth: Makanan, Membaiki Rumah)'.tr()),
-                      validator: (value) => value == null || value.isEmpty ? 'Sila isi ruangan ini' : null,
+                      validator: (value) => value == null || value.isEmpty ? 'Sila isi ruangan ini'.tr() : null,
                     ),
                     const SizedBox(height: 12),
                     Autocomplete<String>(
@@ -3198,7 +3199,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                           controller: textEditingController,
                           focusNode: focusNode,
                           decoration: InputDecoration(labelText:'Lokasi / Zon Bencana'.tr(), hintText:'Mula menaip untuk carian...'.tr()),
-                          validator: (value) => value == null || value.isEmpty ? 'Sila isi ruangan ini' : null,
+                          validator: (value) => value == null || value.isEmpty ? 'Sila isi ruangan ini'.tr() : null,
                         );
                       },
                     ),
@@ -3207,7 +3208,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                       controller: damageCtrl,
                       decoration: InputDecoration(labelText:'Keterangan Kerosakan'.tr()),
                       maxLines: 3,
-                      validator: (value) => value == null || value.isEmpty ? 'Sila isi ruangan ini' : null,
+                      validator: (value) => value == null || value.isEmpty ? 'Sila isi ruangan ini'.tr() : null,
                     ),
                     const SizedBox(height: 16),
                     SizedBox(
@@ -3222,7 +3223,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                         },
                         icon: Icon(selectedImage != null ? Icons.check_circle_rounded : Icons.upload_rounded, 
                           color: selectedImage != null ? AppColors.safe : AppColors.primary),
-                        label: Text(selectedImage != null ? 'Gambar Dipilih (Tukar)' : 'Muat Naik Gambar Bukti'),
+                        label: Text(selectedImage != null ? 'Gambar Dipilih (Tukar)'.tr() : 'Muat Naik Gambar Bukti'.tr()),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: selectedImage != null ? AppColors.safe : AppColors.primary,
                           side: BorderSide(color: selectedImage != null ? AppColors.safe : AppColors.primary),
@@ -3238,14 +3239,14 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                     TextFormField(
                       controller: bankNameCtrl,
                       decoration: InputDecoration(labelText:'Nama Bank (EFT BWI)'.tr(), hintText:'Cth: Maybank'.tr()),
-                      validator: (value) => value == null || value.isEmpty ? 'Sila isi ruangan ini' : null,
+                      validator: (value) => value == null || value.isEmpty ? 'Sila isi ruangan ini'.tr() : null,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: bankAccCtrl,
                       decoration: InputDecoration(labelText:'No. Akaun Bank'.tr()),
                       keyboardType: TextInputType.number,
-                      validator: (value) => value == null || value.isEmpty ? 'Sila isi ruangan ini' : null,
+                      validator: (value) => value == null || value.isEmpty ? 'Sila isi ruangan ini'.tr() : null,
                     ),
                     const SizedBox(height: 16),
                     // Compliance Declarations
@@ -3330,7 +3331,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                       final claim = ClaimModel(
                         id: '',
                         citizenId: authState.uid,
-                        citizenName: authState.displayName.isNotEmpty ? authState.displayName : 'Awam',
+                        citizenName: authState.displayName.isNotEmpty ? authState.displayName : 'Awam'.tr(),
                         icNumber: icCtrl.text,
                         householdSize: int.tryParse(householdCtrl.text) ?? 1,
                         damageDescription: damageCtrl.text,
@@ -3393,7 +3394,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                 height: 140,
                 width: double.infinity,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _evidencePlaceholder('Gagal muat gambar'),
+                errorBuilder: (_, __, ___) => _evidencePlaceholder('Gagal muat gambar'.tr()),
               );
             } else if (claim.photoEvidence.startsWith('data:image')) {
               try {
@@ -3404,10 +3405,10 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                   fit: BoxFit.cover,
                 );
               } catch (_) {
-                evidencePreview = _evidencePlaceholder('Gambar rosak');
+                evidencePreview = _evidencePlaceholder('Gambar rosak'.tr());
               }
             } else {
-              evidencePreview = _evidencePlaceholder('Tiada gambar sedia ada');
+              evidencePreview = _evidencePlaceholder('Tiada gambar sedia ada'.tr());
             }
 
             return Padding(
@@ -3504,7 +3505,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                             filled: true,
                             fillColor: AppColors.surface,
                           ),
-                          validator: (v) => (v == null || v.trim().isEmpty) ? 'Sila isi keterangan kerosakan' : null,
+                          validator: (v) => (v == null || v.trim().isEmpty) ? 'Sila isi keterangan kerosakan'.tr() : null,
                         ),
                         const SizedBox(height: 20),
 
@@ -3575,7 +3576,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                               selectedImage != null ? Icons.swap_horiz_rounded : Icons.add_photo_alternate_rounded,
                               size: 18,
                             ),
-                            label: Text(selectedImage != null ? 'Tukar Gambar' : 'Pilih Gambar Baru'),
+                            label: Text(selectedImage != null ? 'Tukar Gambar'.tr() : 'Pilih Gambar Baru'.tr()),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: selectedImage != null ? AppColors.safe : AppColors.primary,
                               side: BorderSide(color: selectedImage != null ? AppColors.safe : AppColors.primary),
@@ -3641,9 +3642,9 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                                         // Show success
                                         if (mounted) {
                                           outerMsg.showSnackBar(
-                                            const SnackBar(
+                                            SnackBar(
                                               content: Text(
-                                                  '✅ Tuntutan dikemaskini dan dihantar semula kepada pegawai.'),
+                                                  '✅ Tuntutan dikemaskini dan dihantar semula kepada pegawai.'.tr()),
                                               backgroundColor: AppColors.safe,
                                               duration: Duration(seconds: 3),
                                             ),
@@ -3668,7 +3669,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                                     height: 18,
                                     child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                                 : const Icon(Icons.send_rounded, size: 18),
-                            label: Text(isUploading ? 'Menghantar...' : 'Hantar Kemaskini',
+                            label: Text(isUploading ? 'Menghantar...'.tr() : 'Hantar Kemaskini'.tr(),
                                 style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 15)),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.orange,
@@ -3713,7 +3714,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader('Notis Terkini', actionLabel: 'Lihat Semua', onAction: () {
+        _buildSectionHeader('Notis Terkini'.tr(), actionLabel: 'Lihat Semua'.tr(), onAction: () {
           showModalBottomSheet(
             context: context,
             shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
@@ -3724,18 +3725,18 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Senarai Notis Terkini', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text('Senarai Notis Terkini'.tr(), style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 16),
-                  _alertItem('Jalan Ampang ditutup akibat air naik 1 meter.', AppColors.danger, '10 minit lalu'),
-                  _alertItem('Bekalan air di kawasan Gombak akan terputus jam 8 malam.', AppColors.warning, '30 minit lalu'),
-                  _alertItem('Pusat pemindahan Balairaya Cheras dibuka.', AppColors.primary, '1 jam lalu'),
+                  _alertItem('Jalan Ampang ditutup akibat air naik 1 meter.'.tr(), AppColors.danger, '10 minit lalu'),
+                  _alertItem('Bekalan air di kawasan Gombak akan terputus jam 8 malam.'.tr(), AppColors.warning, '30 minit lalu'),
+                  _alertItem('Pusat pemindahan Balairaya Cheras dibuka.'.tr(), AppColors.primary, '1 jam lalu'),
                   const SizedBox(height: 16),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () => Navigator.pop(ctx),
                       style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-                      child: const Text('Tutup', style: TextStyle(color: Colors.white)),
+                      child: Text('Tutup'.tr(), style: TextStyle(color: Colors.white)),
                     ),
                   ),
                 ],
@@ -3744,9 +3745,9 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
           );
         }),
         const SizedBox(height: 16),
-        _alertItem('Jalan Ampang ditutup akibat air naik 1 meter.', AppColors.danger, '10 minit lalu'),
-        _alertItem('Bekalan air di kawasan Gombak akan terputus jam 8 malam.', AppColors.warning, '30 minit lalu'),
-        _alertItem('Pusat pemindahan Balairaya Cheras dibuka.', AppColors.primary, '1 jam lalu'),
+        _alertItem('Jalan Ampang ditutup akibat air naik 1 meter.'.tr(), AppColors.danger, '10 minit lalu'),
+        _alertItem('Bekalan air di kawasan Gombak akan terputus jam 8 malam.'.tr(), AppColors.warning, '30 minit lalu'),
+        _alertItem('Pusat pemindahan Balairaya Cheras dibuka.'.tr(), AppColors.primary, '1 jam lalu'),
       ],
     );
   }
@@ -3780,7 +3781,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader('Kit Bantuan Offline & FAQ', actionLabel: 'Lihat Panduan', onAction: () {
+        _buildSectionHeader('Kit Bantuan Offline & FAQ'.tr(), actionLabel: 'Lihat Panduan'.tr(), onAction: () {
           Navigator.push(context, MaterialPageRoute(builder: (_) => const OfflineGuideScreen()));
         }),
         const SizedBox(height: 16),
@@ -3790,13 +3791,13 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
             children: [
               GestureDetector(
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OfflineGuideScreen())),
-                child: _toolkitCard(Icons.medical_services_rounded, 'Panduan Kecemasan', Colors.red),
+                child: _toolkitCard(Icons.medical_services_rounded, 'Panduan Kecemasan'.tr(), Colors.red),
               ),
               GestureDetector(
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FAQScreen())),
-                child: _toolkitCard(Icons.help_center_rounded, 'Pusat Bantuan / FAQ', Colors.blue),
+                child: _toolkitCard(Icons.help_center_rounded, 'Pusat Bantuan / FAQ'.tr(), Colors.blue),
               ),
-              _toolkitCard(Icons.backpack_rounded, 'Beg Kecemasan', Colors.green),
+              _toolkitCard(Icons.backpack_rounded, 'Beg Kecemasan'.tr(), Colors.green),
             ],
           ),
         )
@@ -3962,27 +3963,27 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
     switch (claim.status) {
       case 'submitted':
         statusColor = AppColors.warning;
-        statusLabel = 'Dihantar — Menunggu Semakan';
+        statusLabel = 'Dihantar — Menunggu Semakan'.tr();
         statusIcon = Icons.hourglass_empty_rounded;
         break;
       case 'under_review':
         statusColor = Colors.purple;
-        statusLabel = 'Sedang Disemak oleh Pegawai';
+        statusLabel = 'Sedang Disemak oleh Pegawai'.tr();
         statusIcon = Icons.manage_search_rounded;
         break;
       case 'approved':
         statusColor = AppColors.safe;
-        statusLabel = 'Diluluskan ✅';
+        statusLabel = 'Diluluskan ✅'.tr();
         statusIcon = Icons.verified_rounded;
         break;
       case 'rejected':
         statusColor = AppColors.danger;
-        statusLabel = 'Ditolak';
+        statusLabel = 'Ditolak'.tr();
         statusIcon = Icons.cancel_rounded;
         break;
       case 'expired':
         statusColor = AppColors.textHint;
-        statusLabel = 'Tamat Tempoh';
+        statusLabel = 'Tamat Tempoh'.tr();
         statusIcon = Icons.timer_off_rounded;
         break;
       default:
@@ -4106,20 +4107,20 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                             ),
                             const SizedBox(height: 14),
                             _nextStepItem(Icons.schedule_rounded, AppColors.safe,
-                                'Penyaluran Bantuan',
-                                'Bantuan akan disalurkan dalam 7 hari bekerja dari tarikh kelulusan.'),
+                                'Penyaluran Bantuan'.tr(),
+                                'Bantuan akan disalurkan dalam 7 hari bekerja dari tarikh kelulusan.'.tr()),
                             const SizedBox(height: 10),
                             _nextStepItem(Icons.email_rounded, AppColors.primary,
-                                'Makluman melalui E-mel',
-                                'Anda akan menerima e-mel rasmi berkenaan kaedah & jadual penyaluran bantuan. Semak peti masuk anda secara berkala.'),
+                                'Makluman melalui E-mel'.tr(),
+                                'Anda akan menerima e-mel rasmi berkenaan kaedah & jadual penyaluran bantuan. Semak peti masuk anda secara berkala.'.tr()),
                             const SizedBox(height: 10),
                             _nextStepItem(Icons.phone_in_talk_rounded, AppColors.warning,
-                                'Dihubungi Melalui Telefon',
-                                'Pegawai kami mungkin menghubungi nombor telefon berdaftar anda untuk pengesahan sebelum penyaluran.'),
+                                'Dihubungi Melalui Telefon'.tr(),
+                                'Pegawai kami mungkin menghubungi nombor telefon berdaftar anda untuk pengesahan sebelum penyaluran.'.tr()),
                             const SizedBox(height: 10),
                             _nextStepItem(Icons.location_on_rounded, AppColors.danger,
-                                'Sila Kekal di Lokasi Berdaftar',
-                                'Pastikan anda mudah dihubungi di alamat yang telah didaftarkan semasa permohonan.'),
+                                'Sila Kekal di Lokasi Berdaftar'.tr(),
+                                'Pastikan anda mudah dihubungi di alamat yang telah didaftarkan semasa permohonan.'.tr()),
                           ],
                         ),
                       ),
@@ -4246,7 +4247,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                               ],
                             ),
                             const SizedBox(height: 8),
-                            Text(claim.rejectReason ?? 'Maklumat tidak lengkap atau tidak memenuhi syarat.',
+                            Text(claim.rejectReason ?? 'Maklumat tidak lengkap atau tidak memenuhi syarat.'.tr(),
                                 style: GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary)),
                             const SizedBox(height: 12),
                             Text('Anda boleh memfailkan tuntutan baru dengan maklumat yang lebih lengkap.'.tr(),
@@ -4271,16 +4272,16 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                           Text('Maklumat Tuntutan'.tr(),
                               style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
                           const SizedBox(height: 12),
-                          _detailRow('No. IC', claim.icNumber),
-                          _detailRow('Saiz Isi Rumah', '${claim.householdSize} orang'),
-                          _detailRow('Lokasi / Zon', claim.location),
-                          _detailRow('Jenis Bantuan', claim.type),
-                          _detailRow('Keterangan Kerosakan', claim.damageDescription),
+                          _detailRow('No. IC'.tr(), claim.icNumber),
+                          _detailRow('Saiz Isi Rumah'.tr(), '${claim.householdSize} orang'),
+                          _detailRow('Lokasi / Zon'.tr(), claim.location),
+                          _detailRow('Jenis Bantuan'.tr(), claim.type),
+                          _detailRow('Keterangan Kerosakan'.tr(), claim.damageDescription),
                           if (claim.createdAt != null)
-                            _detailRow('Tarikh Permohonan',
+                            _detailRow('Tarikh Permohonan'.tr(),
                                 '${claim.createdAt!.day}/${claim.createdAt!.month}/${claim.createdAt!.year}'),
                           if (claim.reviewedAt != null)
-                            _detailRow('Tarikh Semakan',
+                            _detailRow('Tarikh Semakan'.tr(),
                                 '${claim.reviewedAt!.day}/${claim.reviewedAt!.month}/${claim.reviewedAt!.year}'),
                         ],
                       ),
@@ -4345,9 +4346,9 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
   /// 4-step progress stepper for claim flow.
   Widget _buildClaimProgressStepper(String status) {
     final steps = [
-      ('Dihantar', Icons.upload_rounded),
-      ('Disemak', Icons.manage_search_rounded),
-      ('Diputuskan', Icons.gavel_rounded),
+      ('Dihantar'.tr(), Icons.upload_rounded),
+      ('Disemak'.tr(), Icons.manage_search_rounded),
+      ('Diputuskan'.tr(), Icons.gavel_rounded),
     ];
     int currentStep;
     switch (status) {

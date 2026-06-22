@@ -210,7 +210,7 @@ class _DonationCampaignDetailScreenState
                   ),
                 ),
                 Text(
-                  'Sasaran',
+                  'Sasaran'.tr(),
                   style: GoogleFonts.inter(fontSize: 12, color: AppColors.textHint, fontWeight: FontWeight.w500),
                 ),
               ],
@@ -260,20 +260,20 @@ class _DonationCampaignDetailScreenState
 
     return Row(
       children: [
-        _statBox(Icons.calendar_today_rounded, '$daysActive', 'Hari Aktif',
+        _statBox(Icons.calendar_today_rounded, '$daysActive', 'Hari Aktif'.tr(),
             AppColors.primary),
         const SizedBox(width: 12),
         _statBox(
           Icons.savings_rounded,
           'RM ${_fmtShort(_campaign.targetAmount - _campaign.currentAmount)}',
-          'Baki Diperlukan',
+          'Baki Diperlukan'.tr(),
           AppColors.warning,
         ),
         const SizedBox(width: 12),
         _statBox(
           _campaign.isClosed ? Icons.lock_rounded : Icons.check_circle_rounded,
-          _campaign.isClosed ? 'Tutup' : 'Aktif',
-          'Status',
+          _campaign.isClosed ? 'Tutup'.tr() : 'Aktif'.tr(),
+          'Status'.tr(),
           _campaign.isClosed ? AppColors.textSecondary : AppColors.safe,
         ),
       ],
@@ -318,7 +318,7 @@ class _DonationCampaignDetailScreenState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionTitle('Tujuan Kempen'),
+        _sectionTitle('Tujuan Kempen'.tr()),
         const SizedBox(height: 12),
         Container(
           width: double.infinity,
@@ -345,10 +345,10 @@ class _DonationCampaignDetailScreenState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionTitle('Pengagihan Dana'),
+        _sectionTitle('Pengagihan Dana'.tr()),
         const SizedBox(height: 4),
         Text(
-          'Peratus wang yang diagihkan kepada setiap kategori.',
+          'Peratus wang yang diagihkan kepada setiap kategori.'.tr(),
           style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
         ),
         const SizedBox(height: 16),
@@ -375,7 +375,7 @@ class _DonationCampaignDetailScreenState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionTitle('Rekod Sumbangan Anda'),
+        _sectionTitle('Rekod Sumbangan Anda'.tr()),
         const SizedBox(height: 12),
         StreamBuilder<QuerySnapshot>(
           stream: _firestoreService.streamUserDonations(uid),
@@ -558,11 +558,11 @@ class _DonationCampaignDetailScreenState
 
   // ─── Donate Dialog ───────────────────────────────────────────────────────────
   void _showDonationDialog(CampaignModel campaign) {
-  String selectedMethod = 'FPX';
+  String selectedMethod = 'FPX'.tr();
   bool isProcessing = false;
   final amountCtrl = TextEditingController();
   final nameCtrl = TextEditingController();
-  String selectedBank = 'Maybank2U';
+  String selectedBank = 'Maybank2U'.tr();
 
   final authState = context.read<AuthBloc>().state;
   if (authState is AuthAuthenticated && authState.displayName.isNotEmpty) {
@@ -615,7 +615,7 @@ class _DonationCampaignDetailScreenState
               ),
               const SizedBox(height: 20),
               // Quick amount chips
-              Text('Jumlah Cepat',
+              Text('Jumlah Cepat'.tr(),
                   style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -645,7 +645,7 @@ class _DonationCampaignDetailScreenState
               TextField(
                 controller: nameCtrl,
                 decoration: InputDecoration(
-                  labelText: 'Nama Penderma',
+                  labelText: 'Nama Penderma'.tr(),
                   prefixIcon: const Icon(Icons.person_outline_rounded),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -656,7 +656,7 @@ class _DonationCampaignDetailScreenState
               TextField(
                 controller: amountCtrl,
                 decoration: InputDecoration(
-                  labelText: 'Jumlah Derma (RM)',
+                  labelText: 'Jumlah Derma (RM)'.tr(),
                   prefixText: 'RM ',
                   prefixIcon: const Icon(Icons.attach_money_rounded),
                   border: OutlineInputBorder(
@@ -666,7 +666,7 @@ class _DonationCampaignDetailScreenState
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
               ),
               const SizedBox(height: 12),
-              Text('Kaedah Pembayaran',
+              Text('Kaedah Pembayaran'.tr(),
                   style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -674,7 +674,7 @@ class _DonationCampaignDetailScreenState
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 value: selectedMethod,
-                items: ['FPX', 'Kad Kredit / Debit']
+                items: ['FPX'.tr(), 'Kad Kredit / Debit'.tr()]
                     .map((m) => DropdownMenuItem(value: m, child: Text(m)))
                     .toList(),
                 onChanged: (val) {
@@ -685,18 +685,18 @@ class _DonationCampaignDetailScreenState
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
-              if (selectedMethod == 'FPX') ...[
+              if (selectedMethod == 'FPX'.tr()) ...[
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   value: selectedBank,
-                  items: ['Maybank2U', 'CIMB Clicks', 'RHB Now', 'Bank Islam', 'Public Bank']
+                  items: ['Maybank2U'.tr(), 'CIMB Clicks'.tr(), 'RHB Now'.tr(), 'Bank Islam'.tr(), 'Public Bank'.tr()]
                       .map((b) => DropdownMenuItem(value: b, child: Text(b)))
                       .toList(),
                   onChanged: (val) {
                     if (val != null) setModalState(() => selectedBank = val);
                   },
                   decoration: InputDecoration(
-                    labelText: 'Pilih Bank',
+                    labelText: 'Pilih Bank'.tr(),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
@@ -704,7 +704,7 @@ class _DonationCampaignDetailScreenState
                 const SizedBox(height: 12),
                 TextField(
                   decoration: InputDecoration(
-                    labelText: 'Nombor Kad',
+                    labelText: 'Nombor Kad'.tr(),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
@@ -714,7 +714,7 @@ class _DonationCampaignDetailScreenState
                     Expanded(
                       child: TextField(
                         decoration: InputDecoration(
-                          labelText: 'Luput (MM/YY)',
+                          labelText: 'Luput (MM/YY)'.tr(),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                       ),
@@ -745,12 +745,12 @@ class _DonationCampaignDetailScreenState
                           
                           if (amount <= 0) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Sila masukkan jumlah yang sah.')));
+                                SnackBar(content: Text('Sila masukkan jumlah yang sah.'.tr())));
                             return;
                           }
                           if (donorName.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Sila masukkan nama penderma.')));
+                                SnackBar(content: Text('Sila masukkan nama penderma.'.tr())));
                             return;
                           }
                           
@@ -769,7 +769,7 @@ class _DonationCampaignDetailScreenState
                                 'citizenName': donorName,
                                 'amount': amount,
                                 'paymentMethod': selectedMethod,
-                                'bank': selectedMethod == 'FPX' ? selectedBank : 'Card',
+                                'bank': selectedMethod == 'FPX'.tr() ? selectedBank : 'Card'.tr(),
                                 'receiptNo': receiptNo,
                                 'status': 'completed',
                                 'donorName': donorName,
@@ -823,7 +823,7 @@ class _DonationCampaignDetailScreenState
                           height: 20,
                           child: CircularProgressIndicator(
                               color: Colors.white, strokeWidth: 2))
-                      : Text('Bayar Sekarang',
+                      : Text('Bayar Sekarang'.tr(),
                           style: GoogleFonts.inter(
                               fontSize: 15, fontWeight: FontWeight.w700)),
                 ),
@@ -831,7 +831,7 @@ class _DonationCampaignDetailScreenState
               const SizedBox(height: 12),
               Center(
                 child: Text(
-                  '🔒 Pembayaran selamat. Resit layak potongan cukai.',
+                  '🔒 Pembayaran selamat. Resit layak potongan cukai.'.tr(),
                   style: GoogleFonts.inter(fontSize: 11, color: AppColors.textHint),
                 ),
               ),
@@ -861,7 +861,7 @@ class _DonationCampaignDetailScreenState
     );
     try {
       final pdfFile = await ReceiptService.generateReceiptPdf(
-        donorName: donation.donorName.isNotEmpty ? donation.donorName : 'Penderma',
+        donorName: donation.donorName.isNotEmpty ? donation.donorName : 'Penderma'.tr(),
         amount: donation.amount,
         campaignName: donation.campaignName,
         transactionId: donation.receiptNo,
@@ -913,17 +913,17 @@ class _DonationCampaignDetailScreenState
                 ),
                 child: Column(
                   children: [
-                    _receiptRow('No. Resit', donation.receiptNo),
-                    _receiptRow('Tarikh', _fmtDate(donation.createdAt)),
-                    _receiptRow('Kaedah', donation.paymentMethod),
-                    _receiptRow('Penderma',
-                        donation.donorName.isNotEmpty ? donation.donorName : 'N/A'),
+                    _receiptRow('No. Resit'.tr(), donation.receiptNo),
+                    _receiptRow('Tarikh'.tr(), _fmtDate(donation.createdAt)),
+                    _receiptRow('Kaedah'.tr(), donation.paymentMethod),
+                    _receiptRow('Penderma'.tr(),
+                        donation.donorName.isNotEmpty ? donation.donorName : 'N/A'.tr()),
                   ],
                 ),
               ),
               const SizedBox(height: 12),
               Text(
-                '★ Layak potongan cukai di bawah Subseksyen 44(6) Akta Cukai Pendapatan 1967.',
+                '★ Layak potongan cukai di bawah Subseksyen 44(6) Akta Cukai Pendapatan 1967.'.tr(),
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
                     fontSize: 10, color: AppColors.textSecondary),

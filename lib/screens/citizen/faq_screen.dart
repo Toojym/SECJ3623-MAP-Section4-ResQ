@@ -14,7 +14,7 @@ class FAQScreen extends StatelessWidget {
         backgroundColor: AppColors.surface,
         elevation: 0,
         title: Text(
-          'Pusat Bantuan & FAQ',
+          'Pusat Bantuan & FAQ'.tr(),
           style: GoogleFonts.poppins(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
         ),
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
@@ -25,32 +25,32 @@ class FAQScreen extends StatelessWidget {
           _buildCategory(
             title:'Sebelum Bencana (Before Disaster)'.tr(),
             items: [
-              _buildFaqItem('Apakah persiapan awal?', 'Sediakan kit kecemasan, kenal pasti pusat pemindahan, dan peka pada amaran kaji cuaca.'),
-              _buildFaqItem('Bagaimana mengetahui zon risiko?', 'Rujuk peta interaktif dalam aplikasi SIGAP atau portal NADMA.'),
+              _buildFaqItem('Apakah persiapan awal?'.tr(), 'Sediakan kit kecemasan, kenal pasti pusat pemindahan, dan peka pada amaran kaji cuaca.'.tr()),
+              _buildFaqItem('Bagaimana mengetahui zon risiko?'.tr(), 'Rujuk peta interaktif dalam aplikasi SIGAP atau portal NADMA.'.tr()),
             ],
           ),
           const SizedBox(height: 16),
           _buildCategory(
             title:'Semasa Bencana (During Disaster)'.tr(),
             items: [
-              _buildFaqItem('Bagaimana hantar SOS?', 'Tekan butang SOS merah di skrin utama dan pilih jenis kecemasan. Lokasi anda akan dihantar kepada penyelamat.'),
-              _buildFaqItem('Saya tiada internet, apa perlu buat?', 'Gunakan Panduan Luar Talian di aplikasi SIGAP. Jika perlu bantuan segera, hubungi 999.'),
+              _buildFaqItem('Bagaimana hantar SOS?'.tr(), 'Tekan butang SOS merah di skrin utama dan pilih jenis kecemasan. Lokasi anda akan dihantar kepada penyelamat.'.tr()),
+              _buildFaqItem('Saya tiada internet, apa perlu buat?'.tr(), 'Gunakan Panduan Luar Talian di aplikasi SIGAP. Jika perlu bantuan segera, hubungi 999.'.tr()),
             ],
           ),
           const SizedBox(height: 16),
           _buildCategory(
             title:'Tuntutan & Bantuan (Claims)'.tr(),
             items: [
-              _buildFaqItem('Bagaimana mohon tuntutan?', 'Pergi ke tab Tuntutan (Claims) dan isikan borang berserta gambar bukti.'),
-              _buildFaqItem('Berapa lama proses kelulusan?', 'Biasanya mengambil masa 7-14 hari bekerja bergantung pada pengesahan wakil kerajaan.'),
+              _buildFaqItem('Bagaimana mohon tuntutan?'.tr(), 'Pergi ke tab Tuntutan (Claims) dan isikan borang berserta gambar bukti.'.tr()),
+              _buildFaqItem('Berapa lama proses kelulusan?'.tr(), 'Biasanya mengambil masa 7-14 hari bekerja bergantung pada pengesahan wakil kerajaan.'.tr()),
             ],
           ),
           const SizedBox(height: 16),
           _buildCategory(
             title:'Sukarelawan (Volunteer)'.tr(),
             items: [
-              _buildFaqItem('Bagaimana kumpul SIGAP Mata?', 'Anda akan menerima mata setelah berjaya menyelesaikan misi SOS yang diterima.'),
-              _buildFaqItem('Bolehkah saya tukar mata?', 'Ya, mata boleh ditebus untuk sijil penghargaan dari NADMA/Bomba di skrin Leaderboard.'),
+              _buildFaqItem('Bagaimana kumpul SIGAP Mata?'.tr(), 'Anda akan menerima mata setelah berjaya menyelesaikan misi SOS yang diterima.'.tr()),
+              _buildFaqItem('Bolehkah saya tukar mata?'.tr(), 'Ya, mata boleh ditebus untuk sijil penghargaan dari NADMA/Bomba di skrin Leaderboard.'.tr()),
             ],
           ),
         ],

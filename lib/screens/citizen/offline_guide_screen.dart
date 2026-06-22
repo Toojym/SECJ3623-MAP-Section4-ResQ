@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/data/emergency_guides_data.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class OfflineGuideScreen extends StatefulWidget {
   const OfflineGuideScreen({super.key});
@@ -55,7 +56,7 @@ class _OfflineGuideScreenState extends State<OfflineGuideScreen> {
         backgroundColor: AppColors.surface,
         elevation: 0,
         title: Text(
-          'Panduan Luar Talian',
+          'Panduan Luar Talian'.tr(),
           style: GoogleFonts.poppins(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
         ),
         iconTheme: const IconThemeData(color: AppColors.textPrimary),

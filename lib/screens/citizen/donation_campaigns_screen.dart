@@ -26,7 +26,7 @@ class DonationCampaignsScreen extends StatefulWidget {
 class _DonationCampaignsScreenState extends State<DonationCampaignsScreen> {
   final FirestoreService _firestoreService = FirestoreService();
   String _searchQuery = '';
-  String _filterStatus = 'Semua'; // 'Semua', 'Aktif', 'Ditutup'
+  String _filterStatus = 'Semua'; // 'Semua', 'Aktif'.tr(), 'Ditutup'.tr()
 
   @override
   Widget build(BuildContext context) {
@@ -93,7 +93,7 @@ class _DonationCampaignsScreenState extends State<DonationCampaignsScreen> {
         onPressed: () => context.pop(),
       ),
       title: Text(
-        'Tabung Bantuan',
+        'Tabung Bantuan'.tr(),
         style: GoogleFonts.poppins(
           fontSize: 16,
           fontWeight: FontWeight.w700,
@@ -112,7 +112,7 @@ class _DonationCampaignsScreenState extends State<DonationCampaignsScreen> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   Text(
-                    'Tabung Bantuan',
+                    'Tabung Bantuan'.tr(),
                     style: GoogleFonts.poppins(
                       fontSize: 26,
                       fontWeight: FontWeight.w700,
@@ -121,7 +121,7 @@ class _DonationCampaignsScreenState extends State<DonationCampaignsScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Sumbangkan untuk membantu mangsa bencana',
+                    'Sumbangkan untuk membantu mangsa bencana'.tr(),
                     style: GoogleFonts.inter(fontSize: 13, color: Colors.white70),
                   ),
                   const SizedBox(height: 14),
@@ -200,7 +200,7 @@ class _DonationCampaignsScreenState extends State<DonationCampaignsScreen> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: ['Semua', 'Aktif', 'Ditutup'].map((f) {
+              children: ['Semua', 'Aktif'.tr(), 'Ditutup'.tr()].map((f) {
                 final selected = _filterStatus == f;
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
@@ -250,8 +250,8 @@ class _DonationCampaignsScreenState extends State<DonationCampaignsScreen> {
         .map((doc) => CampaignModel.fromMap(doc.id, doc.data() as Map<String, dynamic>))
         .where((c) {
           bool isClosed = c.isClosed || c.currentAmount >= c.targetAmount;
-          if (_filterStatus == 'Aktif') return !isClosed;
-          if (_filterStatus == 'Ditutup') return isClosed;
+          if (_filterStatus == 'Aktif'.tr()) return !isClosed;
+          if (_filterStatus == 'Ditutup'.tr()) return isClosed;
           return true;
         })
         .where((c) =>
@@ -309,7 +309,7 @@ class _DonationCampaignsScreenState extends State<DonationCampaignsScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              'Tiada Kempen Dijumpai',
+              'Tiada Kempen Dijumpai'.tr(),
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -318,7 +318,7 @@ class _DonationCampaignsScreenState extends State<DonationCampaignsScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Tiada kempen derma yang sepadan dengan carian anda.',
+              'Tiada kempen derma yang sepadan dengan carian anda.'.tr(),
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
             ),
@@ -426,9 +426,9 @@ class _CampaignCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       if (isClosed)
-                        _badge('Ditutup', AppColors.textSecondary, Icons.lock_rounded)
+                        _badge('Ditutup'.tr(), AppColors.textSecondary, Icons.lock_rounded)
                       else if (hasDonated)
-                        _badge('Penderma', Colors.amber.shade700, Icons.verified_rounded),
+                        _badge('Penderma'.tr(), Colors.amber.shade700, Icons.verified_rounded),
                     ],
                   ),
                   const SizedBox(height: 6),

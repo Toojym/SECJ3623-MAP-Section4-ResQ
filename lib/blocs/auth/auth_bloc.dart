@@ -139,8 +139,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   Future<void> _onLoggedOut(AuthLoggedOut event, Emitter<AuthState> emit) async {
     try {
-      await _authService.signOut();
       emit(const AuthUnauthenticated());
+      // Wait for GoRouter to unmount screens and cancel active Firebase stream subscriptions
+      await Future.delayed(const Duration(milliseconds: 300));
+      await _authService.signOut();
     } catch (_) {
       emit(const AuthUnauthenticated());
     }

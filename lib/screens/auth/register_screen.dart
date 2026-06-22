@@ -9,6 +9,7 @@ import '../../core/constants/app_strings.dart';
 import '../../core/utils/validators.dart';
 import '../../widgets/common/sigap_button.dart';
 import '../../widgets/common/sigap_text_field.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -55,7 +56,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         } else if (state is AuthError) {
           if (state.message == AppStrings.errEmailInUse) {
             setState(() {
-              _emailError = 'E-mel ini telah didaftarkan. Sila guna e-mel lain.';
+              _emailError = 'E-mel ini telah didaftarkan. Sila guna e-mel lain.'.tr();
               _selectedRole = 'citizen';
             });
             _nameCtrl.clear();

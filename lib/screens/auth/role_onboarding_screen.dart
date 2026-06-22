@@ -6,6 +6,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../services/firestore_service.dart';
 import '../../widgets/common/sigap_button.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class RoleOnboardingScreen extends StatefulWidget {
   const RoleOnboardingScreen({super.key});
@@ -139,7 +140,7 @@ class _RoleOnboardingScreenState extends State<RoleOnboardingScreen> {
         const SizedBox(height: 24),
         Center(
           child: Text(
-            'Selamat Datang ke SIGAP!',
+            'Selamat Datang ke SIGAP!'.tr(),
             style: GoogleFonts.poppins(
               fontSize: 22,
               fontWeight: FontWeight.w700,
@@ -268,43 +269,43 @@ class _RoleOnboardingScreenState extends State<RoleOnboardingScreen> {
       case 'volunteer':
         return {
           'role': AppStrings.volunteerRole,
-          'title': 'Sukarelawan SIGAP',
+          'title': 'Sukarelawan SIGAP'.tr(),
           'desc': AppStrings.volunteerDesc,
           'icon': Icons.handshake_rounded,
           'color': AppColors.volunteerAccent,
           'features': [
-            'Terima misi bantuan bencana',
-            'Kumpul mata SIGAP untuk sijil',
-            'Toggle status aktif / tidak aktif',
-            'Log tugas lapangan',
+            'Terima misi bantuan bencana'.tr(),
+            'Kumpul mata SIGAP untuk sijil'.tr(),
+            'Toggle status aktif / tidak aktif'.tr(),
+            'Log tugas lapangan'.tr(),
           ],
         };
       case 'officer':
         return {
           'role': AppStrings.officerRole,
-          'title': 'Pegawai Kerajaan',
+          'title': 'Pegawai Kerajaan'.tr(),
           'desc': AppStrings.officerDesc,
           'icon': Icons.shield_rounded,
           'color': AppColors.officerAccent,
           'features': [
-            'Pantau kluster SOS secara langsung',
-            'Urus sumber dan inventori',
-            'Lulus tuntutan bantuan',
-            'Selaraskan tindak balas bencana',
+            'Pantau kluster SOS secara langsung'.tr(),
+            'Urus sumber dan inventori'.tr(),
+            'Lulus tuntutan bantuan'.tr(),
+            'Selaraskan tindak balas bencana'.tr(),
           ],
         };
       default:
         return {
           'role': AppStrings.citizenRole,
-          'title': 'Warga SIGAP',
+          'title': 'Warga SIGAP'.tr(),
           'desc': AppStrings.citizenDesc,
           'icon': Icons.home_rounded,
           'color': AppColors.citizenAccent,
           'features': [
-            'Hantar SOS satu ketikan',
-            'Tandakan status keselamatan',
-            'Mohon bantuan dan tuntutan',
-            'Akses panduan kecemasan offline',
+            'Hantar SOS satu ketikan'.tr(),
+            'Tandakan status keselamatan'.tr(),
+            'Mohon bantuan dan tuntutan'.tr(),
+            'Akses panduan kecemasan offline'.tr(),
           ],
         };
     }

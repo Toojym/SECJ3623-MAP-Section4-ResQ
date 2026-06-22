@@ -52,18 +52,18 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
   // Skill chip selection
   List<String> _selectedSkills = [];
   final List<String> _availableExpertise = [
-    'Pertolongan Cemas',
-    'Pemandu Bot',
-    'Pemadam Kebakaran',
-    'Penjimat Hayat',
-    'Pengurusan Evakuasi',
-    'Sokongan Psikologi',
-    'Jururawat Komuniti',
-    'Pemandu Lalu Lintas',
-    'Teknisi Elektrik',
-    'Pakar Komunikasi',
-    'Pentadbir Logistik',
-    'Pengetua Perubatan',
+    'Pertolongan Cemas'.tr(),
+    'Pemandu Bot'.tr(),
+    'Pemadam Kebakaran'.tr(),
+    'Penjimat Hayat'.tr(),
+    'Pengurusan Evakuasi'.tr(),
+    'Sokongan Psikologi'.tr(),
+    'Jururawat Komuniti'.tr(),
+    'Pemandu Lalu Lintas'.tr(),
+    'Teknisi Elektrik'.tr(),
+    'Pakar Komunikasi'.tr(),
+    'Pentadbir Logistik'.tr(),
+    'Pengetua Perubatan'.tr(),
   ];
 
   bool _isLoading = false;
@@ -160,7 +160,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
 
           _selectedSkills = allSkills.where((s) => _availableExpertise.contains(s)).toList();
           final customSkills = allSkills.where((s) => !_availableExpertise.contains(s)).toList();
-          _customSkillsCtrl.text = customSkills.join(', ');
+          _customSkillsCtrl.text = customSkills.join(', '.tr());
         });
       }
     } catch (_) {
@@ -213,7 +213,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
         'address': _addressCtrl.text.trim(),
         'emergencyContactName': _emerNameCtrl.text.trim(),
         'emergencyContactPhone': _emerPhoneCtrl.text.trim(),
-        'skills': allSkillsToSave.join(', '),
+        'skills': allSkillsToSave.join(', '.tr()),
         'location': _locationCtrl.text.trim(),
         'experience': _experienceCtrl.text.trim(),
         'assignedSquad': _selectedSquad,
@@ -319,13 +319,13 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
               try {
                 final state = context.read<AuthBloc>().state;
                 if (state is! AuthAuthenticated) {
-                  throw 'Pengguna tidak disahkan.';
+                  throw 'Pengguna tidak disahkan.'.tr();
                 }
                 final uid = state.uid;
 
                 final user = FirebaseAuth.instance.currentUser;
                 if (user == null || user.email == null) {
-                  throw 'Pengguna tidak dijumpai.';
+                  throw 'Pengguna tidak dijumpai.'.tr();
                 }
                 final credential = EmailAuthProvider.credential(
                     email: user.email!, password: currentPassCtrl.text);
@@ -382,7 +382,8 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(tr('no'),
-                style: const TextStyle(color: AppColors.textSecondary)),
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -413,15 +414,14 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
           IconButton(
             icon: const Icon(Icons.language_rounded, color: AppColors.primary),
             tooltip: tr('languageTooltip'),
-            onPressed: () {
-              if (context.locale.languageCode == 'ms') {
-                context.setLocale(const Locale('en'));
-              } else {
-                context.setLocale(const Locale('ms'));
+            onPressed: () async {
+              final newLocale = context.locale.languageCode == 'ms' ? const Locale('en') : const Locale('ms');
+              await context.setLocale(newLocale);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(newLocale.languageCode == 'en' ? 'Language switched to English'.tr() : 'Bahasa ditukar ke Bahasa Melayu'.tr())),
+                );
               }
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(tr('languageSwitched'))),
-              );
             },
           ),
           if (!_isEditing)
@@ -453,7 +453,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                       const SizedBox(height: 12),
                       _buildVolunteerCard(),
                       const SizedBox(height: 24),
-                      _buildSectionTitle('Tugasan Skuad'),
+                      _buildSectionTitle('Tugasan Skuad'.tr()),
                       const SizedBox(height: 12),
                       _buildSquadCard(),
                       const SizedBox(height: 24),
@@ -602,7 +602,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            _fullNameCtrl.text.isNotEmpty ? _fullNameCtrl.text : 'Sukarelawan SIGAP',
+            _fullNameCtrl.text.isNotEmpty ? _fullNameCtrl.text : 'Sukarelawan SIGAP'.tr(),
             style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
           ),
           Container(
@@ -627,7 +627,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
         label: tr('fullNameLabel'),
         hint: tr('fullNameHint'),
         controller: _fullNameCtrl,
-        validator: (v) => Validators.validateRequired(v, fieldName: 'Nama'),
+        validator: (v) => Validators.validateRequired(v, fieldName: 'Nama'.tr()),
         prefixIcon: const Icon(Icons.person_rounded, size: 20),
         enabled: _isEditing,
       ),
@@ -769,7 +769,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
     return _card([
       if (_isEditing) ...[
         Text(
-          'Pilih Skuad Anda',
+          'Pilih Skuad Anda'.tr(),
           style: GoogleFonts.inter(
             fontSize: 13,
             fontWeight: FontWeight.w600,
@@ -778,7 +778,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Anda hanya akan menerima tugasan daripada skuad yang dipilih',
+          'Anda hanya akan menerima tugasan daripada skuad yang dipilih'.tr(),
           style: GoogleFonts.inter(
             fontSize: 11,
             color: AppColors.textSecondary,
@@ -805,7 +805,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                 Icon(Icons.group_off_rounded, size: 48, color: AppColors.textHint),
                 const SizedBox(height: 8),
                 Text(
-                  'Tiada skuad tersedia buat masa ini',
+                  'Tiada skuad tersedia buat masa ini'.tr(),
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     color: AppColors.textSecondary,
@@ -816,7 +816,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
           )
         else
           ..._availableSquads.map((squad) {
-            final squadName = squad['name'] ?? squad['squadName'] ?? 'Unknown';
+            final squadName = squad['name'] ?? squad['squadName'] ?? 'Unknown'.tr();
             final isSelected = _selectedSquad == squadName;
             final squadColor = getSquadColor(squadName);
             
@@ -864,7 +864,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              squad['description'] ?? 'Skuad bantuan',
+                              squad['description'] ?? 'Skuad bantuan'.tr(),
                               style: GoogleFonts.inter(
                                 fontSize: 11,
                                 color: AppColors.textSecondary,
@@ -923,7 +923,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Skuad Ditugaskan',
+                            'Skuad yang ditugaskan kepada anda'.tr(),
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               color: AppColors.textSecondary,
@@ -960,7 +960,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            'Aktif',
+                            'Aktif'.tr(),
                             style: GoogleFonts.inter(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
@@ -992,7 +992,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Belum Memilih Skuad',
+                  'Belum Memilih Skuad'.tr(),
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -1001,7 +1001,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Tekan butang edit untuk memilih skuad anda',
+                  'Tekan butang edit untuk memilih skuad anda'.tr(),
                   textAlign: TextAlign.center,
                   style: GoogleFonts.inter(
                     fontSize: 12,
@@ -1064,7 +1064,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                     const SizedBox(width: 4),
                   ],
                   Text(
-                    skill,
+                    skill.tr(),
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,

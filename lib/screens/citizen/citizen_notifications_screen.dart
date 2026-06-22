@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/firestore_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class CitizenNotificationsScreen extends StatefulWidget {
   const CitizenNotificationsScreen({super.key});
@@ -15,7 +16,7 @@ class _CitizenNotificationsScreenState extends State<CitizenNotificationsScreen>
   final FirestoreService _firestoreService = FirestoreService();
 
   String _formatDate(Timestamp? timestamp) {
-    if (timestamp == null) return 'Baru sahaja';
+    if (timestamp == null) return 'Baru sahaja'.tr();
     final now = DateTime.now();
     final date = timestamp.toDate();
     final diff = now.difference(date);
@@ -98,7 +99,7 @@ class _CitizenNotificationsScreenState extends State<CitizenNotificationsScreen>
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'Butiran Notifikasi',
+                  'Butiran Notifikasi'.tr(),
                   style: GoogleFonts.poppins(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -129,7 +130,7 @@ class _CitizenNotificationsScreenState extends State<CitizenNotificationsScreen>
                       elevation: 0,
                     ),
                     child: Text(
-                      'Tutup',
+                      'Tutup'.tr(),
                       style: GoogleFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
@@ -169,7 +170,7 @@ class _CitizenNotificationsScreenState extends State<CitizenNotificationsScreen>
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
-          'Notifikasi Semasa',
+          'Notifikasi Semasa'.tr(),
           style: GoogleFonts.poppins(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -188,14 +189,14 @@ class _CitizenNotificationsScreenState extends State<CitizenNotificationsScreen>
           }
           if (snapshot.hasError) {
             return Center(
-              child: Text('Ralat memuatkan notifikasi', style: GoogleFonts.inter(color: AppColors.textSecondary)),
+              child: Text('Ralat memuatkan notifikasi'.tr(), style: GoogleFonts.inter(color: AppColors.textSecondary)),
             );
           }
           final docs = snapshot.data?.docs ?? [];
           if (docs.isEmpty) {
             return Center(
               child: Text(
-                'Tiada notifikasi',
+                'Tiada notifikasi'.tr(),
                 style: GoogleFonts.inter(color: AppColors.textSecondary),
               ),
             );
@@ -254,7 +255,7 @@ class _CitizenNotificationsScreenState extends State<CitizenNotificationsScreen>
                               children: [
                                 Expanded(
                                   child: Text(
-                                    notif['title'] as String? ?? 'Notifikasi',
+                                    notif['title'] as String? ?? 'Notifikasi'.tr(),
                                     style: GoogleFonts.poppins(
                                       fontSize: 15,
                                       fontWeight: isRead ? FontWeight.w500 : FontWeight.w600,

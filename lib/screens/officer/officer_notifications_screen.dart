@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/firestore_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class OfficerNotificationsScreen extends StatefulWidget {
   const OfficerNotificationsScreen({super.key});
@@ -16,7 +17,7 @@ class _OfficerNotificationsScreenState extends State<OfficerNotificationsScreen>
 
   // Helper function to map firestore timestamp to relative string
   String _formatDate(Timestamp? timestamp) {
-    if (timestamp == null) return 'Baru sahaja';
+    if (timestamp == null) return 'Baru sahaja'.tr();
     final now = DateTime.now();
     final date = timestamp.toDate();
     final diff = now.difference(date);
@@ -99,7 +100,7 @@ class _OfficerNotificationsScreenState extends State<OfficerNotificationsScreen>
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'Butiran Notifikasi',
+                  'Butiran Notifikasi'.tr(),
                   style: GoogleFonts.poppins(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -130,7 +131,7 @@ class _OfficerNotificationsScreenState extends State<OfficerNotificationsScreen>
                       elevation: 0,
                     ),
                     child: Text(
-                      'Tutup',
+                      'Tutup'.tr(),
                       style: GoogleFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
@@ -204,7 +205,7 @@ class _OfficerNotificationsScreenState extends State<OfficerNotificationsScreen>
                       ),
                       const SizedBox(height: 24),
                       Text(
-                        'Isytihar Notifikasi Baru',
+                        'Isytihar Notifikasi Baru'.tr(),
                         style: GoogleFonts.poppins(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -213,19 +214,19 @@ class _OfficerNotificationsScreenState extends State<OfficerNotificationsScreen>
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Notifikasi ini akan dihantar kepada semua pengguna (Rakyat, Sukarelawan & Pegawai).',
+                        'Notifikasi ini akan dihantar kepada semua pengguna (Rakyat, Sukarelawan & Pegawai).'.tr(),
                         style: GoogleFonts.inter(
                           fontSize: 13,
                           color: AppColors.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 24),
-                      Text('Tajuk', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
+                      Text('Tajuk'.tr(), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 8),
                       TextField(
                         controller: titleCtrl,
                         decoration: InputDecoration(
-                          hintText: 'Cth: Amaran Banjir Kilat',
+                          hintText: 'Cth: Amaran Banjir Kilat'.tr(),
                           filled: true,
                           fillColor: AppColors.surface,
                           border: OutlineInputBorder(
@@ -236,13 +237,13 @@ class _OfficerNotificationsScreenState extends State<OfficerNotificationsScreen>
                         ),
                       ),
                       const SizedBox(height: 16),
-                      Text('Mesej / Butiran', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
+                      Text('Mesej / Butiran'.tr(), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 8),
                       TextField(
                         controller: messageCtrl,
                         maxLines: 4,
                         decoration: InputDecoration(
-                          hintText: 'Sila berikan butiran lengkap...',
+                          hintText: 'Sila berikan butiran lengkap...'.tr(),
                           filled: true,
                           fillColor: AppColors.surface,
                           border: OutlineInputBorder(
@@ -253,7 +254,7 @@ class _OfficerNotificationsScreenState extends State<OfficerNotificationsScreen>
                         ),
                       ),
                       const SizedBox(height: 16),
-                      Text('Jenis Notifikasi', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
+                      Text('Jenis Notifikasi'.tr(), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 8),
                       Row(
                         children: [
@@ -269,7 +270,7 @@ class _OfficerNotificationsScreenState extends State<OfficerNotificationsScreen>
                           ),
                           Expanded(
                             child: RadioListTile<String>(
-                              title: Text('Amaran', style: GoogleFonts.inter(fontSize: 13)),
+                              title: Text('Amaran'.tr(), style: GoogleFonts.inter(fontSize: 13)),
                               value: 'warning',
                               groupValue: selectedType,
                               onChanged: (v) => setModalState(() => selectedType = v!),
@@ -286,7 +287,7 @@ class _OfficerNotificationsScreenState extends State<OfficerNotificationsScreen>
                           onPressed: () async {
                             if (titleCtrl.text.trim().isEmpty || messageCtrl.text.trim().isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Sila isi tajuk dan mesej.'), backgroundColor: AppColors.danger),
+                                SnackBar(content: Text('Sila isi tajuk dan mesej.'.tr()), backgroundColor: AppColors.danger),
                               );
                               return;
                             }
@@ -300,7 +301,7 @@ class _OfficerNotificationsScreenState extends State<OfficerNotificationsScreen>
                             if (context.mounted) {
                               Navigator.pop(context);
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('✅ Notifikasi berjaya diisytihar ke semua pengguna.'), backgroundColor: AppColors.safe),
+                                SnackBar(content: Text('✅ Notifikasi berjaya diisytihar ke semua pengguna.'.tr()), backgroundColor: AppColors.safe),
                               );
                             }
                           },
@@ -314,7 +315,7 @@ class _OfficerNotificationsScreenState extends State<OfficerNotificationsScreen>
                             elevation: 0,
                           ),
                           child: Text(
-                            'Isytihar Notifikasi',
+                            'Isytihar Notifikasi'.tr(),
                             style: GoogleFonts.inter(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
@@ -339,7 +340,7 @@ class _OfficerNotificationsScreenState extends State<OfficerNotificationsScreen>
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
-          'Notifikasi Semasa',
+          'Notifikasi Semasa'.tr(),
           style: GoogleFonts.poppins(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -354,7 +355,7 @@ class _OfficerNotificationsScreenState extends State<OfficerNotificationsScreen>
         onPressed: _showDeclareNotificationDialog,
         backgroundColor: AppColors.officerAccent,
         icon: const Icon(Icons.campaign_rounded, color: Colors.white),
-        label: Text('Isytihar Notis', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
+        label: Text('Isytihar Notis'.tr(), style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: _firestoreService.streamGlobalNotifications(),
@@ -364,14 +365,14 @@ class _OfficerNotificationsScreenState extends State<OfficerNotificationsScreen>
           }
           if (snapshot.hasError) {
             return Center(
-              child: Text('Ralat memuatkan notifikasi', style: GoogleFonts.inter(color: AppColors.textSecondary)),
+              child: Text('Ralat memuatkan notifikasi'.tr(), style: GoogleFonts.inter(color: AppColors.textSecondary)),
             );
           }
           final docs = snapshot.data?.docs ?? [];
           if (docs.isEmpty) {
             return Center(
               child: Text(
-                'Tiada notifikasi',
+                'Tiada notifikasi'.tr(),
                 style: GoogleFonts.inter(color: AppColors.textSecondary),
               ),
             );
@@ -430,7 +431,7 @@ class _OfficerNotificationsScreenState extends State<OfficerNotificationsScreen>
                               children: [
                                 Expanded(
                                   child: Text(
-                                    notif['title'] as String? ?? 'Notifikasi',
+                                    notif['title'] as String? ?? 'Notifikasi'.tr(),
                                     style: GoogleFonts.poppins(
                                       fontSize: 15,
                                       fontWeight: isRead ? FontWeight.w500 : FontWeight.w600,

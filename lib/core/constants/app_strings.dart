@@ -1,78 +1,78 @@
+import 'package:easy_localization/easy_localization.dart';
+
 class AppStrings {
   AppStrings._();
 
   // App
   static const String appName = 'SIGAP';
-  static const String appTagline = 'Sistem Integrasi Gerak Awam Pantas';
-  static const String appTaglineEn = 'Fast when it matters most.';
+  static String get appTagline => 'appTagline'.tr();
 
   // Auth - Login
-  static const String login = 'Log Masuk';
-  static const String loginSubtitle = 'Selamat kembali. Sila log masuk untuk meneruskan.';
-  static const String email = 'E-mel';
-  static const String emailHint = 'contoh@email.com';
-  static const String password = 'Kata Laluan';
-  static const String passwordHint = 'Masukkan kata laluan anda';
-  static const String forgotPassword = 'Lupa kata laluan?';
-  static const String loginButton = 'Log Masuk';
-  static const String noAccount = 'Belum ada akaun? ';
-  static const String register = 'Daftar';
+  static String get login => 'login'.tr();
+  static String get loginSubtitle => 'loginSubtitle'.tr();
+  static String get email => 'email'.tr();
+  static String get emailHint => 'emailHint'.tr();
+  static String get password => 'password'.tr();
+  static String get passwordHint => 'passwordHint'.tr();
+  static String get forgotPassword => 'forgotPassword'.tr();
+  static String get loginButton => 'loginButton'.tr();
+  static String get noAccount => 'noAccount'.tr();
+  static String get register => 'register'.tr();
 
   // Auth - Register
-  static const String registerTitle = 'Cipta Akaun';
-  static const String registerSubtitle = 'Daftar sebagai sebahagian daripada komuniti SIGAP.';
-  static const String displayName = 'Nama Penuh';
-  static const String displayNameHint = 'Nama seperti dalam kad pengenalan';
-  static const String confirmPassword = 'Sahkan Kata Laluan';
-  static const String confirmPasswordHint = 'Masukkan semula kata laluan';
-  static const String registerButton = 'Daftar Sekarang';
-  static const String haveAccount = 'Sudah ada akaun? ';
+  static String get registerTitle => 'registerTitle'.tr();
+  static String get registerSubtitle => 'registerSubtitle'.tr();
+  static String get displayName => 'displayName'.tr();
+  static String get displayNameHint => 'displayNameHint'.tr();
+  static String get confirmPassword => 'confirmPassword'.tr();
+  static String get confirmPasswordHint => 'confirmPasswordHint'.tr();
+  static String get registerButton => 'registerButton'.tr();
+  static String get haveAccount => 'haveAccount'.tr();
 
   // Auth - Forgot Password
-  static const String forgotPasswordTitle = 'Tetapkan Semula Kata Laluan';
-  static const String forgotPasswordSubtitle =
-      'Masukkan e-mel anda dan kami akan menghantar pautan untuk menetapkan semula kata laluan.';
-  static const String sendResetLink = 'Hantar Pautan';
-  static const String resetEmailSent = 'E-mel tetapan semula telah dihantar. Sila semak peti masuk anda.';
-  static const String backToLogin = 'Kembali ke Log Masuk';
+  static String get forgotPasswordTitle => 'forgotPasswordTitle'.tr();
+  static String get forgotPasswordSubtitle => 'forgotPasswordSubtitle'.tr();
+  static String get sendResetLink => 'sendResetLink'.tr();
+  static String get resetEmailSent => 'resetEmailSent'.tr();
+  static String get backToLogin => 'backToLogin'.tr();
 
   // Role Onboarding
-  static const String chooseRole = 'Pilih Peranan Anda';
-  static const String chooseRoleSubtitle = 'Pilih peranan yang sesuai untuk meneruskan.';
-  static const String citizenRole = 'Warga';
-  static const String citizenDesc = 'Dapatkan bantuan semasa kecemasan, hantar SOS dan ikuti status keselamatan.';
-  static const String volunteerRole = 'Sukarelawan';
-  static const String volunteerDesc = 'Sertai operasi bantuan, terima misi dan kumpul mata SIGAP.';
-  static const String officerRole = 'Pegawai';
-  static const String officerDesc = 'Urus sumber, pantau kluster SOS dan selaraskan tindak balas bencana.';
-  static const String continueButton = 'Teruskan';
+  static String get chooseRole => 'chooseRole'.tr();
+  static String get chooseRoleSubtitle => 'chooseRoleSubtitle'.tr();
+  static String get citizenRole => 'citizenRole'.tr();
+  static String get citizenDesc => 'citizenDesc'.tr();
+  static String get volunteerRole => 'volunteerRole'.tr();
+  static String get volunteerDesc => 'volunteerDesc'.tr();
+  static String get officerRole => 'officerRole'.tr();
+  static String get officerDesc => 'officerDesc'.tr();
+  static String get continueButton => 'continueButton'.tr();
 
   // Common
-  static const String loading = 'Memuatkan...';
-  static const String save = 'Simpan';
-  static const String cancel = 'Batal';
-  static const String logout = 'Log Keluar';
-  static const String logoutConfirm = 'Adakah anda pasti mahu log keluar?';
-  static const String yes = 'Ya';
-  static const String no = 'Tidak';
-  static const String editProfile = 'Edit Profil';
-  static const String myProfile = 'Profil Saya';
+  static String get loading => 'loading'.tr();
+  static String get save => 'save'.tr();
+  static String get cancel => 'cancel'.tr();
+  static String get logout => 'logout'.tr();
+  static String get logoutConfirm => 'logoutConfirm'.tr();
+  static String get yes => 'yes'.tr();
+  static String get no => 'no'.tr();
+  static String get editProfile => 'editProfile'.tr();
+  static String get myProfile => 'myProfile'.tr();
 
-  // Firebase error messages (Bahasa Malaysia)
-  static const String errUserNotFound = 'Akaun tidak dijumpai.';
-  static const String errWrongPassword = 'Kata laluan salah. Cuba lagi.';
-  static const String errEmailInUse = 'E-mel ini sudah didaftarkan.';
-  static const String errWeakPassword = 'Kata laluan terlalu lemah. Gunakan sekurang-kurangnya 8 aksara.';
-  static const String errInvalidEmail = 'Format e-mel tidak sah.';
-  static const String errTooManyRequests = 'Terlalu banyak percubaan. Sila cuba sebentar lagi.';
-  static const String errUnknown = 'Ralat tidak diketahui. Sila cuba lagi.';
-  static const String errNetworkFailed = 'Tiada sambungan internet. Sila cuba lagi.';
+  // Firebase error messages
+  static String get errUserNotFound => 'errUserNotFound'.tr();
+  static String get errWrongPassword => 'errWrongPassword'.tr();
+  static String get errEmailInUse => 'errEmailInUse'.tr();
+  static String get errWeakPassword => 'errWeakPassword'.tr();
+  static String get errInvalidEmail => 'errInvalidEmail'.tr();
+  static String get errTooManyRequests => 'errTooManyRequests'.tr();
+  static String get errUnknown => 'errUnknown'.tr();
+  static String get errNetworkFailed => 'errNetworkFailed'.tr();
 
   // Dashboards
-  static const String citizenDashboard = 'Papan Pemuka';
-  static const String volunteerDashboard = 'Papan Pemuka Sukarelawan';
-  static const String officerDashboard = 'Pusat Kawalan';
-  static const String goodMorning = 'Selamat Pagi';
-  static const String goodAfternoon = 'Selamat Tengah Hari';
-  static const String goodEvening = 'Selamat Petang';
+  static String get citizenDashboard => 'citizenDashboard'.tr();
+  static String get volunteerDashboard => 'volunteerDashboard'.tr();
+  static String get officerDashboard => 'officerDashboard'.tr();
+  static String get goodMorning => 'goodMorning'.tr();
+  static String get goodAfternoon => 'goodAfternoon'.tr();
+  static String get goodEvening => 'goodEvening'.tr();
 }

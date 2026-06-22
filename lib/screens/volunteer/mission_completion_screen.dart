@@ -20,10 +20,10 @@ class _MissionCompletionScreenState extends State<MissionCompletionScreen> {
   final _victimsController = TextEditingController();
   final _notesController = TextEditingController();
   
-  String _victimCondition = 'Selamat';
+  String _victimCondition = 'Selamat'.tr();
   bool _isSubmitting = false;
 
-  final List<String> _conditions = ['Selamat', 'Kecederaan Ringan', 'Kecederaan Parah', 'Kritikal', 'Meninggal Dunia'];
+  final List<String> _conditions = ['Selamat'.tr(), 'Kecederaan Ringan'.tr(), 'Kecederaan Parah'.tr(), 'Kritikal'.tr(), 'Meninggal Dunia'.tr()];
 
   @override
   void dispose() {
@@ -78,7 +78,7 @@ class _MissionCompletionScreenState extends State<MissionCompletionScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
-          'Laporan Penyelesaian Misi',
+          'Laporan Penyelesaian Misi'.tr(),
           style: GoogleFonts.poppins(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -97,14 +97,14 @@ class _MissionCompletionScreenState extends State<MissionCompletionScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Lengkapkan laporan di bawah untuk menutup kes kecemasan ini.',
+                'Lengkapkan laporan di bawah untuk menutup kes kecemasan ini.'.tr(),
                 style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 24),
 
               // Bilangan Mangsa
               Text(
-                'Bilangan Mangsa Diselamatkan',
+                'Bilangan Mangsa Diselamatkan'.tr(),
                 style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
               ),
               const SizedBox(height: 8),
@@ -120,8 +120,8 @@ class _MissionCompletionScreenState extends State<MissionCompletionScreen> {
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 ),
                 validator: (val) {
-                  if (val == null || val.isEmpty) return 'Sila masukkan bilangan mangsa';
-                  if (int.tryParse(val) == null) return 'Sila masukkan nombor yang sah';
+                  if (val == null || val.isEmpty) return 'Sila masukkan bilangan mangsa'.tr();
+                  if (int.tryParse(val) == null) return 'Sila masukkan nombor yang sah'.tr();
                   return null;
                 },
               ),
@@ -129,7 +129,7 @@ class _MissionCompletionScreenState extends State<MissionCompletionScreen> {
 
               // Keadaan Mangsa
               Text(
-                'Keadaan Umum Mangsa',
+                'Keadaan Umum Mangsa'.tr(),
                 style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
               ),
               const SizedBox(height: 8),
@@ -160,7 +160,7 @@ class _MissionCompletionScreenState extends State<MissionCompletionScreen> {
 
               // Nota Tambahan
               Text(
-                'Nota Tambahan (Pilihan)',
+                'Nota Tambahan (Pilihan)'.tr(),
                 style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
               ),
               const SizedBox(height: 8),

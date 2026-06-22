@@ -196,18 +196,18 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
 
     final String label;
     if (isCancelled) {
-      label = 'Dibatalkan';
+      label = 'Dibatalkan'.tr();
     } else if (isResolved) {
-      label = 'Telah Diselesaikan';
+      label = 'Telah Diselesaikan'.tr();
     } else {
-      label = 'Telah Direspons';
+      label = 'Telah Direspons'.tr();
     }
 
     final String subtitle;
     if (isCancelled) {
-      subtitle = report.cancelReason ?? 'Penggera palsu / Situasi terkawal';
+      subtitle = report.cancelReason ?? 'Penggera palsu / Situasi terkawal'.tr();
     } else if (isResolved) {
-      subtitle = 'Insiden ini telah selesai dan ditutup.';
+      subtitle = 'Insiden ini telah selesai dan ditutup.'.tr();
     } else {
       subtitle = 'Direspons oleh ${report.responderName ?? 'sukarelawan'}';
     }
@@ -242,7 +242,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
                     borderRadius: BorderRadius.circular(12)),
               ),
               child: Text(
-                  isOfficer ? 'Kembali ke Pusat Kawalan' : 'Kembali ke Papan Tugas',
+                  isOfficer ? 'Kembali ke Pusat Kawalan'.tr() : 'Kembali ke Papan Tugas'.tr(),
                   style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
             ),
           ],
@@ -257,7 +257,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
     // Format time
     final timeAgo = report.createdAt != null
         ? _formatTimeAgo(report.createdAt!)
-        : 'Baru sahaja';
+        : 'Baru sahaja'.tr();
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -317,7 +317,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
           iconColor: AppColors.danger,
           title:'Lokasi Insiden'.tr(),
           children: [
-            Text(report.address.isNotEmpty ? report.address : 'Tiada alamat',
+            Text(report.address.isNotEmpty ? report.address : 'Tiada alamat'.tr(),
                 style: GoogleFonts.inter(
                     fontSize: 14, color: AppColors.textPrimary)),
             const SizedBox(height: 4),
@@ -339,7 +339,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
             Text(
                 report.description.isNotEmpty
                     ? report.description
-                    : 'Tiada penerangan tambahan.',
+                    : 'Tiada penerangan tambahan.'.tr(),
                 style: GoogleFonts.inter(
                     fontSize: 14,
                     color: AppColors.textPrimary,
@@ -392,10 +392,10 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
                 child: Builder(builder: (context) {
                   if (report.imageUrl!.startsWith('data:image')) {
                     try {
-                      String base64Str = report.imageUrl!.split(',').last.replaceAll(RegExp(r'\s+'), '');
+                      String base64Str = report.imageUrl!.split(',').last.replaceAll(RegExp(r'.tr()\s+'), '.tr()');
                       int padding = base64Str.length % 4;
                       if (padding > 0) base64Str += '=' * (4 - padding);
-                      if (base64Str.isEmpty) throw const FormatException('Empty base64');
+                      if (base64Str.isEmpty) throw FormatException('Empty base64'.tr());
                       return Image.memory(
                         base64Decode(base64Str),
                         fit: BoxFit.cover,
@@ -472,11 +472,11 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
           iconColor: AppColors.safe,
           title:'Maklumat Pelapor'.tr(),
           children: [
-            _infoRow('Nama', report.reporterName),
+            _infoRow('Nama'.tr(), report.reporterName),
             if (report.reporterPhone.isNotEmpty)
-              _infoRow('Telefon', report.reporterPhone),
+              _infoRow('Telefon'.tr(), report.reporterPhone),
             if (report.createdAt != null)
-              _infoRow('Masa Laporan',
+              _infoRow('Masa Laporan'.tr(),
                   DateFormat('dd MMM yyyy, HH:mm').format(report.createdAt!)),
           ],
         ),
@@ -637,7 +637,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                        'Tindakan ini tidak boleh dibatalkan setelah diterima.',
+                        'Tindakan ini tidak boleh dibatalkan setelah diterima.'.tr(),
                         style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
@@ -695,7 +695,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                      'Misi diterima! Sila bergerak ke lokasi insiden.',
+                      'Misi diterima! Sila bergerak ke lokasi insiden.'.tr(),
                       style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
                 ),
               ],
@@ -788,7 +788,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
 
   String _formatTimeAgo(DateTime dateTime) {
     final diff = DateTime.now().difference(dateTime);
-    if (diff.inMinutes < 1) return 'Baru sahaja';
+    if (diff.inMinutes < 1) return 'Baru sahaja'.tr();
     if (diff.inMinutes < 60) return '${diff.inMinutes} min lalu';
     if (diff.inHours < 24) return '${diff.inHours} jam lalu';
     return '${diff.inDays} hari lalu';
@@ -798,8 +798,8 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
     final urgencyColor = _urgencyColor(report.urgency);
 
     double distanceKm = 0.0;
-    String distanceStr = 'Mengira jarak...';
-    String etaStr = 'Anggaran masa ketibaan...';
+    String distanceStr = 'Mengira jarak...'.tr();
+    String etaStr = 'Anggaran masa ketibaan...'.tr();
     if (_volunteerPosition != null) {
       distanceKm = LocationService.calculateDistanceKm(
         _volunteerPosition!.latitude,
@@ -959,8 +959,8 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
                             color: report.needBackup ? AppColors.danger : AppColors.textPrimary)),
                     Text(
                       report.needBackup
-                          ? 'Permintaan bantuan tambahan aktif. Pegawai kawalan telah dimaklumkan.'
-                          : 'Adakah keadaan memerlukan lebih ramai penyelamat?',
+                          ? 'Permintaan bantuan tambahan aktif. Pegawai kawalan telah dimaklumkan.'.tr()
+                          : 'Adakah keadaan memerlukan lebih ramai penyelamat?'.tr(),
                       style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary),
                     ),
                   ],
@@ -979,8 +979,8 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(!report.needBackup
-                                    ? 'Permintaan bantuan tambahan dihantar kepada Pegawai!'
-                                    : 'Permintaan bantuan tambahan dibatalkan.'),
+                                    ? 'Permintaan bantuan tambahan dihantar kepada Pegawai!'.tr()
+                                    : 'Permintaan bantuan tambahan dibatalkan.'.tr()),
                                 backgroundColor: !report.needBackup ? AppColors.danger : AppColors.safe,
                               ),
                             );
@@ -1007,7 +1007,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
                   ),
                 ),
                 child: Text(
-                  report.needBackup ? 'Batal' : 'Minta',
+                  report.needBackup ? 'Batal'.tr() : 'Minta'.tr(),
                   style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
                 ),
               ),
@@ -1020,8 +1020,8 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
           iconColor: urgencyColor,
           title:'Perincian Misi SOS'.tr(),
           children: [
-            _infoRow('Jenis Kecemasan', report.type),
-            _infoRow('Alamat/Lokasi', report.address.isNotEmpty ? report.address : 'Koordinat Sahaja'),
+            _infoRow('Jenis Kecemasan'.tr(), report.type),
+            _infoRow('Alamat/Lokasi'.tr(), report.address.isNotEmpty ? report.address : 'Koordinat Sahaja'.tr()),
             if (report.description.isNotEmpty) ...[
               const SizedBox(height: 8),
               Text('Penerangan Mangsa:'.tr(),
@@ -1108,10 +1108,10 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
                 child: Builder(builder: (context) {
                   if (report.imageUrl!.startsWith('data:image')) {
                     try {
-                      String base64Str = report.imageUrl!.split(',').last.replaceAll(RegExp(r'\s+'), '');
+                      String base64Str = report.imageUrl!.split(',').last.replaceAll(RegExp(r'.tr()\s+'), '.tr()');
                       int padding = base64Str.length % 4;
                       if (padding > 0) base64Str += '=' * (4 - padding);
-                      if (base64Str.isEmpty) throw const FormatException('Empty base64');
+                      if (base64Str.isEmpty) throw FormatException('Empty base64'.tr());
                       return Image.memory(
                         base64Decode(base64Str),
                         fit: BoxFit.cover,
@@ -1153,9 +1153,9 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
           iconColor: AppColors.safe,
           title:'Hubungi Mangsa'.tr(),
           children: [
-            _infoRow('Nama Mangsa', report.reporterName),
+            _infoRow('Nama Mangsa'.tr(), report.reporterName),
             if (report.reporterPhone.isNotEmpty)
-              _infoRow('No. Telefon', report.reporterPhone),
+              _infoRow('No. Telefon'.tr(), report.reporterPhone),
             const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,
@@ -1320,7 +1320,7 @@ class _CallSimulationScreenState extends State<_CallSimulationScreen> with Singl
 
   @override
   Widget build(BuildContext context) {
-    final statusText = _isConnected ? 'PANGGILAN AKTIF' : 'MENYAMBUNGKAN TALIAN...';
+    final statusText = _isConnected ? 'PANGGILAN AKTIF'.tr() : 'MENYAMBUNGKAN TALIAN...'.tr();
     
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -1335,7 +1335,7 @@ class _CallSimulationScreenState extends State<_CallSimulationScreen> with Singl
                 children: [
                   const SizedBox(height: 20),
                   Text(
-                    'SIGAP VOICE BROADCAST',
+                    'SIGAP VOICE BROADCAST'.tr(),
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       fontWeight: FontWeight.w900,
@@ -1450,7 +1450,7 @@ class _CallSimulationScreenState extends State<_CallSimulationScreen> with Singl
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Menghubungkan anda dengan penyelamat berhampiran melalui talian audio satelit.',
+                    'Menghubungkan anda dengan penyelamat berhampiran melalui talian audio satelit.'.tr(),
                     textAlign: TextAlign.center,
                     style: GoogleFonts.inter(
                       fontSize: 12,

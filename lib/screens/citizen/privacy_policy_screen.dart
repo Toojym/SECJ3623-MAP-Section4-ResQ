@@ -21,7 +21,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Notis Perlindungan Data Peribadi (PDPA)',
+              'Notis Perlindungan Data Peribadi (PDPA)'.tr(),
               style: GoogleFonts.poppins(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -36,7 +36,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
             const SizedBox(height: 24),
             _buildSection(
               '1. Jenis Data Peribadi yang Dikumpul',
-              'Kami mengumpul data seperti Nama, No. Kad Pengenalan (IC), Data Lokasi GPS, Nombor Telefon, dan Butiran Akaun Bank (hanya bagi tujuan Tuntutan Bantuan Wang Ihsan).',
+              'Kami mengumpul data seperti Nama, No. Kad Pengenalan (IC), Data Lokasi GPS, Nombor Telefon, dan Butiran Akaun Bank (hanya bagi tujuan Tuntutan Bantuan Wang Ihsan).'.tr(),
             ),
             _buildSection(
               '2. Tujuan Pengumpulan',
@@ -48,11 +48,11 @@ class PrivacyPolicyScreen extends StatelessWidget {
             ),
             _buildSection(
               '4. Pilihan dan Persetujuan (Consent)',
-              'Dengan menggunakan fungsi SOS dan Tuntutan (Claim) di aplikasi ini, anda memberi persetujuan eksplisit kepada kami untuk mengakses lokasi anda dan memproses butiran pengenalan anda.',
+              'Dengan menggunakan fungsi SOS dan Tuntutan (Claim) di aplikasi ini, anda memberi persetujuan eksplisit kepada kami untuk mengakses lokasi anda dan memproses butiran pengenalan anda.'.tr(),
             ),
             _buildSection(
               '5. Keselamatan dan Penyimpanan',
-              'Data akan disimpan secara selamat selagi diperlukan bagi memenuhi tujuan pelaporan dan audit rasmi oleh kerajaan. Selepas tempoh tersebut, data akan dilupuskan mengikut tatacara kerajaan.',
+              'Data akan disimpan secara selamat selagi diperlukan bagi memenuhi tujuan pelaporan dan audit rasmi oleh kerajaan. Selepas tempoh tersebut, data akan dilupuskan mengikut tatacara kerajaan.'.tr(),
             ),
             const SizedBox(height: 24),
             Container(
@@ -63,7 +63,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                 border: Border.all(color: AppColors.warning),
               ),
               child: Text(
-                'Nota: Pemberian maklumat palsu terutamanya bagi tujuan Tuntutan (BWI) adalah satu kesalahan dan boleh didakwa di bawah Akta Suruhanjaya Pencegahan Rasuah Malaysia (SPRM) 2009.',
+                'Nota: Pemberian maklumat palsu terutamanya bagi tujuan Tuntutan (BWI) adalah satu kesalahan dan boleh didakwa di bawah Akta Suruhanjaya Pencegahan Rasuah Malaysia (SPRM) 2009.'.tr(),
                 style: GoogleFonts.inter(
                     fontSize: 13, color: AppColors.warning, fontWeight: FontWeight.w600),
               ),
