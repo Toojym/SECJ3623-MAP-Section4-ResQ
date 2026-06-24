@@ -26,7 +26,7 @@ class DonationCampaignsScreen extends StatefulWidget {
 class _DonationCampaignsScreenState extends State<DonationCampaignsScreen> {
   final FirestoreService _firestoreService = FirestoreService();
   String _searchQuery = '';
-  String _filterStatus = 'Semua'; // 'Semua', 'Aktif'.tr(), 'Ditutup'.tr()
+  String _filterStatus = 'Semua'.tr(); // 'Semua'.tr(), 'Aktif'.tr(), 'Ditutup'.tr()
 
   @override
   Widget build(BuildContext context) {
@@ -129,7 +129,7 @@ class _DonationCampaignsScreenState extends State<DonationCampaignsScreen> {
                     children: [
                       _statChip(
                         Icons.volunteer_activism_rounded,
-                        'RM ${_formatAmount(totalRaised)} terkumpul',
+                        'rmCollected'.tr(args: [_formatAmount(totalRaised)]),
                       ),
                       const SizedBox(width: 10),
                       _statChip(
@@ -200,7 +200,7 @@ class _DonationCampaignsScreenState extends State<DonationCampaignsScreen> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: ['Semua', 'Aktif'.tr(), 'Ditutup'.tr()].map((f) {
+              children: ['Semua'.tr(), 'Aktif'.tr(), 'Ditutup'.tr()].map((f) {
                 final selected = _filterStatus == f;
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
@@ -456,7 +456,7 @@ class _CampaignCard extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            'daripada RM ${_fmt(campaign.targetAmount)}',
+                            'fromRm'.tr(args: [_fmt(campaign.targetAmount)]),
                             style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary),
                           ),
                         ],

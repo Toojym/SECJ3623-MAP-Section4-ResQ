@@ -88,8 +88,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       _glow(
                         child: SigapTextField(
-                          label: AppStrings.email,
-                          hint: AppStrings.emailHint,
+                          label: AppStrings.email.tr(),
+                          hint: AppStrings.email.tr()Hint,
                           controller: _emailCtrl,
                           validator: Validators.validateEmail,
                           keyboardType: TextInputType.emailAddress,
@@ -102,8 +102,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       _glow(
                         child: SigapTextField(
-                          label: AppStrings.password,
-                          hint: AppStrings.passwordHint,
+                          label: AppStrings.password.tr(),
+                          hint: AppStrings.password.tr()Hint,
                           controller: _passwordCtrl,
                           validator: Validators.validatePassword,
                           obscureText: true,
@@ -121,7 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: TextButton(
                           onPressed: () => context.push(AppRoutes.forgotPassword),
                           child: Text(
-                            AppStrings.forgotPassword,
+                            AppStrings.forgotPassword.tr(),
                             style: GoogleFonts.inter(
                               fontSize: 13,
                               color: AppColors.primary,
@@ -134,7 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 8),
 
                       SigapButton(
-                        label: AppStrings.loginButton,
+                        label: AppStrings.login.tr()Button.tr(),
                         onPressed: isLoading ? null : _submit,
                         isLoading: isLoading,
                       ),
@@ -207,7 +207,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            AppStrings.appName,
+            AppStrings.appName.tr(),
             style: GoogleFonts.poppins(
               fontSize: 28,
               fontWeight: FontWeight.w700,
@@ -216,7 +216,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
           Text(
-            AppStrings.appTagline,
+            AppStrings.appTagline.tr(),
             style: GoogleFonts.inter(
               fontSize: 12,
               color: AppColors.textSecondary,
@@ -232,12 +232,12 @@ class _LoginScreenState extends State<LoginScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          AppStrings.login,
+          AppStrings.login.tr(),
           style: Theme.of(context).textTheme.displaySmall,
         ),
         const SizedBox(height: 4),
         Text(
-          AppStrings.loginSubtitle,
+          AppStrings.login.tr()Subtitle,
           style: GoogleFonts.inter(
             fontSize: 14,
             color: AppColors.textSecondary,
@@ -252,7 +252,7 @@ class _LoginScreenState extends State<LoginScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          AppStrings.noAccount,
+          AppStrings.noAccount.tr(),
           style: GoogleFonts.inter(
             color: AppColors.textSecondary,
             fontSize: 14,
@@ -261,7 +261,7 @@ class _LoginScreenState extends State<LoginScreen> {
         GestureDetector(
           onTap: () => context.push(AppRoutes.register),
           child: Text(
-            AppStrings.register,
+            AppStrings.register.tr(),
             style: GoogleFonts.inter(
               color: AppColors.primary,
               fontSize: 14,

@@ -166,7 +166,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
   bool _isSubmittingSOS = false;
   bool _isSirenActive = false;
   bool _showAllClaims = false;
-  String _selectedClaimFilter = 'Semua';
+  String _selectedClaimFilter = 'Semua'.tr();
 
   // Track previous claim statuses to detect changes for notifications
   final Map<String, String> _lastKnownClaimStatuses = {};
@@ -680,7 +680,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Status keselamatan anda dikemaskini kepada $label.'),
+              content: Text('statusUpdated'.tr(args: [label])),
               backgroundColor: color,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -765,14 +765,14 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
             ? 'Penyelamat Sedang Datang!'.tr()
             : 'Mencari Penyelamat...'.tr();
         final String statusDesc = isResponded
-            ? 'Misi diterima oleh ${report.responderName ?? "Sukarelawan"}. Sila bertenang, penyelamat dalam perjalanan.'
+            ? 'sosAcceptedBy'.tr(args: [report.responderName ?? "Sukarelawan".tr()])
             : 'Laporan SOS anda telah diterima sistem. Sukarelawan berdekatan sedang dimaklumkan.'.tr();
 
         String etaStr = 'Anggaran Masa Tiba: 8 - 15 minit'.tr();
         if (isResponded) {
           final int hash = report.id.hashCode.abs();
           final int etaMin = 5 + (hash % 10);
-          etaStr = 'Anggaran Masa Tiba: $etaMin minit';
+          etaStr = 'etaMinutes'.tr(args: [etaMin.toString()]);
         }
 
         return GestureDetector(
@@ -812,7 +812,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                             ),
                           ),
                           Text(
-                            'Jenis: ${report.type} • Ketik untuk butiran',
+                            'typeAndTap'.tr(args: [report.type]),
                             style: GoogleFonts.inter(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
@@ -988,14 +988,14 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                           markerId: const MarkerId('victim'),
                           position: LatLng(report.latitude, report.longitude),
                           icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-                          infoWindow: InfoWindow(title: 'Lokasi Anda (${report.type})'),
+                          infoWindow: InfoWindow(title: 'yourLocationType'.tr(args: [report.type])),
                         ),
                         if (isResponded)
                           Marker(
                             markerId: const MarkerId('responder'),
                             position: LatLng(report.latitude + 0.003, report.longitude + 0.003),
                             icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-                            infoWindow: InfoWindow(title: 'Penyelamat: ${report.responderName}'),
+                            infoWindow: InfoWindow(title: 'rescuerName'.tr(args: [report.responderName!])),
                           ),
                       },
                     ),
@@ -1033,7 +1033,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                         const SizedBox(height: 8),
                         Text(
                           isResponded
-                              ? 'Laporan SOS anda telah diterima oleh ${report.responderName}. Sila kekal di lokasi anda yang selamat.'
+                              ? 'sosReceivedBy'.tr(args: [report.responderName!])
                               : 'Laporan SOS anda telah dihantar ke sistem. Sukarelawan berhampiran sedang dipanggil.'.tr(),
                           style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
                         ),
@@ -1455,7 +1455,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                     Row(
                       children: [
                         Expanded(
-                          child: Text('Laporan SOS: $type',
+                          child: Text('sosReportType'.tr(args: [type]),
                               style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                         ),
                         Container(
@@ -1524,7 +1524,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  'Spesifikasi Khusus: Laporan $type',
+                                  'specificDetailsType'.tr(args: [type]),
                                   style: GoogleFonts.inter(
                                     fontSize: 13,
                                     fontWeight: FontWeight.bold,
@@ -1902,7 +1902,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
         debugPrint('✅ GPS obtained: ${position.latitude}, ${position.longitude}');
       } catch (locError) {
         debugPrint('❌ Location error: $locError');
-        _showErrorSnackbar('Gagal mendapatkan lokasi: $locError');
+        _showErrorSnackbar('failedGetLocation'.tr(args: [locError.toString()]));
         return;
       }
 
@@ -1976,7 +1976,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
         reporterName: authState.displayName.isNotEmpty ? authState.displayName : 'Warga SIGAP'.tr(),
         reporterPhone: phone,
         type: type,
-        description: description.isNotEmpty ? description : 'Kecemasan $type — Perlukan bantuan segera.',
+        description: description.isNotEmpty ? description : 'emergencyNeedHelp'.tr(args: [type]),
         urgency: urgency,
         latitude: position.latitude,
         longitude: position.longitude,
@@ -1989,7 +1989,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
       await _firestoreService.createSOSReport(reportData).timeout(
         const Duration(seconds: 15),
         onTimeout: () {
-          throw Exception('Firestore response timeout. Sila semak sambungan internet.');
+          throw Exception('firestoreTimeout'.tr());
         },
       );
       debugPrint('✅ SOS created successfully!'.tr());
@@ -2010,7 +2010,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
       // Make sure to close any loading state
       if (mounted) {
         navigator.pop(); // Close the loading dialog if still open
-        _showErrorSnackbar('Gagal menghantar SOS: ${e.toString().split('\n').first}');
+        _showErrorSnackbar('failedSendSos'.tr(args: [e.toString().split('\n').first]));
       }
     }
   }
@@ -2077,7 +2077,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Laporan $incidentType anda telah dihantar dan dihalakan kepada:',
+              'sosRoutedTo'.tr(args: [incidentType]),
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
             ),
@@ -2119,7 +2119,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                   AuthorityRoutingService.instance.callAuthority(authority);
                 },
                 icon: const Icon(Icons.phone_rounded),
-                label: Text('Hubungi ${authority.shortName} Sekarang', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                label: Text('contactAuthorityNow'.tr(args: [authority.shortName]), style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: authority.color,
                   foregroundColor: Colors.white,
@@ -2174,7 +2174,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
               } catch (e) {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Gagal membatal: $e'), backgroundColor: AppColors.danger),
+                    SnackBar(content: Text('failedCancel'.tr(args: [e.toString()])), backgroundColor: AppColors.danger),
                   );
                 }
               }
@@ -2278,7 +2278,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
           children: [
             const Icon(Icons.cancel_rounded, color: AppColors.danger, size: 24),
             const SizedBox(width: 12),
-            Text('Batalkan SOS $type?',
+            Text('cancelSosType'.tr(args: [type]),
                 style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600)),
           ],
         ),
@@ -2337,7 +2337,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Gagal membatalkan SOS: $e'),
+                      content: Text('failedCancelSos'.tr(args: [e.toString()])),
                       backgroundColor: AppColors.danger,
                     ),
                   );
@@ -2492,7 +2492,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                     markerId: MarkerId('sos_${report.id}'),
                     position: LatLng(report.latitude, report.longitude),
                     infoWindow: InfoWindow(
-                      title: 'SOS: ${report.type} (${report.urgency})',
+                      title: 'sosTypeUrgency'.tr(args: [report.type, report.urgency]),
                       snippet: report.description.isNotEmpty ? report.description : report.address,
                     ),
                     icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
@@ -2670,7 +2670,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
 
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 16),
-                    child: _familyMemberRow('$name ($relation)', displayStatus, 'Lokasi: $location', color, icon),
+                    child: _familyMemberRow('nameRelation'.tr(args: [name, relation]), displayStatus, 'locationStr'.tr(args: [location]), color, icon),
                   );
                 }).toList(),
               ),
@@ -2859,7 +2859,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
               final status = (doc.data() as Map<String, dynamic>)['status'] as String? ?? '';
               if (status == 'cancelled') return false; // Hide self-cancelled claims
               
-              if (_selectedClaimFilter == 'Semua') return true;
+              if (_selectedClaimFilter == 'Semua'.tr()) return true;
               if (_selectedClaimFilter == 'Dihantar'.tr() && (status == 'submitted' || status.toLowerCase() == 'dihantar')) return true;
               if (_selectedClaimFilter == 'Sedang Disemak'.tr() && (status == 'under_review' || status.toLowerCase() == 'sedang disemak'.tr())) return true;
               if (_selectedClaimFilter == 'Diluluskan'.tr() && (status == 'approved' || status.toLowerCase() == 'diluluskan')) return true;
@@ -2876,7 +2876,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      'Semua', 'Dihantar'.tr(), 'Sedang Disemak'.tr(), 'Diluluskan'.tr(), 'Ditolak'.tr()
+                      'Semua'.tr(), 'Dihantar'.tr(), 'Sedang Disemak'.tr(), 'Diluluskan'.tr(), 'Ditolak'.tr()
                     ].map((filter) {
                       return Padding(
                         padding: const EdgeInsets.only(right: 8.0),
@@ -3085,7 +3085,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                         _showAllClaims = !_showAllClaims;
                       });
                     },
-                    child: Text(_showAllClaims ? 'Tutup'.tr() : 'Lihat Semua (${docs.length})', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                    child: Text(_showAllClaims ? 'Tutup'.tr() : 'seeAllCount'.tr(args: [docs.length.toString()]), style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                   ),
               ],
             );
@@ -3353,7 +3353,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                   } catch (e) {
                     setState(() => isUploading = false);
                     if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ralat: $e')));
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('errorStr'.tr(args: [e.toString()]))));
                     }
                   }
                 },
@@ -3656,7 +3656,7 @@ class _CitizenDashboardState extends State<CitizenDashboard> {
                                       if (sheetCtx.mounted) {
                                         ScaffoldMessenger.of(sheetCtx).showSnackBar(
                                           SnackBar(
-                                            content: Text('Ralat: $e'),
+                                            content: Text('errorStr'.tr(args: [e.toString()])),
                                             backgroundColor: AppColors.danger,
                                           ),
                                         );

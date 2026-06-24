@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -104,16 +104,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       _buildHeader(),
                       const SizedBox(height: 28),
                       SigapTextField(
-                        label: AppStrings.displayName,
-                        hint: AppStrings.displayNameHint,
+                        label: AppStrings.displayName.tr(),
+                        hint: AppStrings.displayNameHint.tr(),
                         controller: _nameCtrl,
                         validator: Validators.validateDisplayName,
                         prefixIcon: const Icon(Icons.person_outline_rounded, size: 20),
                       ),
                       const SizedBox(height: 16),
                       SigapTextField(
-                        label: AppStrings.email,
-                        hint: AppStrings.emailHint,
+                        label: AppStrings.email.tr(),
+                        hint: AppStrings.email.tr()Hint,
                         controller: _emailCtrl,
                         validator: Validators.validateEmail,
                         errorText: _emailError,
@@ -125,8 +125,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 16),
                       SigapTextField(
-                        label: AppStrings.password,
-                        hint: AppStrings.passwordHint,
+                        label: AppStrings.password.tr(),
+                        hint: AppStrings.password.tr()Hint,
                         controller: _passwordCtrl,
                         validator: Validators.validatePassword,
                         obscureText: true,
@@ -134,8 +134,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 16),
                       SigapTextField(
-                        label: AppStrings.confirmPassword,
-                        hint: AppStrings.confirmPasswordHint,
+                        label: AppStrings.confirmPassword.tr(),
+                        hint: AppStrings.confirmPassword.tr()Hint,
                         controller: _confirmCtrl,
                         validator: (v) => Validators.validateConfirmPassword(v, _passwordCtrl.text),
                         obscureText: true,
@@ -146,7 +146,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       _buildRoleSelector(),
                       const SizedBox(height: 28),
                       SigapButton(
-                        label: AppStrings.registerButton,
+                        label: AppStrings.registerButton.tr(),
                         onPressed: isLoading ? null : _submit,
                         isLoading: isLoading,
                       ),
@@ -188,10 +188,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
         const SizedBox(height: 24),
-        Text(AppStrings.registerTitle, style: Theme.of(context).textTheme.displaySmall),
+        Text(AppStrings.registerTitle.tr(), style: Theme.of(context).textTheme.displaySmall),
         const SizedBox(height: 4),
         Text(
-          AppStrings.registerSubtitle,
+          AppStrings.registerSubtitle.tr(),
           style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
         ),
       ],
@@ -203,14 +203,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          AppStrings.chooseRole,
+          AppStrings.chooseRole.tr(),
           style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.textSecondary),
         ),
         const SizedBox(height: 10),
         Row(
           children: [
             _RoleChip(
-              label: AppStrings.citizenRole,
+              label: AppStrings.citizenRole.tr(),
               icon: Icons.home_rounded,
               color: AppColors.citizenAccent,
               isSelected: _selectedRole == 'citizen',
@@ -218,7 +218,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
             const SizedBox(width: 8),
             _RoleChip(
-              label: AppStrings.volunteerRole,
+              label: AppStrings.volunteerRole.tr(),
               icon: Icons.handshake_rounded,
               color: AppColors.volunteerAccent,
               isSelected: _selectedRole == 'volunteer',
@@ -226,7 +226,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
             const SizedBox(width: 8),
             _RoleChip(
-              label: AppStrings.officerRole,
+              label: AppStrings.officerRole.tr(),
               icon: Icons.shield_rounded,
               color: AppColors.officerAccent,
               isSelected: _selectedRole == 'officer',
@@ -243,13 +243,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          AppStrings.haveAccount,
+          AppStrings.haveAccount.tr(),
           style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 14),
         ),
         GestureDetector(
           onTap: () => context.pop(),
           child: Text(
-            AppStrings.login,
+            AppStrings.login.tr(),
             style: GoogleFonts.inter(color: AppColors.primary, fontSize: 14, fontWeight: FontWeight.w600),
           ),
         ),

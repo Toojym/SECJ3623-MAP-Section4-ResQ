@@ -230,7 +230,7 @@ class _DonationCampaignDetailScreenState
                   ),
                 ),
                 Text(
-                  'terkumpul',
+                  'collected'.tr(),
                   style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 8),
@@ -241,7 +241,7 @@ class _DonationCampaignDetailScreenState
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Sasaran: RM ${_fmtFull(_campaign.targetAmount)}',
+                  'targetRm'.tr(args: [_fmtFull(_campaign.targetAmount)]),
                   style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary),
                 ),
               ],
@@ -444,7 +444,7 @@ class _DonationCampaignDetailScreenState
                             color: Colors.pink, size: 18),
                         const SizedBox(width: 8),
                         Text(
-                          'Jumlah Saya: RM ${total.toStringAsFixed(2)}',
+                          'myTotalRm'.tr(args: [total.toStringAsFixed(2)]),
                           style: GoogleFonts.inter(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
@@ -803,7 +803,8 @@ class _DonationCampaignDetailScreenState
                             if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('Gagal memproses derma: ${e.toString().split('\n').first}'),
+                                  content: Text('failedProcessDonation'.tr(args: [e.toString().split('
+').first])),
                                   backgroundColor: AppColors.danger,
                                 ),
                               );

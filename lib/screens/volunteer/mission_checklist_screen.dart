@@ -153,7 +153,7 @@ class _MissionChecklistScreenState extends State<MissionChecklistScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Misi: ${report.type}',
+                  'missionType'.tr(args: [report.type]),
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -208,7 +208,7 @@ class _MissionChecklistScreenState extends State<MissionChecklistScreen> {
           } catch (e) {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Gagal mengemas kini: $e'), backgroundColor: AppColors.danger),
+                SnackBar(content: Text('failedUpdate'.tr(args: [e.toString()])), backgroundColor: AppColors.danger),
               );
             }
           }

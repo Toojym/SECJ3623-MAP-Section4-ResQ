@@ -126,16 +126,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             ),
           ),
           const SizedBox(height: 28),
-          Text(AppStrings.forgotPasswordTitle, style: Theme.of(context).textTheme.headlineMedium),
+          Text(AppStrings.forgotPasswordTitle.tr(), style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 8),
           Text(
-            AppStrings.forgotPasswordSubtitle,
+            AppStrings.forgotPasswordSubtitle.tr(),
             style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary, height: 1.5),
           ),
           const SizedBox(height: 32),
           SigapTextField(
-            label: AppStrings.email,
-            hint: AppStrings.emailHint,
+            label: AppStrings.email.tr(),
+            hint: AppStrings.email.tr()Hint,
             controller: _emailCtrl,
             validator: Validators.validateEmail,
             keyboardType: TextInputType.emailAddress,
@@ -147,7 +147,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           SigapButton(
             label: _countdown > 0 
                 ? 'Hantar Semula Pautan (${_countdown}s)' 
-                : AppStrings.sendResetLink,
+                : AppStrings.sendResetLink.tr(),
             onPressed: (isLoading || _countdown > 0) ? null : _submit,
             isLoading: isLoading,
           ),

@@ -276,7 +276,7 @@ class _VolunteerNotificationsScreenState extends State<VolunteerNotificationsScr
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Misi Baru: ${report.type}',
+                    'newMissionType'.tr(args: [report.type]),
                     style: GoogleFonts.poppins(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,

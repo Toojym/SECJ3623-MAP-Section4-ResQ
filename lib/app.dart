@@ -30,6 +30,7 @@ import 'services/auth_service.dart';
 import 'services/firestore_service.dart';
 import 'services/notification_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 class SigapApp extends StatefulWidget {
   const SigapApp({super.key});
 
@@ -46,8 +47,9 @@ class _SigapAppState extends State<SigapApp> {
   @override
   void initState() {
     super.initState();
-    _authBloc = AuthBloc(authService: _authService, firestoreService: _firestoreService)
-      ..add(const AuthStarted());
+    _authBloc =
+        AuthBloc(authService: _authService, firestoreService: _firestoreService)
+          ..add(const AuthStarted());
 
     StreamSubscription<QuerySnapshot>? globalNotifSub;
     final Set<String> knownNotifIds = {};
@@ -66,35 +68,34 @@ class _SigapAppState extends State<SigapApp> {
         }
 
         // Start listening to global notifications if not already listening
-        if (globalNotifSub == null) {
-          globalNotifSub = _firestoreService.streamGlobalNotifications().listen((snapshot) {
-            if (isFirstLoad) {
-              isFirstLoad = false;
-              for (final doc in snapshot.docs) {
+        globalNotifSub ??=
+            _firestoreService.streamGlobalNotifications().listen((snapshot) {
+          if (isFirstLoad) {
+            isFirstLoad = false;
+            for (final doc in snapshot.docs) {
+              knownNotifIds.add(doc.id);
+            }
+            return;
+          }
+
+          for (final change in snapshot.docChanges) {
+            if (change.type == DocumentChangeType.added) {
+              final doc = change.doc;
+              if (!knownNotifIds.contains(doc.id)) {
                 knownNotifIds.add(doc.id);
-              }
-              return;
-            }
-            
-            for (final change in snapshot.docChanges) {
-              if (change.type == DocumentChangeType.added) {
-                final doc = change.doc;
-                if (!knownNotifIds.contains(doc.id)) {
-                  knownNotifIds.add(doc.id);
-                  final data = doc.data() as Map<String, dynamic>;
-                  final title = data['title'] as String? ?? 'Notifikasi SIGAP';
-                  final message = data['message'] as String? ?? '';
-                  
-                  NotificationService.instance.showLocalNotification(
-                    title: title,
-                    body: message,
-                    id: doc.id.hashCode,
-                  );
-                }
+                final data = doc.data() as Map<String, dynamic>;
+                final title = data['title'] as String? ?? 'Notifikasi SIGAP';
+                final message = data['message'] as String? ?? '';
+
+                NotificationService.instance.showLocalNotification(
+                  title: title,
+                  body: message,
+                  id: doc.id.hashCode,
+                );
               }
             }
-          });
-        }
+          }
+        });
       } else if (state is AuthUnauthenticated) {
         globalNotifSub?.cancel();
         globalNotifSub = null;
@@ -103,7 +104,6 @@ class _SigapAppState extends State<SigapApp> {
       }
     });
 
-      
     _router = GoRouter(
       initialLocation: AppRoutes.splash,
       refreshListenable: _BlocStreamListenable(_authBloc.stream),
@@ -139,11 +139,15 @@ class _SigapAppState extends State<SigapApp> {
         if (authState is AuthAuthenticated) {
           // If profile is not complete, stay on or go to onboarding
           if (!authState.profileComplete) {
-            return location == AppRoutes.onboarding ? null : AppRoutes.onboarding;
+            return location == AppRoutes.onboarding
+                ? null
+                : AppRoutes.onboarding;
           }
 
           // If profile IS complete and they are on an auth route, onboarding, or splash
-          if (isAuthRoute || location == AppRoutes.splash || location == AppRoutes.onboarding) {
+          if (isAuthRoute ||
+              location == AppRoutes.splash ||
+              location == AppRoutes.onboarding) {
             switch (authState.role) {
               case 'volunteer':
                 return AppRoutes.volunteer;
@@ -167,7 +171,9 @@ class _SigapAppState extends State<SigapApp> {
           pageBuilder: (context, state) => CustomTransitionPage(
             key: state.pageKey,
             child: const LoginScreen(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) => FadeTransition(opacity: animation, child: child),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) =>
+                    FadeTransition(opacity: animation, child: child),
           ),
         ),
         GoRoute(
@@ -175,7 +181,9 @@ class _SigapAppState extends State<SigapApp> {
           pageBuilder: (context, state) => CustomTransitionPage(
             key: state.pageKey,
             child: const RegisterScreen(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) => FadeTransition(opacity: animation, child: child),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) =>
+                    FadeTransition(opacity: animation, child: child),
           ),
         ),
         GoRoute(
@@ -183,7 +191,9 @@ class _SigapAppState extends State<SigapApp> {
           pageBuilder: (context, state) => CustomTransitionPage(
             key: state.pageKey,
             child: const ForgotPasswordScreen(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) => FadeTransition(opacity: animation, child: child),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) =>
+                    FadeTransition(opacity: animation, child: child),
           ),
         ),
         GoRoute(
@@ -191,7 +201,9 @@ class _SigapAppState extends State<SigapApp> {
           pageBuilder: (context, state) => CustomTransitionPage(
             key: state.pageKey,
             child: const RoleOnboardingScreen(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) => FadeTransition(opacity: animation, child: child),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) =>
+                    FadeTransition(opacity: animation, child: child),
           ),
         ),
         GoRoute(
@@ -322,7 +334,8 @@ class _SplashScreen extends StatelessWidget {
                     color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(28),
                   ),
-                  child: const Icon(Icons.bolt_rounded, color: Colors.white, size: 56),
+                  child: const Icon(Icons.bolt_rounded,
+                      color: Colors.white, size: 56),
                 ),
               ),
               const SizedBox(height: 20),
@@ -346,7 +359,8 @@ class _SplashScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 48),
-              const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+              const CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
             ],
           ),
         ),

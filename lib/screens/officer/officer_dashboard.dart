@@ -468,7 +468,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                                         fontSize: 13)),
                               )
                             else ...[
-                              Text('Radius Zon: ${_disasterRadius / 1000} km',
+                              Text('zoneRadiusKm'.tr(args: [(_disasterRadius / 1000).toString()]),
                                   style: GoogleFonts.inter(
                                       fontWeight: FontWeight.w600,
                                       fontSize: 13,
@@ -824,7 +824,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     size: 16, color: AppColors.danger),
                 const SizedBox(width: 6),
                 Text(
-                  'Zon Bencana Diisytiharkan (${_disasterZoneNames.length})',
+                  'declaredDisasterZones'.tr(args: [_disasterZoneNames.length.toString()]),
                   style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -1090,7 +1090,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           ],
         ),
         content: Text(
-          'Tindakan ini akan menghantar amaran kecemasan (push alerts) secara meluas kepada semua rakyat di dalam radius ${_disasterRadius / 1000}km dari pusat yang dipilih. Teruskan?',
+          'pushAlertWarning'.tr(args: [(_disasterRadius / 1000).toString()]),
           style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary),
         ),
         actions: [
@@ -1125,7 +1125,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
               }).catchError((e) {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text('Ralat menyimpan zon: $e'),
+                      content: Text('errorSavingZone'.tr(args: [e.toString()])),
                       backgroundColor: AppColors.danger));
                 }
               });
@@ -1179,7 +1179,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
           children: [
             const Icon(Icons.podcasts_rounded, color: AppColors.safe, size: 40),
             const SizedBox(height: 12),
-            Text('Amaran Darurat Dihantar!'.tr(),
+            Text('geofencingSuccess'.tr(args: [totalReached.toString()]),
                 style: GoogleFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
@@ -1210,13 +1210,13 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(
-                'Insiden ${report.type} di ${report.address.isNotEmpty ? report.address : "lokasi insiden"} diselesaikan.'),
+                'incidentResolvedMsg'.tr(args: [report.type, report.address.isNotEmpty ? report.address : "lokasi insiden".tr()])),
             backgroundColor: AppColors.safe));
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Gagal menyelesaikan insiden: $e'),
+            content: Text('failedResolveIncident'.tr(args: [e.toString()])),
             backgroundColor: AppColors.danger));
       }
     }
@@ -1231,7 +1231,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
             style:
                 GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600)),
         content: Text(
-            'Adakah anda pasti ingin menyelesaikan kes ini?\n\n"${report.type} — ${report.address.isNotEmpty ? report.address : report.urgency}"',
+            'confirmResolveCase'.tr(args: [report.type, report.address.isNotEmpty ? report.address : report.urgency]),
             style: GoogleFonts.inter(fontSize: 14)),
         actions: [
           TextButton(
@@ -1326,7 +1326,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                   const SizedBox(height: 16),
                 ],
                 if (report.reporterName.isNotEmpty) ...[
-                  Text('Pelapor: ${report.reporterName}',
+                  Text('reporterNameStr'.tr(args: [report.reporterName]),
                       style: GoogleFonts.inter(
                           fontSize: 12, color: AppColors.textSecondary)),
                   const SizedBox(height: 16),
@@ -1436,12 +1436,12 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                           }
                           scaffoldMessenger.showSnackBar(SnackBar(
                             content: Text(
-                                'Berjaya mengagihkan $selectedSquad ke lokasi krisis.'),
+                                'successDispatchSquad'.tr(args: [selectedSquad])),
                             backgroundColor: AppColors.safe,
                           ));
                         } catch (e) {
                           scaffoldMessenger.showSnackBar(SnackBar(
-                            content: Text('Gagal mengagihkan skuad: $e'),
+                            content: Text('failedDispatchSquad'.tr(args: [e.toString()])),
                             backgroundColor: AppColors.danger,
                           ));
                         }
@@ -1730,8 +1730,8 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                           const SizedBox(height: 2),
                           Text(
                               duration.isNotEmpty
-                                  ? 'Durasi: $duration'
-                                  : 'Pelapor: ${report.reporterName}',
+                                  ? 'durationStr'.tr(args: [duration])
+                                  : 'reporterNameStr'.tr(args: [report.reporterName]),
                               style: GoogleFonts.inter(
                                   fontSize: 12,
                                   color: AppColors.textSecondary)),
@@ -1761,7 +1761,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                       Icon(authority.icon, size: 13, color: authority.color),
                       const SizedBox(width: 4),
                       Text(
-                        'Dihalakan: ${authority.shortName}',
+                        'routedTo'.tr(args: [authority.shortName]),
                         style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: authority.color),
                       ),
                       const Spacer(),
@@ -1801,7 +1801,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                               size: 14, color: AppColors.officerAccent),
                           const SizedBox(width: 4),
                           Text(
-                            'Responded by: ${report.responderName ?? "Penyelamat"}',
+                            'respondedBy'.tr(args: [report.responderName ?? "Penyelamat".tr()]),
                             style: GoogleFonts.inter(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w500,
@@ -2160,7 +2160,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
         if (mounted) {
           loadingNavigator?.pop();
           messenger.showSnackBar(SnackBar(
-              content: Text('Gagal memuatkan zon: $e'),
+              content: Text('failedLoadZone'.tr(args: [e.toString()])),
               backgroundColor: AppColors.danger));
         }
       });
@@ -2169,7 +2169,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
       if (mounted) {
         loadingNavigator?.pop();
         messenger.showSnackBar(SnackBar(
-            content: Text('Gagal memuatkan laporan SOS: $e'),
+            content: Text('failedLoadSOS'.tr(args: [e.toString()])),
             backgroundColor: AppColors.danger));
       }
     });
@@ -2220,7 +2220,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('Arahkan semula ${task.squadName} ke zon baharu?',
+                Text('redirectSquadMsg'.tr(args: [task.squadName]),
                     style: GoogleFonts.inter(fontSize: 14)),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(

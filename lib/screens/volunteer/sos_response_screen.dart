@@ -209,7 +209,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
     } else if (isResolved) {
       subtitle = 'Insiden ini telah selesai dan ditutup.'.tr();
     } else {
-      subtitle = 'Direspons oleh ${report.responderName ?? 'sukarelawan'}';
+      subtitle = 'respondedBy'.tr(args: [report.responderName ?? 'volunteerStr'.tr()]);
     }
 
     return Center(
@@ -322,7 +322,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
                     fontSize: 14, color: AppColors.textPrimary)),
             const SizedBox(height: 4),
             Text(
-                'Koordinat: ${report.latitude.toStringAsFixed(4)}, ${report.longitude.toStringAsFixed(4)}',
+                'coordinatesFormat'.tr(args: [report.latitude.toStringAsFixed(4), report.longitude.toStringAsFixed(4)]),
                 style: GoogleFonts.inter(
                     fontSize: 12, color: AppColors.textSecondary)),
           ],
@@ -619,7 +619,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-                'Anda akan direkodkan sebagai responder untuk insiden ${report.type} ini.',
+                'recordedAsResponder'.tr(args: [report.type]),
                 style: GoogleFonts.inter(
                     fontSize: 13, color: AppColors.textSecondary)),
             const SizedBox(height: 12),
@@ -712,7 +712,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal menerima misi: $e'),
+            content: Text('failedAcceptMission'.tr(args: [e.toString()])),
             backgroundColor: AppColors.danger,
           ),
         );
@@ -744,7 +744,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal menolak misi: $e'), backgroundColor: AppColors.danger),
+          SnackBar(content: Text('failedRejectMission'.tr(args: [e.toString()])), backgroundColor: AppColors.danger),
         );
       }
     } finally {
@@ -817,7 +817,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
       Marker(
         markerId: const MarkerId('citizen_loc'),
         position: LatLng(report.latitude, report.longitude),
-        infoWindow: InfoWindow(title: 'Mangsa: ${report.reporterName}', snippet: report.type),
+        infoWindow: InfoWindow(title: 'victimName'.tr(args: [report.reporterName]), snippet: report.type),
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
       ),
     };
@@ -988,7 +988,7 @@ class _SosResponseScreenState extends State<SosResponseScreen> {
                         } catch (e) {
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Ralat: $e'), backgroundColor: AppColors.danger),
+                              SnackBar(content: Text('errorStr'.tr(args: [e.toString()])), backgroundColor: AppColors.danger),
                             );
                           }
                         } finally {

@@ -20,9 +20,9 @@ class _CitizenNotificationsScreenState extends State<CitizenNotificationsScreen>
     final now = DateTime.now();
     final date = timestamp.toDate();
     final diff = now.difference(date);
-    if (diff.inMinutes < 60) return '${diff.inMinutes} minit lalu';
-    if (diff.inHours < 24) return '${diff.inHours} jam lalu';
-    return '${diff.inDays} hari lalu';
+    if (diff.inMinutes < 60) return 'minutesAgo'.tr(args: [diff.inMinutes.toString()]);
+    if (diff.inHours < 24) return 'hoursAgo'.tr(args: [diff.inHours.toString()]);
+    return 'daysAgo'.tr(args: [diff.inDays.toString()]);
   }
 
   void _showNotificationDetail(Map<String, dynamic> notification) {

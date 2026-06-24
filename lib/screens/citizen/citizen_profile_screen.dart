@@ -241,7 +241,7 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
               const SizedBox(height: 16),
               SigapTextField(
                 label: 'No. Kad Pengenalan (IC)'.tr(),
-                hint: '12 digit tanpa -',
+                hint: 'icFamilyHint'.tr(),
                 controller: icCtrl,
                 keyboardType: TextInputType.number,
                 maxLength: 12,
