@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import '../../core/constants/app_strings.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
@@ -87,8 +86,8 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
           _seenTaskIds.add(id);
           final data = doc.data() as Map<String, dynamic>;
           final squadName =
-              data['squadName'] as String? ?? AppStrings.volunteerTugasanSkuad;
-          final zone = data['zone'] as String? ?? AppStrings.volunteerLokasiTidakDiketahui;
+              data['squadName'] as String? ?? 'Tugasan Skuad'.tr();
+          final zone = data['zone'] as String? ?? 'Lokasi tidak diketahui'.tr();
           final taskSquadId = data['squadId'] as String? ?? '';
           final taskSquadName = data['squadName'] as String? ?? '';
 
@@ -98,7 +97,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
               _seenTaskIds.length > 1) {
             NotificationService.instance.showLocalNotification(
               title: '📋 Tugasan Skuad Baru: $squadName',
-              body: 'volunteerTaskinzoneforsquad'.tr(args: [zone]),
+              body: 'taskInZoneForSquad'.tr(args: [zone]),
               id: id.hashCode,
             );
           }
@@ -115,12 +114,12 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
           final data = doc.data() as Map<String, dynamic>;
           final type = data['type'] as String? ?? 'Kecemasan'.tr();
           final address =
-              data['address'] as String? ?? AppStrings.volunteerLokasiTidakDiketahui;
+              data['address'] as String? ?? 'Lokasi tidak diketahui'.tr();
 
           if (_seenSosIds.length > 1) {
             NotificationService.instance.showLocalNotification(
               title: '🆘 SOS Baru: $type',
-              body: 'volunteerNewincidentreportedat'.tr(args: [address]),
+              body: 'newIncidentReportedAt'.tr(args: [address]),
               id: id.hashCode,
             );
           }
@@ -151,7 +150,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
         _assignedSquadId = data['assignedSquadId'] as String? ?? ''; // ADD THIS
         final skillsRaw = data['skills'];
         if (skillsRaw is List) {
-          _skills = skillsRaw.join(AppStrings.volunteerEmptyKey);
+          _skills = skillsRaw.join(', '.tr());
         } else if (skillsRaw is String) {
           _skills = skillsRaw;
         } else {
@@ -264,15 +263,15 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
           const SizedBox(height: 24),
           _buildSigapMataSection(),
           const SizedBox(height: 24),
-          _buildSectionHeader(AppStrings.volunteerMisiBerdekatan),
+          _buildSectionHeader('Misi Berdekatan'.tr()),
           const SizedBox(height: 12),
           _buildNearbyMissionsPreview(),
           const SizedBox(height: 24),
-          _buildSectionHeader(AppStrings.volunteerTindakanPantas),
+          _buildSectionHeader('Tindakan Pantas'.tr()),
           const SizedBox(height: 12),
           _buildQuickActions(),
           const SizedBox(height: 24),
-          _buildSectionHeader(AppStrings.volunteerModulAkses),
+          _buildSectionHeader('Modul Akses'.tr()),
           const SizedBox(height: 12),
           _buildModuleGrid(),
           const SizedBox(height: 24),
@@ -426,7 +425,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(AppStrings.volunteerStatusKetersediaan,
+                    Text('Status Ketersediaan'.tr(),
                         style: GoogleFonts.inter(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
@@ -434,8 +433,8 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                     const SizedBox(height: 3),
                     Text(
                       _isActive
-                          ? AppStrings.volunteerAndaBolehDihubungiUntuk
-                          : AppStrings.volunteerAndaTidakTersediaBuat,
+                          ? 'Anda boleh dihubungi untuk misi'.tr()
+                          : 'Anda tidak tersedia buat masa ini'.tr(),
                       style: GoogleFonts.inter(
                           fontSize: 12, color: AppColors.textSecondary),
                     ),
@@ -474,7 +473,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      AppStrings.volunteerStatusAndaBolehDilihat,
+                      'Status anda boleh dilihat oleh pegawai SIGAP.'.tr(),
                       style: GoogleFonts.inter(
                           fontSize: 12,
                           color: AppColors.safe,
@@ -502,7 +501,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(AppStrings.volunteerKepakaranSaya,
+            Text('Kepakaran Saya'.tr(),
                 style: GoogleFonts.poppins(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -560,7 +559,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                   const Icon(Icons.stars_rounded,
                       color: Colors.amber, size: 20),
                   const SizedBox(width: 8),
-                  Text(AppStrings.volunteerSigapMata,
+                  Text('SIGAP Mata'.tr(),
                       style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -622,7 +621,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                   .map((doc) => VolunteerTaskModel.fromMap(
                       doc.id, doc.data() as Map<String, dynamic>))
                   .where((t) =>
-                      t.status != AppStrings.volunteerSelesaiTugas &&
+                      t.status != 'Selesai Tugas'.tr() &&
                       !t.hasAccepted(uid) &&
                       !t.hasDeclined(uid) &&
                       !t.isFull &&
@@ -642,7 +641,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                       const Icon(Icons.check_circle_outline_rounded,
                           size: 36, color: AppColors.safe),
                       const SizedBox(height: 8),
-                      Text(AppStrings.volunteerKawasanAndaSelamatBuat,
+                      Text('Kawasan anda selamat buat masa ini.'.tr(),
                           style: GoogleFonts.inter(
                               fontSize: 13, color: AppColors.textSecondary)),
                     ],
@@ -758,39 +757,39 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
       children: [
         _actionCard(
             Icons.manage_accounts_rounded,
-            AppStrings.volunteerKemaskiniProfil,
-            AppStrings.volunteerNamaKemahiranLokasi,
+            'Kemaskini Profil'.tr(),
+            'Nama, kemahiran & lokasi'.tr(),
             AppColors.volunteerAccent,
             () => context.push(AppRoutes.volunteerProfile)),
         const SizedBox(height: 10),
         _actionCard(
             Icons.assignment_rounded,
-            AppStrings.volunteerMisiTersedia,
-            AppStrings.volunteerLihatMisiYangMemerlukan,
+            'Misi Tersedia'.tr(),
+            'Lihat misi yang memerlukan anda'.tr(),
             AppColors.warning,
             () => setState(() => _currentIndex = 1)),
         const SizedBox(height: 10),
         _actionCard(
             Icons.checklist_rounded,
-            AppStrings.volunteerSenaraiSemakMisi,
-            AppStrings.volunteerTandaiTugasYangDiselesaikan,
+            'Senarai Semak Misi'.tr(),
+            'Tandai tugas yang diselesaikan'.tr(),
             const Color(0xFF10B981),
             () => context.push(AppRoutes.missionChecklist)),
         const SizedBox(height: 10),
-        _actionCard(Icons.history_rounded, AppStrings.volunteerSejarahMisi,
-            AppStrings.volunteerRekodMisiTerdahulu, AppColors.primary, () {}),
+        _actionCard(Icons.history_rounded, 'Sejarah Misi'.tr(),
+            'Rekod misi terdahulu'.tr(), AppColors.primary, () {}),
         const SizedBox(height: 10),
         _actionCard(
             Icons.auto_awesome_rounded,
-            AppStrings.volunteerBriefingAwanis,
-            AppStrings.volunteerRingkasanPramisiSumber,
+            'Briefing AWANIS'.tr(),
+            'Ringkasan pra-misi & sumber'.tr(),
             const Color(0xFFEC4899),
             () => _requestAwanisBriefing()),
         const SizedBox(height: 10),
         _actionCard(
             Icons.leaderboard_rounded,
             'Leaderboard'.tr(),
-            AppStrings.volunteerPeringkatSukarelawanTerbaik,
+            'Peringkat sukarelawan terbaik'.tr(),
             const Color(0xFF8B5CF6),
             () => setState(() => _currentIndex = 3)),
       ],
@@ -849,21 +848,21 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
       children: [
         _moduleCard(Icons.notifications_rounded, 'Pemberitahuan'.tr(), '2',
             const Color(0xFF06B6D4), () {}),
-        _moduleCard(Icons.help_rounded, 'Bantuan'.tr(), AppStrings.volunteerFaq,
+        _moduleCard(Icons.help_rounded, 'Bantuan'.tr(), 'FAQ'.tr(),
             const Color(0xFF10B981), () {}),
         _moduleCard(Icons.assessment_rounded, 'Laporan'.tr(), 'Progres'.tr(),
             const Color(0xFFEF4444), () {}),
-        _moduleCard(Icons.school_rounded, 'Pembelajaran'.tr(), AppStrings.volunteerVideo,
+        _moduleCard(Icons.school_rounded, 'Pembelajaran'.tr(), 'Video'.tr(),
             const Color(0xFFF97316), () {}),
         _moduleCard(
             Icons.location_on_rounded,
-            AppStrings.volunteerMisiTersedia,
+            'Misi Tersedia'.tr(),
             'Aktif'.tr(),
             const Color(0xFF8B5CF6),
             () => setState(() => _currentIndex = 1)),
         _moduleCard(
             Icons.card_giftcard_rounded,
-            AppStrings.volunteerPelepasanMata,
+            'Pelepasan Mata'.tr(),
             'Baru'.tr(),
             const Color(0xFFEC4899),
             () => setState(() => _currentIndex = 4)),
@@ -942,13 +941,13 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(AppStrings.volunteerMisiTersedia,
+              Text('Misi Tersedia'.tr(),
                   style: GoogleFonts.poppins(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary)),
               const SizedBox(height: 4),
-              Text(AppStrings.volunteerTerimaMisiSosAtau,
+              Text('Terima misi SOS atau tugasan skuad di sini'.tr(),
                   style: GoogleFonts.inter(
                       fontSize: 13, color: AppColors.textSecondary)),
             ],
@@ -965,10 +964,10 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                   indicatorColor: AppColors.volunteerAccent,
                   tabs: [
                     Tab(
-                        text: AppStrings.volunteerMisiSos,
+                        text: 'Misi SOS'.tr(),
                         icon: const Icon(Icons.warning_rounded)),
                     Tab(
-                        text: AppStrings.volunteerTugasanSkuad,
+                        text: 'Tugasan Skuad'.tr(),
                         icon: const Icon(Icons.group_rounded)),
                   ],
                 ),
@@ -1034,13 +1033,13 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                 const Icon(Icons.check_circle_outline_rounded,
                     size: 64, color: AppColors.safe),
                 const SizedBox(height: 16),
-                Text(AppStrings.volunteerTiadaMisiSosAktif,
+                Text('Tiada Misi SOS Aktif'.tr(),
                     style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textSecondary)),
                 const SizedBox(height: 8),
-                Text(AppStrings.volunteerKawasanAndaSelamatBuat1,
+                Text('Kawasan anda selamat buat masa ini'.tr(),
                     style: GoogleFonts.inter(
                         fontSize: 13, color: AppColors.textHint)),
               ],
@@ -1245,7 +1244,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8))),
-                        child: Text(AppStrings.volunteerTerimaMisi,
+                        child: Text('Terima Misi'.tr(),
                             style: GoogleFonts.inter(
                                 fontSize: 13, fontWeight: FontWeight.w600)),
                       ),
@@ -1286,7 +1285,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
           // Check if task belongs to volunteer's squad
           final isForMySquad = task.squadId == _assignedSquadId ||
               task.squadName == _assignedSquad;
-          final notCompleted = task.status != AppStrings.volunteerSelesaiTugas;
+          final notCompleted = task.status != 'Selesai Tugas'.tr();
           final notAccepted = !task.hasAccepted(uid);
           final notDeclined = !task.hasDeclined(uid);
           final notFull = !task.isFull;
@@ -1312,13 +1311,13 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                 const Icon(Icons.group_off_rounded,
                     size: 64, color: AppColors.textHint),
                 const SizedBox(height: 16),
-                Text(AppStrings.volunteerBelumDitugaskanKeSkuad,
+                Text('Belum Ditugaskan ke Skuad'.tr(),
                     style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textSecondary)),
                 const SizedBox(height: 8),
-                Text(AppStrings.volunteerSilaHubungiPegawaiUntuk,
+                Text('Sila hubungi pegawai untuk ditugaskan ke skuad'.tr(),
                     style: GoogleFonts.inter(
                         fontSize: 13, color: AppColors.textHint)),
               ],
@@ -1334,7 +1333,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                 const Icon(Icons.group_off_rounded,
                     size: 64, color: AppColors.textHint),
                 const SizedBox(height: 16),
-                Text(AppStrings.volunteerTiadaTugasanSkuad,
+                Text('Tiada Tugasan Skuad'.tr(),
                     style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -1498,7 +1497,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8))),
-                        child: Text(AppStrings.volunteerTerimaMisi,
+                        child: Text('Terima Misi'.tr(),
                             style: GoogleFonts.inter(
                                 fontSize: 13, fontWeight: FontWeight.w600)),
                       ),
@@ -1519,8 +1518,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                           Icon(Icons.info_outline_rounded,
                               size: 12, color: AppColors.warning),
                           const SizedBox(width: 6),
-                          Text(
-                              AppStrings.volunteerActivateavailability,
+                          Text('activateAvailability'.tr(),
                               style: GoogleFonts.inter(
                                   fontSize: 11, color: AppColors.warning)),
                         ],
@@ -1548,13 +1546,13 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(AppStrings.volunteerPetaKemajuanMisi,
+              Text('Peta & Kemajuan Misi'.tr(),
                   style: GoogleFonts.poppins(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary)),
               const SizedBox(height: 4),
-              Text(AppStrings.volunteerLihatLokasiMisiDan,
+              Text('Lihat lokasi misi dan kemaskini kemajuan tugasan anda'.tr(),
                   style: GoogleFonts.inter(
                       fontSize: 13, color: AppColors.textSecondary)),
             ],
@@ -1572,7 +1570,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                   tabs: [
                     Tab(text: 'Peta'.tr(), icon: const Icon(Icons.map_rounded)),
                     Tab(
-                        text: AppStrings.volunteerKemajuanSaya,
+                        text: 'Kemajuan Saya'.tr(),
                         icon: const Icon(Icons.trending_up_rounded)),
                   ],
                 ),
@@ -1609,7 +1607,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                       _currentPosition!.latitude, _currentPosition!.longitude),
                   icon: BitmapDescriptor.defaultMarkerWithHue(
                       BitmapDescriptor.hueAzure),
-                  infoWindow: InfoWindow(title: AppStrings.volunteerLokasiAnda),
+                  infoWindow: InfoWindow(title: 'Lokasi Anda'.tr()),
                 ),
               );
             }
@@ -1628,8 +1626,9 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                     icon: BitmapDescriptor.defaultMarkerWithHue(
                         BitmapDescriptor.hueRed),
                     infoWindow: InfoWindow(
-                        title: 'volunteerSostype'.tr(args: [report.type]),
-                        snippet: 'volunteerPriorityandaddress'.tr(args: [report.urgency, report.address]),
+                      title: 'sosType'.tr(args: [report.type]),
+                      snippet: 'priorityAndAddress'
+                          .tr(args: [report.urgency, report.address]),
                     ),
                   ),
                 );
@@ -1640,7 +1639,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
               final tasks = taskSnapshot.data!.docs
                   .map((doc) => VolunteerTaskModel.fromMap(
                       doc.id, doc.data() as Map<String, dynamic>))
-                  .where((t) => t.status != AppStrings.volunteerSelesaiTugas)
+                  .where((t) => t.status != 'Selesai Tugas'.tr())
                   .toList();
 
               for (final task in tasks) {
@@ -1652,8 +1651,9 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                     icon: BitmapDescriptor.defaultMarkerWithHue(
                         BitmapDescriptor.hueViolet),
                     infoWindow: InfoWindow(
-                        title: 'volunteerSquadnamestr'.tr(args: [task.squadName]),
-                        snippet: 'volunteerZoneandstatus'.tr(args: [task.zone, task.status]),
+                      title: 'squadNameStr'.tr(args: [task.squadName]),
+                      snippet:
+                          'zoneAndStatus'.tr(args: [task.zone, task.status]),
                     ),
                   ),
                 );
@@ -1682,11 +1682,13 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
   LatLng _getTaskCoordinates(String zone) {
     final normalized = zone.toLowerCase();
     if (normalized.contains('ampang')) return const LatLng(3.1490, 101.7620);
-    if (normalized.contains(AppStrings.volunteerHuluLangat))
+    if (normalized.contains('hulu langat'.tr())) {
       return const LatLng(3.0948, 101.8187);
+    }
     if (normalized.contains('gombak')) return const LatLng(3.2521, 101.6530);
-    if (normalized.contains(AppStrings.volunteerSriPetaling))
+    if (normalized.contains('sri petaling'.tr())) {
       return const LatLng(3.0705, 101.6920);
+    }
     return const LatLng(3.1390, 101.6869);
   }
 
@@ -1741,7 +1743,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
 
             final filteredTasks = allTasks.where((task) {
               if (!task.acceptedVolunteerUIDs.contains(uid)) return false;
-              final isCompleted = task.status == AppStrings.volunteerSelesaiTugas;
+              final isCompleted = task.status == 'Selesai Tugas'.tr();
               if (_selectedMissionFilter == 'active') {
                 return !isCompleted;
               } else if (_selectedMissionFilter == 'completed') {
@@ -1768,7 +1770,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                     ),
                     child: Row(
                       children: [
-                        _buildFilterTab('all', AppStrings.volunteerSemua),
+                        _buildFilterTab('all', 'Semua'.tr()),
                         _buildFilterTab('active', 'Aktif'.tr()),
                         _buildFilterTab('completed', 'Selesai'.tr()),
                       ],
@@ -1782,8 +1784,8 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                     if (filteredReports.isNotEmpty) ...[
                       Text(
                         _selectedMissionFilter == 'completed'
-                            ? AppStrings.volunteerMisiSosSelesai
-                            : AppStrings.volunteerMisiSosDalamProgres,
+                            ? 'Misi SOS Selesai'.tr()
+                            : 'Misi SOS Dalam Progres'.tr(),
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -1800,8 +1802,8 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                     if (filteredTasks.isNotEmpty) ...[
                       Text(
                         _selectedMissionFilter == 'completed'
-                            ? AppStrings.volunteerTugasanSkuadSelesai
-                            : AppStrings.volunteerTugasanSkuadDalamProgres,
+                            ? 'Tugasan Skuad Selesai'.tr()
+                            : 'Tugasan Skuad Dalam Progres'.tr(),
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -1817,7 +1819,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                     if (_selectedMissionFilter != 'active') ...[
                       const SizedBox(height: 16),
                       Text(
-                        AppStrings.volunteerSejarahMisiLepas,
+                        'Sejarah Misi Lepas'.tr(),
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -1826,24 +1828,24 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                       ),
                       const SizedBox(height: 12),
                       _buildFakePastMissionCard(
-                        AppStrings.volunteerMisiBantuanBanjirAlpha,
-                        AppStrings.volunteerKampungPasirPutih,
+                        'Misi Bantuan Banjir (Alpha Rescue)'.tr(),
+                        'Kampung Pasir Putih'.tr(),
                         '12 Nov 2023',
-                        AppStrings.volunteer_150Mata,
+                        '+150 Mata'.tr(),
                       ),
                       const SizedBox(height: 12),
                       _buildFakePastMissionCard(
-                        AppStrings.volunteerPembersihanPascabencanaBravoMedic,
-                        AppStrings.volunteerSekolahKebangsaanSkudai,
+                        'Pembersihan Pasca-Bencana (Bravo Medic)'.tr(),
+                        'Sekolah Kebangsaan Skudai'.tr(),
                         '05 Okt 2023',
-                        AppStrings.volunteer_100Mata,
+                        '+100 Mata'.tr(),
                       ),
                       const SizedBox(height: 12),
                       _buildFakePastMissionCard(
-                        AppStrings.volunteerLogistikMakananCharlieLogistics,
-                        AppStrings.volunteerPusatKomunitiJb,
+                        'Logistik Makanan (Charlie Logistics)'.tr(),
+                        'Pusat Komuniti JB'.tr(),
                         '18 Sep 2023',
-                        AppStrings.volunteer_120Mata,
+                        '+120 Mata'.tr(),
                       ),
                     ]
                   ],
@@ -1972,17 +1974,17 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
   }
 
   Widget _buildEmptyMissionsState() {
-    String title = AppStrings.volunteerTiadaMisi;
-    String subtitle = AppStrings.volunteerNomissionsyet;
+    String title = 'Tiada Misi'.tr();
+    String subtitle = 'noMissionsYet'.tr();
     IconData icon = Icons.assignment_rounded;
 
     if (_selectedMissionFilter == 'active') {
-      title = AppStrings.volunteerTiadaMisiAktif;
-      subtitle = AppStrings.volunteerNoactivemissions;
+      title = 'Tiada Misi Aktif'.tr();
+      subtitle = 'noActiveMissions'.tr();
       icon = Icons.directions_run_rounded;
     } else if (_selectedMissionFilter == 'completed') {
-      title = AppStrings.volunteerTiadaMisiSelesai;
-      subtitle = AppStrings.volunteerNocompletedmissions;
+      title = 'Tiada Misi Selesai'.tr();
+      subtitle = 'noCompletedMissions'.tr();
       icon = Icons.check_circle_rounded;
     }
 
@@ -2027,7 +2029,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
   // ADD THIS NEW METHOD - Detailed SOS Progress Card (like reference design) - WITHOUT BUTTONS
   Widget _buildDetailedSOSProgressCard(SosReportModel report) {
     // Time ago calculation
-    String timeAgo = AppStrings.volunteerBaruSahaja;
+    String timeAgo = 'Baru sahaja'.tr();
     if (report.createdAt != null) {
       final diff = DateTime.now().difference(report.createdAt!);
       if (diff.inMinutes < 60) {
@@ -2248,7 +2250,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            AppStrings.volunteerKemajuanMisi,
+                            'Kemajuan Misi'.tr(),
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
@@ -2319,10 +2321,10 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
 
   Widget _buildDetailedSquadProgressCard(VolunteerTaskModel task, String uid) {
     final statusSteps = [
-      AppStrings.volunteerMenujuKeLokasi,
-      AppStrings.volunteerTibaDiLokasi,
-      AppStrings.volunteerSedangBertugas,
-      AppStrings.volunteerSelesaiTugas,
+      'Menuju ke Lokasi'.tr(),
+      'Tiba di Lokasi'.tr(),
+      'Sedang Bertugas'.tr(),
+      'Selesai Tugas'.tr(),
     ];
 
     // Find current step index based on task status
@@ -2332,7 +2334,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
       currentStepIndex = 0;
     }
 
-    final isCompleted = task.status == AppStrings.volunteerSelesaiTugas;
+    final isCompleted = task.status == 'Selesai Tugas'.tr();
 
     print('=== BUILDING SQUAD PROGRESS CARD ===');
     print('Task: ${task.squadName}');
@@ -2457,7 +2459,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                             ),
                           ),
                           Text(
-                            'volunteerZonestr'.tr(args: [task.zone]),
+                            'zoneStr'.tr(args: [task.zone]),
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               color: AppColors.textSecondary,
@@ -2505,7 +2507,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          AppStrings.volunteerKemajuanTugasan,
+                          'Kemajuan Tugasan'.tr(),
                           style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
@@ -2541,7 +2543,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                   const Divider(height: 1),
                   const SizedBox(height: 12),
                   Text(
-                    AppStrings.volunteerKemaskiniStatusTugasan,
+                    'Kemaskini Status Tugasan:'.tr(),
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -2555,35 +2557,35 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                     children: [
                       // Show all buttons, but disable ones that are before current step
                       _buildStatusButton(
-                        label: AppStrings.volunteerMenujuKeLokasi,
+                        label: 'Menuju ke Lokasi'.tr(),
                         isActive: currentStepIndex == 0,
                         isCompleted: currentStepIndex > 0,
                         onPressed: () => _updateSquadTaskProgress(
-                            task, AppStrings.volunteerMenujuKeLokasi, uid),
+                            task, 'Menuju ke Lokasi'.tr(), uid),
                         color: priorityColor,
                       ),
                       _buildStatusButton(
-                        label: AppStrings.volunteerTibaDiLokasi,
+                        label: 'Tiba di Lokasi'.tr(),
                         isActive: currentStepIndex == 1,
                         isCompleted: currentStepIndex > 1,
                         onPressed: () => _updateSquadTaskProgress(
-                            task, AppStrings.volunteerTibaDiLokasi, uid),
+                            task, 'Tiba di Lokasi'.tr(), uid),
                         color: priorityColor,
                       ),
                       _buildStatusButton(
-                        label: AppStrings.volunteerSedangBertugas,
+                        label: 'Sedang Bertugas'.tr(),
                         isActive: currentStepIndex == 2,
                         isCompleted: currentStepIndex > 2,
                         onPressed: () => _updateSquadTaskProgress(
-                            task, AppStrings.volunteerSedangBertugas, uid),
+                            task, 'Sedang Bertugas'.tr(), uid),
                         color: priorityColor,
                       ),
                       _buildStatusButton(
-                        label: AppStrings.volunteerSelesaiTugas,
+                        label: 'Selesai Tugas'.tr(),
                         isActive: currentStepIndex == 3,
                         isCompleted: currentStepIndex > 3,
                         onPressed: () => _updateSquadTaskProgress(
-                            task, AppStrings.volunteerSelesaiTugas, uid),
+                            task, 'Selesai Tugas'.tr(), uid),
                         color: priorityColor,
                       ),
                     ],
@@ -2602,7 +2604,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            AppStrings.volunteerClickupdatestatus,
+                            'clickUpdateStatus'.tr(),
                             style: GoogleFonts.inter(
                               fontSize: 11,
                               color: AppColors.warning,
@@ -2714,7 +2716,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text(
-                AppStrings.volunteerSilaAktifkanStatusKetersediaan),
+                'Sila aktifkan status ketersediaan anda terlebih dahulu'.tr()),
             backgroundColor: AppColors.warning),
       );
       return;
@@ -2772,7 +2774,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text(
-                AppStrings.volunteerSilaAktifkanStatusKetersediaan),
+                'Sila aktifkan status ketersediaan anda terlebih dahulu'.tr()),
             backgroundColor: AppColors.warning),
       );
       return;
@@ -2829,10 +2831,10 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
   Future<void> _updateSquadTaskProgress(
       VolunteerTaskModel task, String newStatus, String uid) async {
     final progressMap = {
-      AppStrings.volunteerMenujuKeLokasi: 0.0,
-      AppStrings.volunteerTibaDiLokasi: 0.33,
-      AppStrings.volunteerSedangBertugas: 0.66,
-      AppStrings.volunteerSelesaiTugas: 1.0,
+      'Menuju ke Lokasi'.tr(): 0.0,
+      'Tiba di Lokasi'.tr(): 0.33,
+      'Sedang Bertugas'.tr(): 0.66,
+      'Selesai Tugas'.tr(): 1.0,
     };
 
     try {
@@ -2846,11 +2848,11 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
         updates['currentLng'] = _currentPosition!.longitude;
       }
       await _firestoreService.updateVolunteerTask(task.id, updates);
-      if (mounted && newStatus == AppStrings.volunteerSelesaiTugas) {
+      if (mounted && newStatus == 'Selesai Tugas'.tr()) {
         await _firestoreService.addVolunteerPoints(uid, 50);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text(AppStrings.volunteerTugasanSelesai50Sigap),
+              content: Text('Tugasan selesai! +50 SIGAP Mata'.tr()),
               backgroundColor: AppColors.safe));
           _loadProfile();
         }
@@ -2883,7 +2885,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary)),
               const SizedBox(height: 4),
-              Text(AppStrings.volunteerPeringkatSukarelawanBerdasarkanSigap,
+              Text('Peringkat sukarelawan berdasarkan SIGAP Mata'.tr(),
                   style: GoogleFonts.inter(
                       fontSize: 13, color: AppColors.textSecondary)),
             ],
@@ -2894,38 +2896,38 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
             builder: (context) {
               final docs = [
                 {
-                  'name': AppStrings.volunteerAhmadAlbab,
-                  'assignedSquad': AppStrings.volunteerAlphaRescue,
+                  'name': 'Ahmad Albab'.tr(),
+                  'assignedSquad': 'Alpha Rescue'.tr(),
                   'sigapMataPoints': 2450
                 },
                 {
-                  'name': AppStrings.volunteerSitiNurhaliza,
-                  'assignedSquad': AppStrings.volunteerBravoMedic,
+                  'name': 'Siti Nurhaliza'.tr(),
+                  'assignedSquad': 'Bravo Medic'.tr(),
                   'sigapMataPoints': 2100
                 },
                 {
                   'name': 'youVolunteer'.tr(),
-                  'assignedSquad': AppStrings.volunteerDeltaSupport,
+                  'assignedSquad': 'Delta Support'.tr(),
                   'sigapMataPoints': 1250
                 },
                 {
                   'name': 'Muthusamy'.tr(),
-                  'assignedSquad': AppStrings.volunteerEchoRelief,
+                  'assignedSquad': 'Echo Relief'.tr(),
                   'sigapMataPoints': 980
                 },
                 {
-                  'name': AppStrings.volunteerWongWeiKit,
-                  'assignedSquad': AppStrings.volunteerAlphaRescue,
+                  'name': 'Wong Wei Kit'.tr(),
+                  'assignedSquad': 'Alpha Rescue'.tr(),
                   'sigapMataPoints': 850
                 },
                 {
-                  'name': AppStrings.volunteerNurulAin,
-                  'assignedSquad': AppStrings.volunteerEchoRelief,
+                  'name': 'Nurul Ain'.tr(),
+                  'assignedSquad': 'Echo Relief'.tr(),
                   'sigapMataPoints': 720
                 },
                 {
-                  'name': AppStrings.volunteerFaizalTahir,
-                  'assignedSquad': AppStrings.volunteerBravoMedic,
+                  'name': 'Faizal Tahir'.tr(),
+                  'assignedSquad': 'Bravo Medic'.tr(),
                   'sigapMataPoints': 640
                 },
               ];
@@ -3030,13 +3032,13 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       children: [
-        Text(AppStrings.volunteerPelepasanSigapMata,
+        Text('Pelepasan SIGAP Mata'.tr(),
             style: GoogleFonts.poppins(
                 fontSize: 22,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary)),
         const SizedBox(height: 8),
-        Text(AppStrings.volunteerTukarkanPoinSigapMata,
+        Text('Tukarkan poin SIGAP Mata anda dengan sijil tersertifikasi'.tr(),
             style: GoogleFonts.inter(
                 fontSize: 13, color: AppColors.textSecondary)),
         const SizedBox(height: 24),
@@ -3056,7 +3058,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                   const Icon(Icons.stars_rounded,
                       color: Colors.amber, size: 24),
                   const SizedBox(width: 12),
-                  Text(AppStrings.volunteerPoinSigapMataAnda,
+                  Text('Poin SIGAP Mata Anda'.tr(),
                       style: GoogleFonts.inter(
                           fontSize: 13,
                           color: Colors.white70,
@@ -3073,27 +3075,27 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
           ),
         ),
         const SizedBox(height: 24),
-        Text(AppStrings.volunteerSijilTersediaUntukPelepasan,
+        Text('Sijil Tersedia untuk Pelepasan'.tr(),
             style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary)),
         const SizedBox(height: 12),
         _certificateCard(
-            AppStrings.volunteerSijilNadmansukarelawanDarurat,
-            AppStrings.volunteer_500SigapMata,
+            'Sijil NADMA\nSukarelawan Darurat'.tr(),
+            '500 SIGAP Mata'.tr(),
             AppColors.primary,
             Icons.verified_user_rounded),
         const SizedBox(height: 12),
         _certificateCard(
-            AppStrings.volunteerSijilBombanpembantuPenyelamat,
-            AppStrings.volunteer_750SigapMata,
+            'Sijil Bomba\nPembantu Penyelamat'.tr(),
+            '750 SIGAP Mata'.tr(),
             const Color(0xFFEF4444),
             Icons.shield_rounded),
         const SizedBox(height: 12),
         _certificateCard(
-            AppStrings.volunteerSijilLanjutannkoordinatorMisi,
-            AppStrings.volunteer_1200SigapMata,
+            'Sijil Lanjutan\nKoordinator Misi'.tr(),
+            '1200 SIGAP Mata'.tr(),
             const Color(0xFF8B5CF6),
             Icons.military_tech_rounded),
         const SizedBox(height: 24),
@@ -3112,7 +3114,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                       size: 20, color: AppColors.safe),
                   const SizedBox(width: 12),
                   Expanded(
-                      child: Text(AppStrings.volunteerCaraMengumpulPoin,
+                      child: Text('Cara Mengumpul Poin'.tr(),
                           style: GoogleFonts.inter(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -3120,14 +3122,14 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                 ],
               ),
               const SizedBox(height: 12),
-              _pointsExplanation(AppStrings.volunteerSelesaikanMisiDarurat,
-                  AppStrings.volunteerDapatkanPoinPerMisi),
+              _pointsExplanation('Selesaikan misi darurat'.tr(),
+                  'Dapatkan poin per misi yang selesai'.tr()),
               const SizedBox(height: 8),
-              _pointsExplanation(AppStrings.volunteerBantuanKepadaKorban,
-                  AppStrings.volunteerBonusPoinUntukBantuan),
+              _pointsExplanation('Bantuan kepada korban'.tr(),
+                  'Bonus poin untuk bantuan kualiti tinggi'.tr()),
               const SizedBox(height: 8),
-              _pointsExplanation(AppStrings.volunteerPeringkatLeaderboard,
-                  AppStrings.volunteerBonusMingguanUntukVolunteer),
+              _pointsExplanation('Peringkat Leaderboard'.tr(),
+                  'Bonus mingguan untuk volunteer terbaik'.tr()),
             ],
           ),
         ),
@@ -3162,7 +3164,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                       backgroundColor: AppColors.safe));
                 },
                 style: ElevatedButton.styleFrom(backgroundColor: color),
-                child: Text(AppStrings.volunteerYaTebus),
+                child: Text('Ya, Tebus'.tr()),
               ),
             ],
           ),
@@ -3319,7 +3321,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
           children: [
             const CircularProgressIndicator(color: AppColors.volunteerAccent),
             const SizedBox(height: 16),
-            Text(AppStrings.volunteerAwanisSedangMenganalisisLaporan,
+            Text('AWANIS sedang menganalisis laporan...'.tr(),
                 style: GoogleFonts.inter(
                     fontSize: 13, color: AppColors.textSecondary)),
           ],
@@ -3342,7 +3344,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
                     color: Color(0xFFEC4899)),
                 const SizedBox(width: 8),
                 Expanded(
-                    child: Text(AppStrings.volunteerPremissionBriefing,
+                    child: Text('Pre-Mission Briefing'.tr(),
                         style: GoogleFonts.poppins(
                             fontWeight: FontWeight.bold, fontSize: 18))),
               ],
@@ -3363,7 +3365,7 @@ class _VolunteerDashboardState extends State<VolunteerDashboard> {
       if (mounted) {
         Navigator.pop(context);
         _showComingSoonDialog(
-            'Ralat'.tr(), AppStrings.volunteerGagalMendapatkanMaklumatAwanis);
+            'Ralat'.tr(), 'Gagal mendapatkan maklumat AWANIS.'.tr());
       }
     }
   }
