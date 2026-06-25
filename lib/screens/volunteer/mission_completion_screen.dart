@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_strings.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_colors.dart';
@@ -23,7 +24,7 @@ class _MissionCompletionScreenState extends State<MissionCompletionScreen> {
   String _victimCondition = 'Selamat'.tr();
   bool _isSubmitting = false;
 
-  final List<String> _conditions = ['Selamat'.tr(), 'Kecederaan Ringan'.tr(), 'Kecederaan Parah'.tr(), 'Kritikal'.tr(), 'Meninggal Dunia'.tr()];
+  final List<String> _conditions = ['Selamat'.tr(), AppStrings.volunteerKecederaanRingan, AppStrings.volunteerKecederaanParah, 'Kritikal'.tr(), AppStrings.volunteerMeninggalDunia];
 
   @override
   void dispose() {
@@ -53,7 +54,7 @@ class _MissionCompletionScreenState extends State<MissionCompletionScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Misi diselesaikan dengan jaya!'.tr()),
+            content: Text(AppStrings.volunteerMisiDiselesaikanDenganJaya),
             backgroundColor: AppColors.safe,
           ),
         );
@@ -78,7 +79,7 @@ class _MissionCompletionScreenState extends State<MissionCompletionScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
-          'Laporan Penyelesaian Misi'.tr(),
+          AppStrings.volunteerLaporanPenyelesaianMisi,
           style: GoogleFonts.poppins(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -97,14 +98,14 @@ class _MissionCompletionScreenState extends State<MissionCompletionScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Lengkapkan laporan di bawah untuk menutup kes kecemasan ini.'.tr(),
+                AppStrings.volunteerLengkapkanLaporanDiBawah,
                 style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 24),
 
               // Bilangan Mangsa
               Text(
-                'Bilangan Mangsa Diselamatkan'.tr(),
+                AppStrings.volunteerBilanganMangsaDiselamatkan,
                 style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
               ),
               const SizedBox(height: 8),
@@ -112,7 +113,7 @@ class _MissionCompletionScreenState extends State<MissionCompletionScreen> {
                 controller: _victimsController,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
-                  hintText:'Cth: 2'.tr(),
+                  hintText:AppStrings.volunteerCth2,
                   filled: true,
                   fillColor: Colors.white,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppColors.divider)),
@@ -120,8 +121,8 @@ class _MissionCompletionScreenState extends State<MissionCompletionScreen> {
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 ),
                 validator: (val) {
-                  if (val == null || val.isEmpty) return 'Sila masukkan bilangan mangsa'.tr();
-                  if (int.tryParse(val) == null) return 'Sila masukkan nombor yang sah'.tr();
+                  if (val == null || val.isEmpty) return AppStrings.volunteerSilaMasukkanBilanganMangsa;
+                  if (int.tryParse(val) == null) return AppStrings.volunteerSilaMasukkanNomborYang;
                   return null;
                 },
               ),
@@ -129,7 +130,7 @@ class _MissionCompletionScreenState extends State<MissionCompletionScreen> {
 
               // Keadaan Mangsa
               Text(
-                'Keadaan Umum Mangsa'.tr(),
+                AppStrings.volunteerKeadaanUmumMangsa,
                 style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
               ),
               const SizedBox(height: 8),
@@ -160,7 +161,7 @@ class _MissionCompletionScreenState extends State<MissionCompletionScreen> {
 
               // Nota Tambahan
               Text(
-                'Nota Tambahan (Pilihan)'.tr(),
+                AppStrings.volunteerNotaTambahanPilihan,
                 style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
               ),
               const SizedBox(height: 8),
@@ -168,7 +169,7 @@ class _MissionCompletionScreenState extends State<MissionCompletionScreen> {
                 controller: _notesController,
                 maxLines: 4,
                 decoration: InputDecoration(
-                  hintText:'Cth: Mangsa telah diserahkan kepada pihak ambulans...'.tr(),
+                  hintText:AppStrings.volunteerCthMangsaTelahDiserahkan,
                   filled: true,
                   fillColor: Colors.white,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppColors.divider)),
@@ -191,7 +192,7 @@ class _MissionCompletionScreenState extends State<MissionCompletionScreen> {
                   ),
                   child: _isSubmitting
                       ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : Text('Sahkan & Selesaikan Misi'.tr(), style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600)),
+                      : Text(AppStrings.volunteerSahkanSelesaikanMisi, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600)),
                 ),
               ),
             ],

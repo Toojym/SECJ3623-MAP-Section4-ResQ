@@ -90,7 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       _glow(
                         child: SigapTextField(
                           label: AppStrings.email.tr(),
-                          hint: AppStrings.email.tr()Hint,
+                          hint: AppStrings.emailHint,
                           controller: _emailCtrl,
                           validator: Validators.validateEmail,
                           keyboardType: TextInputType.emailAddress,
@@ -104,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       _glow(
                         child: SigapTextField(
                           label: AppStrings.password.tr(),
-                          hint: AppStrings.password.tr()Hint,
+                          hint: AppStrings.passwordHint,
                           controller: _passwordCtrl,
                           validator: Validators.validatePassword,
                           obscureText: true,
@@ -135,7 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 8),
 
                       SigapButton(
-                        label: AppStrings.login.tr()Button.tr(),
+                        label: AppStrings.loginButton,
                         onPressed: isLoading ? null : _submit,
                         isLoading: isLoading,
                       ),
@@ -238,7 +238,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 4),
         Text(
-          AppStrings.login.tr()Subtitle,
+          AppStrings.loginSubtitle,
           style: GoogleFonts.inter(
             fontSize: 14,
             color: AppColors.textSecondary,

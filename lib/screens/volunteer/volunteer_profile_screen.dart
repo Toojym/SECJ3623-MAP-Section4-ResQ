@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import '../../core/constants/app_strings.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -52,18 +53,18 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
   // Skill chip selection
   List<String> _selectedSkills = [];
   final List<String> _availableExpertise = [
-    'Pertolongan Cemas'.tr(),
-    'Pemandu Bot'.tr(),
-    'Pemadam Kebakaran'.tr(),
-    'Penjimat Hayat'.tr(),
-    'Pengurusan Evakuasi'.tr(),
-    'Sokongan Psikologi'.tr(),
-    'Jururawat Komuniti'.tr(),
-    'Pemandu Lalu Lintas'.tr(),
-    'Teknisi Elektrik'.tr(),
-    'Pakar Komunikasi'.tr(),
-    'Pentadbir Logistik'.tr(),
-    'Pengetua Perubatan'.tr(),
+    AppStrings.volunteerPertolonganCemas,
+    AppStrings.volunteerPemanduBot,
+    AppStrings.volunteerPemadamKebakaran,
+    AppStrings.volunteerPenjimatHayat,
+    AppStrings.volunteerPengurusanEvakuasi,
+    AppStrings.volunteerSokonganPsikologi,
+    AppStrings.volunteerJururawatKomuniti,
+    AppStrings.volunteerPemanduLaluLintas,
+    AppStrings.volunteerTeknisiElektrik,
+    AppStrings.volunteerPakarKomunikasi,
+    AppStrings.volunteerPentadbirLogistik,
+    AppStrings.volunteerPengetuaPerubatan,
   ];
 
   bool _isLoading = false;
@@ -160,7 +161,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
 
           _selectedSkills = allSkills.where((s) => _availableExpertise.contains(s)).toList();
           final customSkills = allSkills.where((s) => !_availableExpertise.contains(s)).toList();
-          _customSkillsCtrl.text = customSkills.join(', '.tr());
+          _customSkillsCtrl.text = customSkills.join(AppStrings.volunteerEmptyKey);
         });
       }
     } catch (_) {
@@ -213,7 +214,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
         'address': _addressCtrl.text.trim(),
         'emergencyContactName': _emerNameCtrl.text.trim(),
         'emergencyContactPhone': _emerPhoneCtrl.text.trim(),
-        'skills': allSkillsToSave.join(', '.tr()),
+        'skills': allSkillsToSave.join(AppStrings.volunteerEmptyKey),
         'location': _locationCtrl.text.trim(),
         'experience': _experienceCtrl.text.trim(),
         'assignedSquad': _selectedSquad,
@@ -319,13 +320,13 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
               try {
                 final state = context.read<AuthBloc>().state;
                 if (state is! AuthAuthenticated) {
-                  throw 'Pengguna tidak disahkan.'.tr();
+                  throw AppStrings.volunteerPenggunaTidakDisahkan;
                 }
                 final uid = state.uid;
 
                 final user = FirebaseAuth.instance.currentUser;
                 if (user == null || user.email == null) {
-                  throw 'Pengguna tidak dijumpai.'.tr();
+                  throw AppStrings.volunteerPenggunaTidakDijumpai;
                 }
                 final credential = EmailAuthProvider.credential(
                     email: user.email!, password: currentPassCtrl.text);
@@ -419,7 +420,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
               await context.setLocale(newLocale);
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(newLocale.languageCode == 'en' ? 'Language switched to English'.tr() : 'Bahasa ditukar ke Bahasa Melayu'.tr())),
+                  SnackBar(content: Text(newLocale.languageCode == 'en' ? AppStrings.volunteerLanguageSwitchedToEnglish : AppStrings.volunteerBahasaDitukarKeBahasa)),
                 );
               }
             },
@@ -453,7 +454,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                       const SizedBox(height: 12),
                       _buildVolunteerCard(),
                       const SizedBox(height: 24),
-                      _buildSectionTitle('Tugasan Skuad'.tr()),
+                      _buildSectionTitle(AppStrings.volunteerTugasanSkuad),
                       const SizedBox(height: 12),
                       _buildSquadCard(),
                       const SizedBox(height: 24),
@@ -602,7 +603,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            _fullNameCtrl.text.isNotEmpty ? _fullNameCtrl.text : 'Sukarelawan SIGAP'.tr(),
+            _fullNameCtrl.text.isNotEmpty ? _fullNameCtrl.text : AppStrings.volunteerSukarelawanSigap,
             style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
           ),
           Container(
@@ -769,7 +770,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
     return _card([
       if (_isEditing) ...[
         Text(
-          'Pilih Skuad Anda'.tr(),
+          AppStrings.volunteerPilihSkuadAnda,
           style: GoogleFonts.inter(
             fontSize: 13,
             fontWeight: FontWeight.w600,
@@ -778,7 +779,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Anda hanya akan menerima tugasan daripada skuad yang dipilih'.tr(),
+          AppStrings.volunteerAndaHanyaAkanMenerima,
           style: GoogleFonts.inter(
             fontSize: 11,
             color: AppColors.textSecondary,
@@ -805,7 +806,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                 Icon(Icons.group_off_rounded, size: 48, color: AppColors.textHint),
                 const SizedBox(height: 8),
                 Text(
-                  'Tiada skuad tersedia buat masa ini'.tr(),
+                  AppStrings.volunteerTiadaSkuadTersediaBuat,
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     color: AppColors.textSecondary,
@@ -864,7 +865,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              squad['description'] ?? 'Skuad bantuan'.tr(),
+                              squad['description'] ?? AppStrings.volunteerSkuadBantuan,
                               style: GoogleFonts.inter(
                                 fontSize: 11,
                                 color: AppColors.textSecondary,
@@ -923,7 +924,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Skuad yang ditugaskan kepada anda'.tr(),
+                            AppStrings.volunteerSkuadYangDitugaskanKepada,
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               color: AppColors.textSecondary,
@@ -992,7 +993,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Belum Memilih Skuad'.tr(),
+                  AppStrings.volunteerBelumMemilihSkuad,
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -1001,7 +1002,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Tekan butang edit untuk memilih skuad anda'.tr(),
+                  AppStrings.volunteerTekanButangEditUntuk,
                   textAlign: TextAlign.center,
                   style: GoogleFonts.inter(
                     fontSize: 12,

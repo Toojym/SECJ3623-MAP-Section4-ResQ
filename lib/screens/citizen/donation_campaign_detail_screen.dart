@@ -3,6 +3,7 @@
 // donation history, and sticky "Derma Sekarang" CTA.
 
 import 'package:flutter/material.dart';
+import '../../core/constants/app_strings.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -124,7 +125,7 @@ class _DonationCampaignDetailScreenState
               children: [
                 const Icon(Icons.lock_rounded, size: 14, color: Colors.white),
                 const SizedBox(width: 6),
-                Text('Ditutup'.tr(),
+                Text(AppStrings.closed,
                     style: GoogleFonts.inter(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -272,7 +273,7 @@ class _DonationCampaignDetailScreenState
         const SizedBox(width: 12),
         _statBox(
           _campaign.isClosed ? Icons.lock_rounded : Icons.check_circle_rounded,
-          _campaign.isClosed ? 'Tutup'.tr() : 'Aktif'.tr(),
+          _campaign.isClosed ? AppStrings.close : 'Aktif'.tr(),
           'Status'.tr(),
           _campaign.isClosed ? AppColors.textSecondary : AppColors.safe,
         ),
@@ -406,12 +407,12 @@ class _DonationCampaignDetailScreenState
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Belum Ada Sumbangan'.tr(),
+                          Text(AppStrings.noDonationYet,
                               style: GoogleFonts.inter(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   color: AppColors.textPrimary)),
-                          Text('Sumbangan anda akan dipaparkan di sini.'.tr(),
+                          Text(AppStrings.donationWillAppearHere,
                               style: GoogleFonts.inter(
                                   fontSize: 12, color: AppColors.textSecondary)),
                         ],
@@ -477,7 +478,7 @@ class _DonationCampaignDetailScreenState
                         ),
                         trailing: TextButton(
                           onPressed: () => _showReceiptDialog(d),
-                          child: Text('Resit'.tr(),
+                          child: Text(AppStrings.receipt,
                               style: GoogleFonts.inter(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
@@ -515,7 +516,7 @@ class _DonationCampaignDetailScreenState
         child: ElevatedButton.icon(
           onPressed: () => _showDonationDialog(_campaign),
           icon: const Icon(Icons.favorite_rounded, size: 20),
-          label: Text('Derma Sekarang'.tr(),
+          label: Text(AppStrings.donateNow,
               style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700)),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,
@@ -615,7 +616,7 @@ class _DonationCampaignDetailScreenState
               ),
               const SizedBox(height: 20),
               // Quick amount chips
-              Text('Jumlah Cepat'.tr(),
+              Text(AppStrings.quickAmount,
                   style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -666,7 +667,7 @@ class _DonationCampaignDetailScreenState
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
               ),
               const SizedBox(height: 12),
-              Text('Kaedah Pembayaran'.tr(),
+              Text(AppStrings.paymentMethod,
                   style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -745,12 +746,12 @@ class _DonationCampaignDetailScreenState
                           
                           if (amount <= 0) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Sila masukkan jumlah yang sah.'.tr())));
+                                SnackBar(content: Text(AppStrings.errEnterValidAmount)));
                             return;
                           }
                           if (donorName.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Sila masukkan nama penderma.'.tr())));
+                                SnackBar(content: Text(AppStrings.errEnterDonorName)));
                             return;
                           }
                           
@@ -803,8 +804,7 @@ class _DonationCampaignDetailScreenState
                             if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('failedProcessDonation'.tr(args: [e.toString().split('
-').first])),
+                                  content: Text('failedProcessDonation'.tr(args: [e.toString().split('\n').first])),
                                   backgroundColor: AppColors.danger,
                                 ),
                               );
@@ -824,7 +824,7 @@ class _DonationCampaignDetailScreenState
                           height: 20,
                           child: CircularProgressIndicator(
                               color: Colors.white, strokeWidth: 2))
-                      : Text('Bayar Sekarang'.tr(),
+                      : Text(AppStrings.payNow,
                           style: GoogleFonts.inter(
                               fontSize: 15, fontWeight: FontWeight.w700)),
                 ),
@@ -855,7 +855,7 @@ class _DonationCampaignDetailScreenState
           children: [
             const CircularProgressIndicator(),
             const SizedBox(height: 16),
-            Text('Menjana resit PDF...'.tr()),
+            Text(AppStrings.generatingPdfReceipt),
           ],
         ),
       ),
@@ -887,7 +887,7 @@ class _DonationCampaignDetailScreenState
                     size: 40, color: AppColors.primary),
               ),
               const SizedBox(height: 12),
-              Text('Sumbangan Berjaya!'.tr(),
+              Text(AppStrings.donationSuccess,
                   style: GoogleFonts.poppins(
                       fontSize: 16, fontWeight: FontWeight.w700)),
             ],
@@ -937,7 +937,7 @@ class _DonationCampaignDetailScreenState
               onPressed: () async =>
                   ReceiptService.shareReceipt(pdfFile, donation.receiptNo),
               icon: const Icon(Icons.share_rounded),
-              label: Text('Kongsi PDF'.tr()),
+              label: Text(AppStrings.sharePdf),
             ),
             OutlinedButton.icon(
               onPressed: () async {
@@ -947,18 +947,18 @@ class _DonationCampaignDetailScreenState
                   if (!ctx.mounted) return;
                   ScaffoldMessenger.of(ctx).showSnackBar(
                     SnackBar(
-                      content: Text('Gagal memuat turun resit: $e'),
+                      content: Text(AppStrings.errDownloadReceipt.replaceAll('{}', e.toString())),
                       backgroundColor: AppColors.danger,
                     ),
                   );
                 }
               },
               icon: const Icon(Icons.download_rounded),
-              label: Text('Muat Turun PDF'.tr()),
+              label: Text(AppStrings.downloadPdf),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx),
-              child: Text('Tutup'.tr()),
+              child: Text(AppStrings.close),
             ),
           ],
         ),
@@ -968,7 +968,7 @@ class _DonationCampaignDetailScreenState
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Gagal menjana resit: $e'),
+              content: Text(AppStrings.errGenerateReceipt.replaceAll('{}', e.toString())),
               backgroundColor: AppColors.danger),
         );
       }

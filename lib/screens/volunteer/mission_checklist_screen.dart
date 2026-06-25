@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../../core/constants/app_strings.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../blocs/auth/auth_bloc.dart';
@@ -20,11 +21,11 @@ class _MissionChecklistScreenState extends State<MissionChecklistScreen> {
   final _firestoreService = FirestoreService();
 
   final List<String> _checklistItems = [
-    'Peralatan kecemasan lengkap (First aid, dsb)'.tr(),
-    'Dalam perjalanan ke lokasi insiden'.tr(),
-    'Tiba di lokasi insiden'.tr(),
-    'Menjalankan operasi menyelamat'.tr(),
-    'Bantuan awal disalurkan kepada mangsa'.tr(),
+    AppStrings.volunteerPeralatanKecemasanLengkapFirst,
+    AppStrings.volunteerDalamPerjalananKeLokasi,
+    AppStrings.volunteerTibaDiLokasiInsiden,
+    AppStrings.volunteerMenjalankanOperasiMenyelamat,
+    AppStrings.volunteerBantuanAwalDisalurkanKepada,
   ];
 
   @override
@@ -36,7 +37,7 @@ class _MissionChecklistScreenState extends State<MissionChecklistScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
-          'Senarai Semak Misi'.tr(),
+          AppStrings.volunteerSenaraiSemakMisi,
           style: GoogleFonts.poppins(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -84,7 +85,7 @@ class _MissionChecklistScreenState extends State<MissionChecklistScreen> {
               _buildMissionHeader(currentMission),
               const SizedBox(height: 24),
               Text(
-                'Tandai tugas yang telah diselesaikan:'.tr(),
+                AppStrings.volunteerTandaiTugasYangTelah,
                 style: GoogleFonts.poppins(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -111,7 +112,7 @@ class _MissionChecklistScreenState extends State<MissionChecklistScreen> {
           Icon(Icons.assignment_turned_in_rounded, size: 64, color: AppColors.textHint),
           const SizedBox(height: 16),
           Text(
-            'Tiada Misi Aktif'.tr(),
+            AppStrings.volunteerTiadaMisiAktif,
             style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -120,7 +121,7 @@ class _MissionChecklistScreenState extends State<MissionChecklistScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Senarai semak hanya tersedia untuk\nmisi yang sedang dijalankan.'.tr(),
+            AppStrings.volunteerSenaraiSemakHanyaTersedia,
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(fontSize: 13, color: AppColors.textHint),
           ),
@@ -153,7 +154,7 @@ class _MissionChecklistScreenState extends State<MissionChecklistScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'missionType'.tr(args: [report.type]),
+                  'volunteerMissiontype'.tr(args: [report.type]),
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -162,7 +163,7 @@ class _MissionChecklistScreenState extends State<MissionChecklistScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  report.address.isNotEmpty ? report.address : 'Lokasi koordinat'.tr(),
+                  report.address.isNotEmpty ? report.address : AppStrings.volunteerLokasiKoordinat,
                   style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
                 ),
               ],

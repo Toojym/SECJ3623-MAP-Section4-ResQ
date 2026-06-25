@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import '../core/constants/app_strings.dart';
 
 class PdfReportService {
   static Future<Uint8List> generateReportPdf(String reportText, String reportTitle) async {
@@ -20,7 +21,7 @@ class PdfReportService {
               child: pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  pw.Text('SIGAP - Laporan AWANIS', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
+                  pw.Text(AppStrings.pdfAwanisReportTitle, style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
                   pw.Text(
                     '${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
                     style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey700),
@@ -45,7 +46,7 @@ class PdfReportService {
             pw.Divider(),
             pw.SizedBox(height: 10),
             pw.Center(
-              child: pw.Text('Laporan ini dijana oleh AWANIS (Sistem AI SIGAP)', style: pw.TextStyle(fontSize: 10, color: PdfColors.grey600)),
+              child: pw.Text(AppStrings.pdfAwanisReportFooter, style: pw.TextStyle(fontSize: 10, color: PdfColors.grey600)),
             ),
           ];
         },

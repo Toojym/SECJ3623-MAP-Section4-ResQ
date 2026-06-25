@@ -136,7 +136,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           const SizedBox(height: 32),
           SigapTextField(
             label: AppStrings.email.tr(),
-            hint: AppStrings.email.tr()Hint,
+            hint: AppStrings.emailHint,
             controller: _emailCtrl,
             validator: Validators.validateEmail,
             keyboardType: TextInputType.emailAddress,

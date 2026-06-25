@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import '../../core/constants/app_strings.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -236,11 +237,11 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
 
               try {
                 final state = context.read<AuthBloc>().state;
-                if (state is! AuthAuthenticated) throw 'Pengguna tidak disahkan.'.tr();
+                if (state is! AuthAuthenticated) throw AppStrings.officerPenggunatidakdisahkan;
                 final uid = state.uid;
 
                 final user = FirebaseAuth.instance.currentUser;
-                if (user == null || user.email == null) throw 'Pengguna tidak dijumpai.'.tr();
+                if (user == null || user.email == null) throw AppStrings.officerPenggunatidakdijumpai;
 
                 final credential = EmailAuthProvider.credential(
                   email: user.email!,
@@ -302,7 +303,7 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
               await context.setLocale(newLocale);
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(newLocale.languageCode == 'en' ? 'Language switched to English'.tr() : 'Bahasa ditukar ke Bahasa Melayu'.tr())),
+                  SnackBar(content: Text(newLocale.languageCode == 'en' ? AppStrings.officerLanguageswitchedtoenglish : AppStrings.officerBahasaditukarkebahasa)),
                 );
               }
             },
@@ -441,12 +442,12 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          Text(_fullNameCtrl.text.isNotEmpty ? _fullNameCtrl.text : 'Pegawai SIGAP'.tr(), style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+          Text(_fullNameCtrl.text.isNotEmpty ? _fullNameCtrl.text : AppStrings.officerPegawaisigap, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
           Container(
             margin: const EdgeInsets.only(top: 4),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
             decoration: BoxDecoration(color: AppColors.officerAccent.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(99)),
-            child: Text('Pegawai Kerajaan'.tr(), style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.officerAccent)),
+            child: Text(AppStrings.officerPegawaikerajaan, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.officerAccent)),
           ),
           if (_isEditing)
             Padding(
@@ -471,7 +472,7 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
     return _card([
       SigapTextField(
         label: tr('fullNameLabel'),
-        hint: 'Tuan/Puan ...'.tr(),
+        hint: AppStrings.officerTuanpuan,
         controller: _fullNameCtrl,
         validator: (v) => Validators.validateRequired(v, fieldName: 'Nama'.tr()),
         prefixIcon: const Icon(Icons.person_rounded, size: 20),
@@ -537,7 +538,7 @@ class _OfficerProfileScreenState extends State<OfficerProfileScreen> {
         label: tr('agencyLabel'),
         hint: tr('agencyHint'),
         controller: _agencyCtrl,
-        validator: (v) => Validators.validateRequired(v, fieldName: 'Nama agensi'.tr()),
+        validator: (v) => Validators.validateRequired(v, fieldName: AppStrings.officerNamaagensi),
         prefixIcon: const Icon(Icons.business_rounded, size: 20),
         enabled: _isEditing,
       ),

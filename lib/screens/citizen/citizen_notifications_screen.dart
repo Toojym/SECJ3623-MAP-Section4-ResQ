@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_strings.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/firestore_service.dart';
@@ -130,7 +131,7 @@ class _CitizenNotificationsScreenState extends State<CitizenNotificationsScreen>
                       elevation: 0,
                     ),
                     child: Text(
-                      'Tutup'.tr(),
+                      AppStrings.close,
                       style: GoogleFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
@@ -189,7 +190,7 @@ class _CitizenNotificationsScreenState extends State<CitizenNotificationsScreen>
           }
           if (snapshot.hasError) {
             return Center(
-              child: Text('Ralat memuatkan notifikasi'.tr(), style: GoogleFonts.inter(color: AppColors.textSecondary)),
+              child: Text(AppStrings.errLoadingNotifications, style: GoogleFonts.inter(color: AppColors.textSecondary)),
             );
           }
           final docs = snapshot.data?.docs ?? [];

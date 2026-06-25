@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../../core/constants/app_strings.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -21,7 +22,7 @@ class _VolunteerNotificationsScreenState extends State<VolunteerNotificationsScr
   final FirestoreService _firestoreService = FirestoreService();
 
   String _formatDate(Timestamp? timestamp) {
-    if (timestamp == null) return 'Baru sahaja'.tr();
+    if (timestamp == null) return AppStrings.volunteerBaruSahaja;
     final now = DateTime.now();
     final date = timestamp.toDate();
     final diff = now.difference(date);
@@ -39,7 +40,7 @@ class _VolunteerNotificationsScreenState extends State<VolunteerNotificationsScr
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
-          'Pemberitahuan Misi'.tr(),
+          AppStrings.volunteerPemberitahuanMisi,
           style: GoogleFonts.poppins(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -57,7 +58,7 @@ class _VolunteerNotificationsScreenState extends State<VolunteerNotificationsScr
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: Text(
-                'Notifikasi Umum'.tr(),
+                AppStrings.volunteerNotifikasiUmum,
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -71,7 +72,7 @@ class _VolunteerNotificationsScreenState extends State<VolunteerNotificationsScr
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Text('Tiada notifikasi umum'.tr(), style: GoogleFonts.inter(color: AppColors.textSecondary)),
+                    child: Text(AppStrings.volunteerTiadaNotifikasiUmum, style: GoogleFonts.inter(color: AppColors.textSecondary)),
                   );
                 }
 
@@ -148,7 +149,7 @@ class _VolunteerNotificationsScreenState extends State<VolunteerNotificationsScr
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
               child: Text(
-                'Misi SOS Terkini'.tr(),
+                AppStrings.volunteerMisiSosTerkini,
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -210,7 +211,7 @@ class _VolunteerNotificationsScreenState extends State<VolunteerNotificationsScr
           Icon(Icons.notifications_off_rounded, size: 64, color: AppColors.textHint),
           const SizedBox(height: 16),
           Text(
-            'Tiada Pemberitahuan Baru'.tr(),
+            AppStrings.volunteerTiadaPemberitahuanBaru,
             style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -219,7 +220,7 @@ class _VolunteerNotificationsScreenState extends State<VolunteerNotificationsScr
           ),
           const SizedBox(height: 8),
           Text(
-            'Kawasan anda selamat buat masa ini.'.tr(),
+            AppStrings.volunteerKawasanAndaSelamatBuat,
             style: GoogleFonts.inter(fontSize: 13, color: AppColors.textHint),
           ),
         ],
@@ -276,7 +277,7 @@ class _VolunteerNotificationsScreenState extends State<VolunteerNotificationsScr
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'newMissionType'.tr(args: [report.type]),
+                    'volunteerNewmissiontype'.tr(args: [report.type]),
                     style: GoogleFonts.poppins(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -285,7 +286,7 @@ class _VolunteerNotificationsScreenState extends State<VolunteerNotificationsScr
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    report.address.isNotEmpty ? report.address : 'Lokasi koordinat'.tr(),
+                    report.address.isNotEmpty ? report.address : AppStrings.volunteerLokasiKoordinat,
                     style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 8),

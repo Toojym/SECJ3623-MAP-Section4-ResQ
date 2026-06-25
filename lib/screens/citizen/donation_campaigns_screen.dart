@@ -2,6 +2,7 @@
 // Full-screen campaign browser for citizens with search, progress bars, and donate entry point.
 
 import 'package:flutter/material.dart';
+import '../../core/constants/app_strings.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -26,7 +27,7 @@ class DonationCampaignsScreen extends StatefulWidget {
 class _DonationCampaignsScreenState extends State<DonationCampaignsScreen> {
   final FirestoreService _firestoreService = FirestoreService();
   String _searchQuery = '';
-  String _filterStatus = 'Semua'.tr(); // 'Semua'.tr(), 'Aktif'.tr(), 'Ditutup'.tr()
+  String _filterStatus = 'Semua'.tr(); // 'Semua'.tr(), 'Aktif'.tr(), AppStrings.closed
 
   @override
   Widget build(BuildContext context) {
@@ -200,7 +201,7 @@ class _DonationCampaignsScreenState extends State<DonationCampaignsScreen> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: ['Semua'.tr(), 'Aktif'.tr(), 'Ditutup'.tr()].map((f) {
+              children: ['Semua'.tr(), 'Aktif'.tr(), AppStrings.closed].map((f) {
                 final selected = _filterStatus == f;
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
@@ -251,7 +252,7 @@ class _DonationCampaignsScreenState extends State<DonationCampaignsScreen> {
         .where((c) {
           bool isClosed = c.isClosed || c.currentAmount >= c.targetAmount;
           if (_filterStatus == 'Aktif'.tr()) return !isClosed;
-          if (_filterStatus == 'Ditutup'.tr()) return isClosed;
+          if (_filterStatus == AppStrings.closed) return isClosed;
           return true;
         })
         .where((c) =>
@@ -426,7 +427,7 @@ class _CampaignCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       if (isClosed)
-                        _badge('Ditutup'.tr(), AppColors.textSecondary, Icons.lock_rounded)
+                        _badge(AppStrings.closed, AppColors.textSecondary, Icons.lock_rounded)
                       else if (hasDonated)
                         _badge('Penderma'.tr(), Colors.amber.shade700, Icons.verified_rounded),
                     ],
@@ -503,7 +504,7 @@ class _CampaignCard extends StatelessWidget {
                         child: OutlinedButton.icon(
                           onPressed: onTap,
                           icon: const Icon(Icons.info_outline_rounded, size: 16),
-                          label: Text('Butiran'.tr()),
+                          label: Text(AppStrings.details),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AppColors.primary,
                             side: const BorderSide(color: AppColors.primary),
@@ -519,7 +520,7 @@ class _CampaignCard extends StatelessWidget {
                           child: ElevatedButton.icon(
                             onPressed: onDonate,
                             icon: const Icon(Icons.favorite_rounded, size: 16),
-                            label: Text('Derma'.tr()),
+                            label: Text(AppStrings.donate),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               foregroundColor: Colors.white,

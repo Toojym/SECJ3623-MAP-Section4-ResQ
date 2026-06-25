@@ -4,6 +4,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:printing/printing.dart';
+import '../core/constants/app_strings.dart';
 
 class ReceiptService {
   static Future<File> generateReceiptPdf({
@@ -18,15 +19,15 @@ class ReceiptService {
 
     // Manual date formatting
     String getMonthName(int month) {
-      const months = [
-        'Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun',
-        'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'
+      final months = [
+        AppStrings.monthJan, AppStrings.monthFeb, AppStrings.monthMar, AppStrings.monthApr, AppStrings.monthMay, AppStrings.monthJun,
+        AppStrings.monthJul, AppStrings.monthAug, AppStrings.monthSep, AppStrings.monthOct, AppStrings.monthNov, AppStrings.monthDec
       ];
       return months[month - 1];
     }
     
     String getAmPm(int hour) {
-      return hour >= 12 ? 'PTG' : 'PAGI';
+      return hour >= 12 ? AppStrings.timePm : AppStrings.timeAm;
     }
     
     int get12Hour(int hour) {
@@ -50,11 +51,11 @@ class ReceiptService {
                 pw.Center(
                   child: pw.Column(
                     children: [
-                      pw.Text('SIGAP', style: pw.TextStyle(fontSize: 28, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
+                      pw.Text(AppStrings.appName, style: pw.TextStyle(fontSize: 28, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
                       pw.SizedBox(height: 8),
-                      pw.Text('Sistem Integrasi Gerak Awam Pantas', style: pw.TextStyle(fontSize: 12, color: PdfColors.grey700)),
+                      pw.Text(AppStrings.appFullName, style: pw.TextStyle(fontSize: 12, color: PdfColors.grey700)),
                       pw.SizedBox(height: 4),
-                      pw.Text('RESIT CUKAI DIGITAL', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.grey800)),
+                      pw.Text(AppStrings.digitalTaxReceipt, style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.grey800)),
                     ],
                   ),
                 ),
@@ -65,32 +66,32 @@ class ReceiptService {
                   child: pw.Container(
                     padding: pw.EdgeInsets.symmetric(vertical: 8, horizontal: 20),
                     decoration: pw.BoxDecoration(color: PdfColors.blue100, borderRadius: pw.BorderRadius.circular(8)),
-                    child: pw.Text('RESIT SUMBANGAN', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
+                    child: pw.Text(AppStrings.donationReceipt, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
                   ),
                 ),
                 pw.SizedBox(height: 20),
-                _infoRow('No. Resit:', transactionId),
-                _infoRow('Tarikh:', formattedDate),
-                _infoRow('Kaedah Bayaran:', paymentMethod),
+                _infoRow(AppStrings.receiptNo, transactionId),
+                _infoRow(AppStrings.dateLabel, formattedDate),
+                _infoRow(AppStrings.paymentMethod, paymentMethod),
                 pw.SizedBox(height: 20),
                 pw.Divider(),
                 pw.SizedBox(height: 20),
-                pw.Text('MAKLUMAT PENDERMA', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: PdfColors.grey800)),
+                pw.Text(AppStrings.donorInformation, style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: PdfColors.grey800)),
                 pw.SizedBox(height: 10),
-                _infoRow('Nama Penderma:', donorName),
+                _infoRow(AppStrings.donorNameLabel, donorName),
                 pw.SizedBox(height: 20),
                 pw.Divider(),
                 pw.SizedBox(height: 20),
-                pw.Text('MAKLUMAT SUMBANGAN', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: PdfColors.grey800)),
+                pw.Text(AppStrings.donationInformation, style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: PdfColors.grey800)),
                 pw.SizedBox(height: 10),
-                _infoRow('Tujuan Sumbangan:', campaignName),
+                _infoRow(AppStrings.donationPurpose, campaignName),
                 pw.SizedBox(height: 20),
                 pw.Divider(),
                 pw.SizedBox(height: 20),
                 pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
-                    pw.Text('JUMLAH SUMBANGAN:', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                    pw.Text(AppStrings.totalDonation, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
                     pw.Text(formattedAmount, style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.green700)),
                   ],
                 ),
@@ -102,15 +103,15 @@ class ReceiptService {
                   decoration: pw.BoxDecoration(color: PdfColors.grey100, borderRadius: pw.BorderRadius.circular(8)),
                   child: pw.Column(
                     children: [
-                      pw.Text('PENGECUALIAN CUKAI', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.grey800)),
+                      pw.Text(AppStrings.taxExemption, style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.grey800)),
                       pw.SizedBox(height: 8),
-                      pw.Text('Sumbangan ini layak mendapat pengecualian cukai di bawah\nSubseksyen 44(6) Akta Cukai Pendapatan 1967.', textAlign: pw.TextAlign.center, style: pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
+                      pw.Text(AppStrings.taxExemptionDesc, textAlign: pw.TextAlign.center, style: pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
                     ],
                   ),
                 ),
                 pw.SizedBox(height: 30),
                 pw.Center(
-                  child: pw.Text('Terima kasih atas sokongan anda!\nwww.sigap.gov.my', textAlign: pw.TextAlign.center, style: pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
+                  child: pw.Text(AppStrings.receiptFooter, textAlign: pw.TextAlign.center, style: pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
                 ),
               ],
             ),

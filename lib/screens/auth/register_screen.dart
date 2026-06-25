@@ -113,7 +113,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const SizedBox(height: 16),
                       SigapTextField(
                         label: AppStrings.email.tr(),
-                        hint: AppStrings.email.tr()Hint,
+                        hint: AppStrings.emailHint,
                         controller: _emailCtrl,
                         validator: Validators.validateEmail,
                         errorText: _emailError,
@@ -126,7 +126,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const SizedBox(height: 16),
                       SigapTextField(
                         label: AppStrings.password.tr(),
-                        hint: AppStrings.password.tr()Hint,
+                        hint: AppStrings.passwordHint,
                         controller: _passwordCtrl,
                         validator: Validators.validatePassword,
                         obscureText: true,
@@ -135,7 +135,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const SizedBox(height: 16),
                       SigapTextField(
                         label: AppStrings.confirmPassword.tr(),
-                        hint: AppStrings.confirmPassword.tr()Hint,
+                        hint: AppStrings.confirmPasswordHint,
                         controller: _confirmCtrl,
                         validator: (v) => Validators.validateConfirmPassword(v, _passwordCtrl.text),
                         obscureText: true,
